@@ -1,4 +1,5 @@
 'use client'
+// Dashboard page with sidebar integration
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession, signIn, signOut } from 'next-auth/react'
