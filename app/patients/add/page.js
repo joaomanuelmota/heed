@@ -16,8 +16,32 @@ export default function AddPatient() {
     email: '',
     phone: '',
     dateOfBirth: '',
-    address: ''
+    address: '',
+    status: 'active',
+    sessionType: 'on-site',
+    specialty: ''
   })
+
+  const specialtyOptions = [
+    { value: '', label: 'Select Specialty' },
+    { value: 'clinical', label: 'Clinical Psychology' },
+    { value: 'counseling', label: 'Counseling Psychology' },
+    { value: 'cognitive', label: 'Cognitive Psychology' },
+    { value: 'behavioral', label: 'Behavioral Psychology' },
+    { value: 'developmental', label: 'Developmental Psychology' },
+    { value: 'forensic', label: 'Forensic Psychology' },
+    { value: 'health', label: 'Health Psychology' },
+    { value: 'neuropsychology', label: 'Neuropsychology' },
+    { value: 'school', label: 'School Psychology' },
+    { value: 'social', label: 'Social Psychology' },
+    { value: 'sport', label: 'Sport Psychology' },
+    { value: 'trauma', label: 'Trauma Psychology' },
+    { value: 'addiction', label: 'Addiction Psychology' },
+    { value: 'family', label: 'Family Therapy' },
+    { value: 'couples', label: 'Couples Therapy' },
+    { value: 'group', label: 'Group Therapy' },
+    { value: 'other', label: 'Other' }
+  ]
 
   useEffect(() => {
     checkUser()
@@ -59,6 +83,9 @@ export default function AddPatient() {
         phone: patientData.phone || null,
         dateOfBirth: patientData.dateOfBirth || null,
         address: patientData.address || null,
+        status: patientData.status,
+        session_type: patientData.sessionType,
+        specialty: patientData.specialty || null,
         psychologist_id: user.id,
         created_at: new Date().toISOString()
       }
@@ -71,13 +98,18 @@ export default function AddPatient() {
         setMessage(`Error: ${error.message}`)
       } else {
         setMessage('Patient added successfully!')
+        
+        // Clear form
         setPatientData({
           firstName: '',
           lastName: '',
           email: '',
           phone: '',
           dateOfBirth: '',
-          address: ''
+          address: '',
+          status: 'active',
+          sessionType: 'on-site',
+          specialty: ''
         })
         
         setTimeout(() => {
@@ -142,7 +174,7 @@ export default function AddPatient() {
                     name="firstName"
                     value={patientData.firstName}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     required
                     disabled={loading}
                   />
@@ -156,7 +188,7 @@ export default function AddPatient() {
                     name="lastName"
                     value={patientData.lastName}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     required
                     disabled={loading}
                   />
@@ -170,7 +202,7 @@ export default function AddPatient() {
                     name="email"
                     value={patientData.email}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     disabled={loading}
                   />
                 </div>
@@ -183,7 +215,7 @@ export default function AddPatient() {
                     name="phone"
                     value={patientData.phone}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     disabled={loading}
                   />
                 </div>
@@ -196,9 +228,58 @@ export default function AddPatient() {
                     name="dateOfBirth"
                     value={patientData.dateOfBirth}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     disabled={loading}
                   />
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={patientData.status}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
+                    disabled={loading}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    Session Type
+                  </label>
+                  <select
+                    name="sessionType"
+                    value={patientData.sessionType}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
+                    disabled={loading}
+                  >
+                    <option value="on-site">On-Site</option>
+                    <option value="remote">Remote</option>
+                    <option value="hybrid">Hybrid</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    Specialty
+                  </label>
+                  <select
+                    name="specialty"
+                    value={patientData.specialty}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
+                    disabled={loading}
+                  >
+                    {specialtyOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               
@@ -211,7 +292,7 @@ export default function AddPatient() {
                   value={patientData.address}
                   onChange={handleChange}
                   rows="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                   disabled={loading}
                 />
               </div>

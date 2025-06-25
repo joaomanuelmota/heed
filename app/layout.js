@@ -42,7 +42,7 @@ function LayoutContent({ children }) {
       <Sidebar />
       
       {/* Main Content Area */}
-      <div className="flex-1">
+      <div className="flex-1 ml-64">
         {children}
       </div>
     </div>

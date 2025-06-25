@@ -19,8 +19,44 @@ export default function EditPatient() {
     email: '',
     phone: '',
     dateOfBirth: '',
-    address: ''
+    address: '',
+    status: 'active',
+    sessionType: 'on-site',
+    specialty: ''
   })
+
+  const specialtyOptions = [
+    { value: '', label: 'Select Specialty' },
+    { value: 'clinical', label: 'Clinical Psychology' },
+    { value: 'counseling', label: 'Counseling Psychology' },
+    { value: 'cognitive', label: 'Cognitive Psychology' },
+    { value: 'behavioral', label: 'Behavioral Psychology' },
+    { value: 'developmental', label: 'Developmental Psychology' },
+    { value: 'forensic', label: 'Forensic Psychology' },
+    { value: 'health', label: 'Health Psychology' },
+    { value: 'neuropsychology', label: 'Neuropsychology' },
+    { value: 'school', label: 'School Psychology' },
+    { value: 'social', label: 'Social Psychology' },
+    { value: 'sport', label: 'Sport Psychology' },
+    { value: 'trauma', label: 'Trauma Psychology' },
+    { value: 'addiction', label: 'Addiction Psychology' },
+    { value: 'family', label: 'Family Therapy' },
+    { value: 'couples', label: 'Couples Therapy' },
+    { value: 'group', label: 'Group Therapy' },
+    { value: 'other', label: 'Other' }
+  ]
+
+  // Add this debugging code right after all the useState declarations
+  useEffect(() => {
+    console.log('=== PATIENT DATA STATE CHANGED ===')
+    console.log('Current patientData state:', patientData)
+  }, [patientData])
+
+  useEffect(() => {
+    console.log('=== COMPONENT MOUNTED/UPDATED ===')
+    console.log('params.id:', params.id)
+    console.log('user:', user)
+  }, [params.id, user])
 
   useEffect(() => {
     checkUser()
@@ -65,7 +101,10 @@ export default function EditPatient() {
           email: data.email || '',
           phone: data.phone || '',
           dateOfBirth: data.dateOfBirth || '',
-          address: data.address || ''
+          address: data.address || '',
+          status: data.status || 'active',
+          sessionType: data.session_type || 'on-site',
+          specialty: data.specialty || ''
         })
       }
     } catch (error) {
@@ -76,16 +115,30 @@ export default function EditPatient() {
   }
 
   const handleChange = (e) => {
-    setPatientData({
+    console.log('=== FORM FIELD CHANGED ===')
+    console.log('Field name:', e.target.name)
+    console.log('New value:', e.target.value)
+    console.log('Previous state:', patientData)
+    
+    const newState = {
       ...patientData,
       [e.target.name]: e.target.value
-    })
+    }
+    
+    console.log('New state will be:', newState)
+    
+    setPatientData(newState)
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
     setMessage('')
+
+    console.log('=== DEBUGGING PATIENT UPDATE ===')
+    console.log('Patient ID:', params.id)
+    console.log('User ID:', user.id)
+    console.log('Form Data:', patientData)
 
     try {
       // Prepare data with proper handling
@@ -95,27 +148,38 @@ export default function EditPatient() {
         email: patientData.email || null,
         phone: patientData.phone || null,
         dateOfBirth: patientData.dateOfBirth || null,
-        address: patientData.address || null
+        address: patientData.address || null,
+        status: patientData.status,
+        session_type: patientData.sessionType,
+        specialty: patientData.specialty || null
       }
+
+      console.log('Update Data being sent:', updateData)
 
       const { data, error } = await supabase
         .from('patients')
         .update(updateData)
         .eq('id', params.id)
-        .eq('psychologist_id', user.id)
+        .select() // Add this to return the updated data
+
+      console.log('Supabase response data:', data)
+      console.log('Supabase response error:', error)
 
       if (error) {
         setMessage(`Error: ${error.message}`)
+        console.error('Update failed:', error)
       } else {
         setMessage('Patient updated successfully!')
+        console.log('Update successful, updated patient:', data)
         
-        // Redirect back to patient profile after 2 seconds
-        setTimeout(() => {
-          router.push(`/patients/${params.id}`)
-        }, 2000)
+        // Don't redirect immediately, let's see if the form shows updated data
+        // setTimeout(() => {
+        //   router.push(`/patients/${params.id}`)
+        // }, 1500)
       }
     } catch (error) {
       setMessage(`Unexpected error: ${error.message}`)
+      console.error('Unexpected error:', error)
     }
 
     setSaving(false)
@@ -133,10 +197,11 @@ export default function EditPatient() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-600 text-xl mb-4">{error}</div>
+          <div className="text-red-600 text-xl mb-4">Error</div>
+          <p className="text-gray-600 mb-6">{error}</p>
           <Link 
             href="/patients"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
           >
             Back to Patients
           </Link>
@@ -147,33 +212,25 @@ export default function EditPatient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Edit Patient</h1>
-              <p className="text-gray-600">
-                {patientData.firstName} {patientData.lastName}
-              </p>
-            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Edit Patient</h1>
             <div className="flex space-x-3">
               <Link 
                 href={`/patients/${params.id}`}
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium"
               >
-                Cancel
+                Back to Patient
               </Link>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white p-8 rounded-lg shadow-sm border">
           
-          {/* Success/Error Message */}
           {message && (
             <div className={`p-3 mb-6 rounded-lg ${
               message.includes('successfully') 
@@ -198,7 +255,7 @@ export default function EditPatient() {
                     name="firstName"
                     value={patientData.firstName}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     required
                     disabled={saving}
                   />
@@ -212,7 +269,7 @@ export default function EditPatient() {
                     name="lastName"
                     value={patientData.lastName}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     required
                     disabled={saving}
                   />
@@ -226,7 +283,7 @@ export default function EditPatient() {
                     name="email"
                     value={patientData.email}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     disabled={saving}
                   />
                 </div>
@@ -239,7 +296,7 @@ export default function EditPatient() {
                     name="phone"
                     value={patientData.phone}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     disabled={saving}
                   />
                 </div>
@@ -252,9 +309,58 @@ export default function EditPatient() {
                     name="dateOfBirth"
                     value={patientData.dateOfBirth}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     disabled={saving}
                   />
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={patientData.status}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
+                    disabled={saving}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    Session Type
+                  </label>
+                  <select
+                    name="sessionType"
+                    value={patientData.sessionType}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
+                    disabled={saving}
+                  >
+                    <option value="on-site">On-Site</option>
+                    <option value="remote">Remote</option>
+                    <option value="hybrid">Hybrid</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    Specialty
+                  </label>
+                  <select
+                    name="specialty"
+                    value={patientData.specialty}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
+                    disabled={saving}
+                  >
+                    {specialtyOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               
@@ -267,13 +373,12 @@ export default function EditPatient() {
                   value={patientData.address}
                   onChange={handleChange}
                   rows="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                   disabled={saving}
                 />
               </div>
             </div>
 
-            {/* Submit Button */}
             <div className="flex justify-end space-x-4 pt-6">
               <Link
                 href={`/patients/${params.id}`}
@@ -290,7 +395,7 @@ export default function EditPatient() {
                     : 'bg-blue-600 hover:bg-blue-700'
                 } text-white`}
               >
-                {saving ? 'Saving Changes...' : 'Save Changes'}
+                {saving ? 'Updating...' : 'Update Patient'}
               </button>
             </div>
           </form>

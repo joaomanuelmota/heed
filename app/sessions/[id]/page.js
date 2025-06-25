@@ -305,7 +305,7 @@ export default function SessionDetails() {
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                   >
                     <option value="scheduled">Scheduled</option>
                     <option value="completed">Completed</option>
@@ -407,7 +407,7 @@ Action items:
 
 Next session goals:
 - "
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none text-gray-900"
               />
               
               <div className="mt-4 text-sm text-gray-500">

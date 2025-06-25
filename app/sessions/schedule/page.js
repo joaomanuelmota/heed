@@ -262,7 +262,7 @@ export default function ScheduleSession() {
                 name="patient_id"
                 value={sessionData.patient_id}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                 required
                 disabled={saving}
               >
@@ -287,7 +287,7 @@ export default function ScheduleSession() {
                 name="title"
                 value={sessionData.title}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                 placeholder="e.g., Therapy Session, Follow-up, Initial Consultation"
                 disabled={saving}
               />
@@ -304,7 +304,7 @@ export default function ScheduleSession() {
                   value={sessionData.session_date}
                   onChange={handleChange}
                   min={getMinDate()}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                   required
                   disabled={saving}
                 />
@@ -318,7 +318,7 @@ export default function ScheduleSession() {
                   name="session_time"
                   value={sessionData.session_time}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                   required
                   disabled={saving}
                 >
@@ -340,7 +340,7 @@ export default function ScheduleSession() {
                 name="duration_minutes"
                 value={sessionData.duration_minutes}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                 disabled={saving}
               >
                 <option value={30}>30 minutes</option>
@@ -361,7 +361,7 @@ export default function ScheduleSession() {
                 onChange={handleChange}
                 rows="3"
                 placeholder="Any notes about this session..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                 disabled={saving}
               />
             </div>

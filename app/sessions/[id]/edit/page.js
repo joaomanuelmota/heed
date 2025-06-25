@@ -273,7 +273,7 @@ export default function EditSession() {
                   name="patient_id"
                   value={sessionData.patient_id}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                   required
                   disabled={saving}
                 >
@@ -298,7 +298,7 @@ export default function EditSession() {
                   name="title"
                   value={sessionData.title}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                   placeholder="e.g., Therapy Session, Follow-up, Initial Consultation"
                   disabled={saving}
                 />
@@ -315,7 +315,7 @@ export default function EditSession() {
                     value={sessionData.session_date}
                     onChange={handleChange}
                     min={getMinDate()}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     required
                     disabled={saving}
                   />
@@ -329,7 +329,7 @@ export default function EditSession() {
                     name="session_time"
                     value={sessionData.session_time}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     required
                     disabled={saving}
                   >
@@ -352,7 +352,7 @@ export default function EditSession() {
                     name="duration_minutes"
                     value={sessionData.duration_minutes}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     disabled={saving}
                   >
                     <option value={30}>30 minutes</option>
@@ -371,7 +371,7 @@ export default function EditSession() {
                     name="status"
                     value={sessionData.status}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                     disabled={saving}
                   >
                     <option value="scheduled">Scheduled</option>
@@ -392,7 +392,7 @@ export default function EditSession() {
                   onChange={handleChange}
                   rows="6"
                   placeholder="Session notes, observations, action items..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900"
                   disabled={saving}
                 />
               </div>
