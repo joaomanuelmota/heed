@@ -234,187 +234,161 @@ export default function ScheduleSession() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Schedule Session</h1>
-            <div className="flex space-x-3">
-              <Link 
-                href="/sessions"
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium"
+    <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="bg-white p-8 rounded-lg shadow-sm border">
+        
+        {/* Success/Error Message */}
+        {message && (
+          <div className={`p-3 mb-6 rounded-lg ${
+            message.includes('successfully') 
+              ? 'bg-green-100 text-green-700 border border-green-300' 
+              : 'bg-red-100 text-red-700 border border-red-300'
+          }`}>
+            {message}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          
+          {/* Patient Selection */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Session Details</h3>
+            
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-2">
+                Patient *
+              </label>
+              <select
+                name="patient_id"
+                value={sessionData.patient_id}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                required
+                disabled={saving}
               >
-                View Sessions
-              </Link>
-              <Link 
-                href="/dashboard"
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium"
-              >
-                Dashboard
-              </Link>
+                <option value="">Select a patient</option>
+                {patients.map((patient) => (
+                  <option key={patient.id} value={patient.id}>
+                    {patient.firstName} {patient.lastName}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white p-8 rounded-lg shadow-sm border">
-          
-          {/* Success/Error Message */}
-          {message && (
-            <div className={`p-3 mb-6 rounded-lg ${
-              message.includes('successfully') 
-                ? 'bg-green-100 text-green-700 border border-green-300' 
-                : 'bg-red-100 text-red-700 border border-red-300'
-            }`}>
-              {message}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Patient Selection */}
+          {/* Session Info */}
+          <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Session Details</h3>
-              
+              <label className="block text-gray-700 text-sm font-medium mb-2">
+                Session Title
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={sessionData.title}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                placeholder="e.g., Therapy Session, Follow-up, Initial Consultation"
+                disabled={saving}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Patient *
+                  Date *
+                </label>
+                <input
+                  type="date"
+                  name="session_date"
+                  value={sessionData.session_date}
+                  onChange={handleChange}
+                  min={getMinDate()}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  required
+                  disabled={saving}
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Time *
                 </label>
                 <select
-                  name="patient_id"
-                  value={sessionData.patient_id}
+                  name="session_time"
+                  value={sessionData.session_time}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                   required
                   disabled={saving}
                 >
-                  <option value="">Select a patient</option>
-                  {patients.map((patient) => (
-                    <option key={patient.id} value={patient.id}>
-                      {patient.firstName} {patient.lastName}
+                  <option value="">Select time</option>
+                  {generateTimeSlots().map((slot) => (
+                    <option key={slot.value} value={slot.value}>
+                      {slot.display}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* Session Info */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Session Title
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={sessionData.title}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  placeholder="e.g., Therapy Session, Follow-up, Initial Consultation"
-                  disabled={saving}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Date *
-                  </label>
-                  <input
-                    type="date"
-                    name="session_date"
-                    value={sessionData.session_date}
-                    onChange={handleChange}
-                    min={getMinDate()}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    required
-                    disabled={saving}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Time *
-                  </label>
-                  <select
-                    name="session_time"
-                    value={sessionData.session_time}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    required
-                    disabled={saving}
-                  >
-                    <option value="">Select time</option>
-                    {generateTimeSlots().map((slot) => (
-                      <option key={slot.value} value={slot.value}>
-                        {slot.display}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Duration (minutes)
-                </label>
-                <select
-                  name="duration_minutes"
-                  value={sessionData.duration_minutes}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  disabled={saving}
-                >
-                  <option value={30}>30 minutes</option>
-                  <option value={45}>45 minutes</option>
-                  <option value={60}>60 minutes</option>
-                  <option value={90}>90 minutes</option>
-                  <option value={120}>2 hours</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Session Notes (Optional)
-                </label>
-                <textarea
-                  name="notes"
-                  value={sessionData.notes}
-                  onChange={handleChange}
-                  rows="3"
-                  placeholder="Any notes about this session..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  disabled={saving}
-                />
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="flex justify-end space-x-4 pt-6">
-              <Link
-                href="/dashboard"
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-medium"
-              >
-                Cancel
-              </Link>
-              <button
-                type="submit"
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-2">
+                Duration (minutes)
+              </label>
+              <select
+                name="duration_minutes"
+                value={sessionData.duration_minutes}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                 disabled={saving}
-                className={`px-6 py-2 rounded-lg font-medium ${
-                  saving 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700'
-                } text-white`}
               >
-                {saving ? 'Scheduling...' : 'Schedule Session'}
-              </button>
+                <option value={30}>30 minutes</option>
+                <option value={45}>45 minutes</option>
+                <option value={60}>60 minutes</option>
+                <option value={90}>90 minutes</option>
+                <option value={120}>2 hours</option>
+              </select>
             </div>
-          </form>
-        </div>
-      </main>
-    </div>
+
+            <div>
+              <label className="block text-gray-700 text-sm font-medium mb-2">
+                Session Notes (Optional)
+              </label>
+              <textarea
+                name="notes"
+                value={sessionData.notes}
+                onChange={handleChange}
+                rows="3"
+                placeholder="Any notes about this session..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                disabled={saving}
+              />
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-end space-x-4 pt-6">
+            <Link
+              href="/dashboard"
+              className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-medium"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              disabled={saving}
+              className={`px-6 py-2 rounded-lg font-medium ${
+                saving 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              } text-white`}
+            >
+              {saving ? 'Scheduling...' : 'Schedule Session'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
   )
 }

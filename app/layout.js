@@ -1,6 +1,9 @@
+'use client'
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from './providers';
+import { usePathname } from 'next/navigation';
+import Sidebar from '../components/Sidebar';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,10 +15,39 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
-  title: "Heed - Psychology Practice Management",
-  description: "Professional psychology practice management app",
-};
+// Páginas que NÃO devem ter sidebar
+const pagesWithoutSidebar = [
+  '/',
+  '/login',
+  '/signup'
+];
+
+function LayoutContent({ children }) {
+  const pathname = usePathname();
+  const showSidebar = !pagesWithoutSidebar.includes(pathname);
+
+  if (!showSidebar) {
+    // Páginas sem sidebar (login, signup, etc.)
+    return (
+      <div className="min-h-screen">
+        {children}
+      </div>
+    );
+  }
+
+  // Páginas com sidebar (dashboard, patients, sessions, etc.)
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <Sidebar />
+      
+      {/* Main Content Area */}
+      <div className="flex-1">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function RootLayout({ children }) {
   return (
@@ -24,7 +56,9 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          {children}
+          <LayoutContent>
+            {children}
+          </LayoutContent>
         </Providers>
       </body>
     </html>

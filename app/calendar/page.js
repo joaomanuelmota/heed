@@ -310,36 +310,7 @@ export default function Calendar() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
-            <div className="flex space-x-4">
-              <Link 
-                href="/sessions/schedule"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-              >
-                Schedule Session
-              </Link>
-              <Link 
-                href="/sessions"
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium"
-              >
-                Sessions List
-              </Link>
-              <Link 
-                href="/dashboard"
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium"
-              >
-                Dashboard
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <>
       {/* Calendar Controls */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -474,6 +445,6 @@ export default function Calendar() {
           </div>
         )}
       </main>
-    </div>
+    </>
   )
 }
