@@ -137,18 +137,26 @@ export default function EditPatient() {
 
     console.log('=== DEBUGGING PATIENT UPDATE ===')
     console.log('Patient ID:', params.id)
+    console.log('Patient ID type:', typeof params.id)
     console.log('User ID:', user.id)
     console.log('Form Data:', patientData)
 
     try {
+      // Validação básica
+      if (!patientData.firstName.trim() || !patientData.lastName.trim()) {
+        setMessage('First name and last name are required!')
+        setSaving(false)
+        return
+      }
+
       // Prepare data with proper handling
       const updateData = {
-        firstName: patientData.firstName,
-        lastName: patientData.lastName,
-        email: patientData.email || null,
-        phone: patientData.phone || null,
+        firstName: patientData.firstName.trim(),
+        lastName: patientData.lastName.trim(),
+        email: patientData.email?.trim() || null,
+        phone: patientData.phone?.trim() || null,
         dateOfBirth: patientData.dateOfBirth || null,
-        address: patientData.address || null,
+        address: patientData.address?.trim() || null,
         status: patientData.status,
         session_type: patientData.sessionType,
         specialty: patientData.specialty || null
@@ -156,26 +164,50 @@ export default function EditPatient() {
 
       console.log('Update Data being sent:', updateData)
 
-      const { data, error } = await supabase
+      // Primeiro: verificar se o paciente existe e pertence ao user
+      const { data: existingPatient, error: checkError } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('id', params.id)
+        .eq('psychologist_id', user.id)
+        .single()
+
+      console.log('Existing patient check:', { existingPatient, checkError })
+
+      if (checkError) {
+        setMessage(`Error checking patient: ${checkError.message}`)
+        setSaving(false)
+        return
+      }
+
+      if (!existingPatient) {
+        setMessage('Patient not found or you do not have permission to edit this patient')
+        setSaving(false)
+        return
+      }
+
+      // Agora fazer a atualização
+      const { data, error, count } = await supabase
         .from('patients')
         .update(updateData)
         .eq('id', params.id)
-        .select() // Add this to return the updated data
+        .eq('psychologist_id', user.id)
+        .select()
 
-      console.log('Supabase response data:', data)
-      console.log('Supabase response error:', error)
+      console.log('Update result:', { data, error, count })
+      console.log('Number of rows affected:', count)
 
       if (error) {
         setMessage(`Error: ${error.message}`)
         console.error('Update failed:', error)
       } else {
         setMessage('Patient updated successfully!')
-        console.log('Update successful, updated patient:', data)
+        console.log('Update completed successfully')
         
-        // Don't redirect immediately, let's see if the form shows updated data
-        // setTimeout(() => {
-        //   router.push(`/patients/${params.id}`)
-        // }, 1500)
+        // Redirecionar após 2 segundos
+        setTimeout(() => {
+          router.push(`/patients/${params.id}`)
+        }, 2000)
       }
     } catch (error) {
       setMessage(`Unexpected error: ${error.message}`)
