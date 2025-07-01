@@ -24,3 +24,32 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* Quill Editor Styles */
+/* Custom Rich Text Editor Styles */
+.rich-text-editor {
+  position: relative;
+}
+
+/* Remove default contenteditable outline */
+[contenteditable]:focus {
+  outline: none !important;
+}
+
+/* Ensure proper text formatting */
+[contenteditable] * {
+  max-width: 100%;
+}
+
+/* Better list spacing */
+[contenteditable] li {
+  margin: 0.25rem 0;
+}
+
+/* Link styles */
+[contenteditable] a {
+  cursor: pointer;
+}
+
+[contenteditable] a:hover {
+  text-decoration: underline !important;
+}

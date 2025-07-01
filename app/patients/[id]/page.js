@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
+import RichTextEditor from '../../../components/RichTextEditor'
 import { 
   User, Mail, Phone, FileText, CreditCard, 
   MapPin, Calendar, Clock, Edit, ChevronRight, ChevronDown, ChevronUp,
@@ -10,7 +11,7 @@ import {
   Heart, Brain, Stethoscope, Search, Bell,
   Share, MoreHorizontal, Camera, Video,
   MessageCircle, Shield, Star, Users, Timer,
-  Bold, Italic, List, ListOrdered, Save, Type
+  Bold, Italic, List, ListOrdered, Save, Type, Trash2
 } from 'lucide-react'
 
 export default function PatientProfile() {
@@ -20,6 +21,29 @@ export default function PatientProfile() {
   const [error, setError] = useState('')
   const [isExpanded, setIsExpanded] = useState(false)
   const [activeTab, setActiveTab] = useState('notes')
+  
+  // Estados para notas
+  const [showAddNote, setShowAddNote] = useState(false)
+  const [notes, setNotes] = useState([])
+  const [notesLoading, setNotesLoading] = useState(false)
+  const [noteData, setNoteData] = useState({
+    title: '',
+    content: '',
+    note_date: new Date().toISOString().split('T')[0]
+  })
+
+  // Estados para payments/sessions
+  const [sessions, setSessions] = useState([])
+  const [sessionsLoading, setSessionsLoading] = useState(false)
+
+  // Estados para edição de notas
+  const [editingNoteId, setEditingNoteId] = useState(null)
+  const [editNoteData, setEditNoteData] = useState({
+    title: '',
+    content: '',
+    note_date: ''
+  })
+  
   const router = useRouter()
   const params = useParams()
 
@@ -68,6 +92,13 @@ export default function PatientProfile() {
     setLoading(false)
   }
 
+  useEffect(() => {
+    if (patient && user) {
+      fetchNotes(patient.id)
+      fetchSessions(patient.id)
+    }
+  }, [patient, user])
+
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return 'Unknown'
     const today = new Date()
@@ -88,6 +119,239 @@ export default function PatientProfile() {
       month: 'long',
       day: 'numeric'
     })
+  }
+
+  const fetchNotes = async (patientId) => {
+    console.log('fetchNotes called with:', { patientId, user: !!user })
+    
+    if (!user) {
+      console.log('No user, skipping fetchNotes')
+      return
+    }
+    
+    setNotesLoading(true)
+    try {
+      console.log('Fetching notes for patient:', patientId, 'psychologist:', user.id)
+      
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('psychologist_id', user.id)
+        .order('note_date', { ascending: false })
+
+      console.log('Notes fetch result:', { data, error })
+
+      if (error) {
+        console.error('Error fetching notes:', error)
+      } else {
+        setNotes(data || [])
+        console.log('Notes set to:', data?.length || 0, 'notes')
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching notes:', error)
+    }
+    setNotesLoading(false)
+  }
+
+  const fetchSessions = async (patientId) => {
+    if (!user) return
+    
+    setSessionsLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('psychologist_id', user.id)
+        .order('session_date', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching sessions:', error)
+      } else {
+        setSessions(data || [])
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching sessions:', error)
+    }
+    setSessionsLoading(false)
+  }
+
+  const updatePaymentStatus = async (sessionId, newStatus) => {
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({ 
+          payment_status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', sessionId)
+        .eq('psychologist_id', user.id)
+
+      if (error) {
+        console.error('Error updating payment status:', error)
+        alert('Error updating payment status: ' + error.message)
+      } else {
+        // Atualizar a sessão na lista local
+        setSessions(sessions.map(session => 
+          session.id === sessionId 
+            ? { ...session, payment_status: newStatus }
+            : session
+        ))
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error)
+      alert('Unexpected error updating payment status')
+    }
+  }
+
+  const getPaymentStatusBadge = (status) => {
+    const statusConfig = {
+      pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+      paid: { label: 'Paid', color: 'bg-green-100 text-green-800 border-green-200' },
+      'invoice issued': { label: 'Invoice Issued', color: 'bg-blue-100 text-blue-800 border-blue-200' }
+    }
+    return statusConfig[status] || statusConfig.pending
+  }
+
+  const saveNote = async () => {
+    if (!noteData.title.trim()) {
+      alert('Please enter a note title')
+      return
+    }
+    
+    if (!patient) {
+      alert('Patient information not available')
+      return
+    }
+
+    try {
+      const newNote = {
+        psychologist_id: user.id,
+        patient_id: patient.id,
+        title: noteData.title.trim(),
+        content: noteData.content || '',
+        note_date: noteData.note_date,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      const { data, error } = await supabase
+        .from('notes')
+        .insert([newNote])
+        .select()
+
+      if (error) {
+        console.error('Error saving note:', error)
+        alert('Error saving note: ' + error.message)
+      } else {
+        // Adicionar a nova nota à lista
+        setNotes([data[0], ...notes])
+        
+        // Limpar formulário
+        setNoteData({
+          title: '',
+          content: '',
+          note_date: new Date().toISOString().split('T')[0]
+        })
+        
+        // Fechar formulário
+        setShowAddNote(false)
+        
+        alert('Note saved successfully!')
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error)
+      alert('Unexpected error saving note')
+    }
+  }
+
+  const deleteNote = async (noteId) => {
+    if (!confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', noteId)
+        .eq('psychologist_id', user.id)
+
+      if (error) {
+        console.error('Error deleting note:', error)
+        alert('Error deleting note: ' + error.message)
+      } else {
+        // Remove a nota da lista local
+        setNotes(notes.filter(note => note.id !== noteId))
+        alert('Note deleted successfully!')
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error)
+      alert('Unexpected error deleting note')
+    }
+  }
+
+  const startEditNote = (note) => {
+    setEditingNoteId(note.id)
+    setEditNoteData({
+      title: note.title,
+      content: note.content || '',
+      note_date: note.note_date
+    })
+  }
+
+  const cancelEditNote = () => {
+    setEditingNoteId(null)
+    setEditNoteData({
+      title: '',
+      content: '',
+      note_date: ''
+    })
+  }
+
+  const saveEditNote = async (noteId) => {
+    if (!editNoteData.title.trim()) {
+      alert('Please enter a note title')
+      return
+    }
+
+    try {
+      const updateData = {
+        title: editNoteData.title.trim(),
+        content: editNoteData.content || '',
+        note_date: editNoteData.note_date,
+        updated_at: new Date().toISOString()
+      }
+
+      const { data, error } = await supabase
+        .from('notes')
+        .update(updateData)
+        .eq('id', noteId)
+        .eq('psychologist_id', user.id)
+        .select()
+
+      if (error) {
+        console.error('Error updating note:', error)
+        alert('Error updating note: ' + error.message)
+      } else {
+        // Atualizar a nota na lista local
+        setNotes(notes.map(note => 
+          note.id === noteId ? { ...note, ...updateData } : note
+        ))
+        
+        // Sair do modo de edição
+        setEditingNoteId(null)
+        setEditNoteData({ title: '', content: '', note_date: '' })
+        
+        alert('Note updated successfully!')
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error)
+      alert('Unexpected error updating note')
+    }
+
+    fetchSessions(patient.id)
   }
 
   const getStatusDisplay = (status) => {
@@ -119,74 +383,238 @@ export default function PatientProfile() {
       case 'notes':
         return (
           <div className="space-y-6">
-            {/* Note Taking Interface */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-              {/* Formatting Toolbar */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                <div className="flex items-center space-x-1">
-                  <button className="p-2 rounded hover:bg-gray-100 transition-colors" title="Bold">
-                    <Bold className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <button className="p-2 rounded hover:bg-gray-100 transition-colors" title="Italic">
-                    <Italic className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <button className="p-2 rounded hover:bg-gray-100 transition-colors" title="Underline">
-                    <span className="w-4 h-4 flex items-center justify-center text-gray-600 font-semibold text-sm">U</span>
-                  </button>
-                  <button className="p-2 rounded hover:bg-gray-100 transition-colors" title="Bullet List">
-                    <List className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <button className="p-2 rounded hover:bg-gray-100 transition-colors" title="Numbered List">
-                    <ListOrdered className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <button className="p-2 rounded hover:bg-gray-100 transition-colors" title="Link">
-                    <span className="w-4 h-4 flex items-center justify-center text-gray-600">🔗</span>
-                  </button>
-                  <div className="w-px h-5 bg-gray-300 mx-1"></div>
-                  <button className="p-2 rounded hover:bg-gray-100 transition-colors" title="Undo">
-                    <span className="w-4 h-4 flex items-center justify-center text-gray-600">↶</span>
-                  </button>
-                  <button className="p-2 rounded hover:bg-gray-100 transition-colors" title="Redo">
-                    <span className="w-4 h-4 flex items-center justify-center text-gray-600">↷</span>
-                  </button>
-                </div>
+            {/* Add Note Button */}
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Clinical Notes</h3>
+              <button 
+                onClick={() => setShowAddNote(!showAddNote)}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{showAddNote ? 'Cancel' : 'Add New Note'}</span>
+              </button>
+            </div>
+
+            {/* Formulário de criação de nota - aparece quando showAddNote é true */}
+            {showAddNote && (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Add New Note</h4>
                 
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm text-green-600">Auto-saved</span>
-                  <button className="flex items-center space-x-2 px-4 py-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors font-medium">
-                    <Plus className="w-4 h-4" />
-                    <span>Add Note</span>
-                  </button>
-                </div>
-              </div>
+                <div className="space-y-4">
+                  {/* Título */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Note Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={noteData.title}
+                      onChange={(e) => setNoteData({...noteData, title: e.target.value})}
+                      placeholder="e.g., Session notes, Progress update..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
 
-              {/* Editor Area */}
-              <div className="p-6">
-                <div className="w-full min-h-[300px] focus:outline-none text-gray-900 leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div className="text-center py-12">
-                    <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Notes Feature Coming Soon</h3>
-                    <p className="text-gray-500 max-w-md mx-auto">
-                      The clinical notes feature will be available once the notes table is created in the database. 
-                      You'll be able to create, edit, and manage patient notes with rich text formatting.
-                    </p>
+                  {/* Data */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Note Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={noteData.note_date}
+                      onChange={(e) => setNoteData({...noteData, note_date: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    />
                   </div>
-                </div>
-              </div>
 
-              {/* Date and Time Footer */}
-              <div className="px-6 pb-6">
-                <div className="flex items-center space-x-4 text-gray-500">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm">{new Date().toLocaleDateString()}</span>
-                    <Calendar className="w-4 h-4" />
+                  {/* Conteúdo da nota */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Note Content
+                    </label>
+                    <RichTextEditor
+                      value={noteData.content}
+                      onChange={(content) => setNoteData({...noteData, content: content})}
+                      placeholder="Write your detailed notes here..."
+                    />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                    <Clock className="w-4 h-4" />
+
+                  {/* Botões */}
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      onClick={() => setShowAddNote(false)}
+                      className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={saveNote}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                    >
+                      Save Note
+                    </button>
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Lista de notas */}
+            <div className="space-y-4">
+              {notesLoading ? (
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-gray-500 mt-2">Loading notes...</p>
+                  </div>
+                </div>
+              ) : notes.length === 0 ? (
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="text-center py-8">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No notes yet. Click "Add New Note" to get started.</p>
+                  </div>
+                </div>
+              ) : (
+                notes.map((note, index) => {
+                  const noteDate = new Date(note.note_date)
+                  const prevNote = index > 0 ? notes[index - 1] : null
+                  const prevDate = prevNote ? new Date(prevNote.note_date) : null
+                  const showDateHeader = !prevDate || noteDate.toDateString() !== prevDate.toDateString()
+                  
+                  return (
+                    <div key={note.id}>
+                      {/* Date Header - só mostra se for uma data diferente da anterior */}
+                      {showDateHeader && (
+                        <div className="flex items-center mb-4 mt-6 first:mt-0">
+                          <div className="flex-shrink-0 w-24 text-right pr-4">
+                            <div className="text-sm font-semibold text-blue-600">
+                              {noteDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {noteDate.getFullYear()}
+                            </div>
+                          </div>
+                          <div className="flex-grow h-px bg-gray-200"></div>
+                        </div>
+                      )}
+                      
+                      {/* Note Card */}
+                      <div className="flex">
+                        {/* Timeline Line */}
+                        <div className="flex-shrink-0 w-24 flex justify-center">
+                          <div className="w-px bg-gray-200 h-full relative">
+                            <div className="absolute top-4 -left-1.5 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow"></div>
+                          </div>
+                        </div>
+                        
+                        {/* Note Content */}
+                        <div className="flex-1 ml-4 mb-6">
+                          <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                            
+                            {/* Modo normal (visualização) */}
+                            {editingNoteId !== note.id ? (
+                              <>
+                                <div className="flex justify-between items-start mb-3">
+                                  <h4 className="text-lg font-semibold text-gray-900">{note.title}</h4>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-xs text-gray-400">
+                                      {noteDate.toLocaleTimeString('en-US', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                      })}
+                                    </span>
+                                    <button 
+                                      onClick={() => startEditNote(note)}
+                                      className="text-gray-400 hover:text-blue-600 transition-colors"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                      onClick={() => deleteNote(note.id)}
+                                      className="text-gray-400 hover:text-red-600 transition-colors"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                                
+                                <div 
+                                  className="prose prose-sm max-w-none text-gray-700"
+                                  dangerouslySetInnerHTML={{ 
+                                    __html: note.content ? 
+                                      (note.content.length > 200 ? note.content.substring(0, 200) + '...' : note.content) 
+                                      : 'No content'
+                                  }}
+                                />
+                              </>
+                            ) : (
+                              /* Modo edição */
+                              <div className="space-y-4">
+                                <h4 className="text-lg font-semibold text-gray-900">Edit Note</h4>
+                                
+                                {/* Título */}
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Note Title *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={editNoteData.title}
+                                    onChange={(e) => setEditNoteData({...editNoteData, title: e.target.value})}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                  />
+                                </div>
+
+                                {/* Data */}
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Note Date *
+                                  </label>
+                                  <input
+                                    type="date"
+                                    value={editNoteData.note_date}
+                                    onChange={(e) => setEditNoteData({...editNoteData, note_date: e.target.value})}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                  />
+                                </div>
+
+                                {/* Conteúdo */}
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Note Content
+                                  </label>
+                                  <RichTextEditor
+                                    value={editNoteData.content}
+                                    onChange={(content) => setEditNoteData({...editNoteData, content: content})}
+                                    placeholder="Edit your note content..."
+                                  />
+                                </div>
+
+                                {/* Botões */}
+                                <div className="flex justify-end space-x-3 pt-4">
+                                  <button
+                                    onClick={cancelEditNote}
+                                    className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-medium"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => saveEditNote(note.id)}
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                                  >
+                                    Save Changes
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
             </div>
           </div>
         )
@@ -205,15 +633,104 @@ export default function PatientProfile() {
         )
       case 'payments':
         return (
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CreditCard className="w-8 h-8 text-gray-400" />
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Session Payments</h3>
+              <div className="text-sm text-gray-500">
+                {sessions.length} session{sessions.length !== 1 ? 's' : ''} total
+              </div>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Payments</h3>
-            <p className="text-gray-600 mb-4">
-              Payment tracking and billing will be available once the payments table is created.
-            </p>
-            <p className="text-sm text-gray-500">Coming Soon</p>
+
+            {/* Sessions Table */}
+            {sessionsLoading ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-500 mt-2">Loading sessions...</p>
+                </div>
+              </div>
+            ) : sessions.length === 0 ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="text-center py-8">
+                  <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No sessions found for this patient.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Session
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Duration
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Cost
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Payment Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {sessions.map((session) => (
+                        <tr key={session.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {session.title || 'Session'}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {session.notes ? `${session.notes.substring(0, 50)}...` : 'No notes'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {new Date(session.session_date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </div>
+                            {session.session_time && (
+                              <div className="text-sm text-gray-500">
+                                {session.session_time}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {session.duration_minutes} min
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            €{session.session_fee || '0.00'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <select
+                              value={session.payment_status || 'pending'}
+                              onChange={(e) => updatePaymentStatus(session.id, e.target.value)}
+                              className={`text-xs font-medium px-2 py-1 rounded-full border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                getPaymentStatusBadge(session.payment_status || 'pending').color
+                              }`}
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="paid">Paid</option>
+                              <option value="invoice issued">Invoice Issued</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )
       default:
@@ -322,9 +839,12 @@ export default function PatientProfile() {
                     >
                       <Edit className="w-5 h-5 text-gray-700" />
                     </Link>
-                    <button className="px-6 py-3 bg-blue-500 text-white rounded-2xl font-semibold hover:bg-blue-600 transition-all hover:scale-105 shadow-lg">
+                    <Link
+                      href={`/sessions/schedule?patient_id=${patient.id}`}
+                      className="px-6 py-3 bg-blue-500 text-white rounded-2xl font-semibold hover:bg-blue-600 transition-all hover:scale-105 shadow-lg inline-block text-center"
+                    >
                       Schedule Session
-                    </button>
+                    </Link>
                   </div>
                 </div>
 
