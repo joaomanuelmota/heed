@@ -48,6 +48,9 @@ export default function PatientProfile() {
   const [showScheduleSidebar, setShowScheduleSidebar] = useState(false)
   const [editingPatient, setEditingPatient] = useState(null)
   
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [expandedNoteId, setExpandedNoteId] = useState(null);
+  
   const router = useRouter()
   const params = useParams()
 
@@ -247,7 +250,6 @@ export default function PatientProfile() {
 
       if (error) {
         console.error('Error saving note:', error)
-        alert('Error saving note: ' + error.message)
       } else {
         // Adicionar a nova nota à lista
         setNotes([data[0], ...notes])
@@ -261,8 +263,6 @@ export default function PatientProfile() {
         
         // Fechar formulário
         setShowAddNote(false)
-        
-        alert('Note saved successfully!')
       }
     } catch (error) {
       console.error('Unexpected error:', error)
@@ -347,8 +347,6 @@ export default function PatientProfile() {
         // Sair do modo de edição
         setEditingNoteId(null)
         setEditNoteData({ title: '', content: '', note_date: '' })
-        
-        alert('Note updated successfully!')
       }
     } catch (error) {
       console.error('Unexpected error:', error)
@@ -379,7 +377,8 @@ export default function PatientProfile() {
   const tabs = [
     { id: 'notes', label: 'Note Taking', icon: FileText },
     { id: 'treatment', label: 'Treatment Plan', icon: Stethoscope },
-    { id: 'payments', label: 'Payments', icon: CreditCard }
+    { id: 'payments', label: 'Payments', icon: CreditCard },
+    { id: 'info', label: 'Info', icon: User }
   ]
 
   const renderTabContent = () => {
@@ -401,224 +400,152 @@ export default function PatientProfile() {
 
             {/* Formulário de criação de nota - aparece quando showAddNote é true */}
             {showAddNote && (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Add New Note</h4>
-                
-                <div className="space-y-4">
-                  {/* Título */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Note Title *
-                    </label>
-                    <input
-                      type="text"
-                      value={noteData.title}
-                      onChange={(e) => setNoteData({...noteData, title: e.target.value})}
-                      placeholder="e.g., Session notes, Progress update..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* Data */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Note Date *
-                    </label>
-                    <input
-                      type="date"
-                      value={noteData.note_date}
-                      onChange={(e) => setNoteData({...noteData, note_date: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* Conteúdo da nota */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Note Content
-                    </label>
-                    <RichTextEditor
-                      value={noteData.content}
-                      onChange={(content) => setNoteData({...noteData, content: content})}
-                      placeholder="Write your detailed notes here..."
-                    />
-                  </div>
-
-                  {/* Botões */}
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <button
-                      onClick={() => setShowAddNote(false)}
-                      className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-medium"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={saveNote}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
-                    >
-                      Save Note
-                    </button>
-                  </div>
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className="flex flex-col md:flex-row gap-4 mb-4">
+                  <input
+                    type="text"
+                    value={noteData.title}
+                    onChange={(e) => setNoteData({...noteData, title: e.target.value})}
+                    placeholder="Note Title *"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                  <input
+                    type="date"
+                    value={noteData.note_date}
+                    onChange={(e) => setNoteData({...noteData, note_date: e.target.value})}
+                    placeholder="Note Date *"
+                    className="w-40 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="mb-4">
+                  <RichTextEditor
+                    value={noteData.content}
+                    onChange={(content) => setNoteData({...noteData, content: content})}
+                    placeholder="Note Content..."
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setShowAddNote(false)}
+                    className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveNote}
+                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                  >
+                    Save Note
+                  </button>
                 </div>
               </div>
             )}
 
-            {/* Lista de notas */}
-            <div className="space-y-4">
-              {notesLoading ? (
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-gray-500 mt-2">Loading notes...</p>
-                  </div>
-                </div>
-              ) : notes.length === 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <div className="text-center py-8">
-                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No notes yet. Click "Add New Note" to get started.</p>
-                  </div>
-                </div>
-              ) : (
-                notes.map((note, index) => {
-                  const noteDate = new Date(note.note_date)
-                  const prevNote = index > 0 ? notes[index - 1] : null
-                  const prevDate = prevNote ? new Date(prevNote.note_date) : null
-                  const showDateHeader = !prevDate || noteDate.toDateString() !== prevDate.toDateString()
-                  
-                  return (
-                    <div key={note.id}>
-                      {/* Date Header - só mostra se for uma data diferente da anterior */}
-                      {showDateHeader && (
-                        <div className="flex items-center mb-4 mt-6 first:mt-0">
-                          <div className="flex-shrink-0 w-24 text-right pr-4">
-                            <div className="text-sm font-semibold text-blue-600">
-                              {noteDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {noteDate.getFullYear()}
-                            </div>
+            {/* Lista de notas redesenhada */}
+            <div className="space-y-10">
+              {notes.length === 0 && (
+                <div className="text-gray-500 text-center py-12">No notes found.</div>
+              )}
+              {notes.map((note, index) => {
+                const noteDate = new Date(note.note_date)
+                const prevNote = index > 0 ? notes[index - 1] : null
+                const prevDate = prevNote ? new Date(prevNote.note_date) : null
+                const showDateHeader = !prevDate || noteDate.toDateString() !== prevDate.toDateString()
+                const preview = note.content
+                  ? note.content.replace(/<[^>]+>/g, '').split('\n').slice(0, 3).join(' ').slice(0, 120) + (note.content.length > 120 ? '...' : '')
+                  : 'No content';
+                const isExpanded = expandedNoteId === note.id;
+                return (
+                  <div key={note.id}>
+                    {/* Date Header - só mostra se for uma data diferente da anterior */}
+                    {showDateHeader && (
+                      <div className="flex items-center mb-4 mt-6 first:mt-0">
+                        <div className="flex-shrink-0 w-24 text-right pr-4">
+                          <div className="text-sm font-semibold text-blue-600">
+                            {noteDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </div>
-                          <div className="flex-grow h-px bg-gray-200"></div>
-                        </div>
-                      )}
-                      
-                      {/* Note Card */}
-                      <div className="flex">
-                        {/* Timeline Line */}
-                        <div className="flex-shrink-0 w-24 flex justify-center">
-                          <div className="w-px bg-gray-200 h-full relative">
-                            <div className="absolute top-4 -left-1.5 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow"></div>
+                          <div className="text-xs text-gray-500">
+                            {noteDate.getFullYear()}
                           </div>
                         </div>
-                        
-                        {/* Note Content */}
-                        <div className="flex-1 ml-4 mb-6">
-                          <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                            
-                            {/* Modo normal (visualização) */}
-                            {editingNoteId !== note.id ? (
-                              <>
-                                <div className="flex justify-between items-start mb-3">
-                                  <h4 className="text-lg font-semibold text-gray-900">{note.title}</h4>
-                                  <div className="flex items-center space-x-2">
-                                    <span className="text-xs text-gray-400">
-                                      {noteDate.toLocaleTimeString('en-US', { 
-                                        hour: '2-digit', 
-                                        minute: '2-digit' 
-                                      })}
-                                    </span>
-                                    <button 
-                                      onClick={() => startEditNote(note)}
-                                      className="text-gray-400 hover:text-blue-600 transition-colors"
-                                    >
-                                      <Edit className="w-4 h-4" />
-                                    </button>
-                                    <button 
-                                      onClick={() => deleteNote(note.id)}
-                                      className="text-gray-400 hover:text-red-600 transition-colors"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
+                        <div className="flex-grow h-px bg-gray-200"></div>
+                      </div>
+                    )}
+                    {/* Note Card Redesigned */}
+                    <div className="flex">
+                      <div className="flex-shrink-0 w-24 flex justify-center">
+                        <div className="w-px bg-gray-200 h-full relative">
+                          <div className="absolute top-4 -left-1.5 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow"></div>
+                        </div>
+                      </div>
+                      <div className="flex-1 ml-4 mb-6">
+                        <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow group relative">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-lg font-bold text-gray-900 truncate max-w-[70%]">{note.title}</h4>
+                          </div>
+                          {isExpanded ? (
+                            editingNoteId === note.id ? (
+                              // Formulário de edição inline
+                              <form onSubmit={e => { e.preventDefault(); saveEditNote(note.id); }} className="space-y-3">
+                                <input
+                                  type="text"
+                                  value={editNoteData.title}
+                                  onChange={e => setEditNoteData({ ...editNoteData, title: e.target.value })}
+                                  placeholder="Note Title *"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 font-bold"
+                                  required
+                                />
+                                <input
+                                  type="date"
+                                  value={editNoteData.note_date}
+                                  onChange={e => setEditNoteData({ ...editNoteData, note_date: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                  required
+                                />
+                                <RichTextEditor
+                                  value={editNoteData.content}
+                                  onChange={content => setEditNoteData({ ...editNoteData, content })}
+                                  placeholder="Edit your note content..."
+                                />
+                                <div className="flex items-center justify-between mt-2">
+                                  <button type="button" onClick={cancelEditNote} className="text-gray-600 hover:underline text-xs">Cancelar</button>
+                                  <div className="flex gap-2">
+                                    <button type="submit" className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">Salvar</button>
                                   </div>
                                 </div>
-                                
-                                <div 
-                                  className="prose prose-sm max-w-none text-gray-700"
-                                  dangerouslySetInnerHTML={{ 
-                                    __html: note.content ? 
-                                      (note.content.length > 200 ? note.content.substring(0, 200) + '...' : note.content) 
-                                      : 'No content'
-                                  }}
-                                />
-                              </>
+                              </form>
                             ) : (
-                              /* Modo edição */
-                              <div className="space-y-4">
-                                <h4 className="text-lg font-semibold text-gray-900">Edit Note</h4>
-                                
-                                {/* Título */}
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Note Title *
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={editNoteData.title}
-                                    onChange={(e) => setEditNoteData({...editNoteData, title: e.target.value})}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                  />
+                              // Visualização expandida
+                              <>
+                                <div className="prose prose-sm max-w-none text-gray-700 mb-2" dangerouslySetInnerHTML={{ __html: note.content }} />
+                                <div className="flex items-center justify-between mt-2">
+                                  <button onClick={() => setExpandedNoteId(null)} className="text-blue-600 hover:underline text-xs">Ver menos</button>
+                                  <div className="flex gap-2">
+                                    <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600" title="Editar"><Edit className="w-4 h-4" /></button>
+                                    <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600" title="Excluir"><Trash2 className="w-4 h-4" /></button>
+                                  </div>
                                 </div>
-
-                                {/* Data */}
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Note Date *
-                                  </label>
-                                  <input
-                                    type="date"
-                                    value={editNoteData.note_date}
-                                    onChange={(e) => setEditNoteData({...editNoteData, note_date: e.target.value})}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                  />
-                                </div>
-
-                                {/* Conteúdo */}
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Note Content
-                                  </label>
-                                  <RichTextEditor
-                                    value={editNoteData.content}
-                                    onChange={(content) => setEditNoteData({...editNoteData, content: content})}
-                                    placeholder="Edit your note content..."
-                                  />
-                                </div>
-
-                                {/* Botões */}
-                                <div className="flex justify-end space-x-3 pt-4">
-                                  <button
-                                    onClick={cancelEditNote}
-                                    className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg font-medium"
-                                  >
-                                    Cancel
-                                  </button>
-                                  <button
-                                    onClick={() => saveEditNote(note.id)}
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
-                                  >
-                                    Save Changes
-                                  </button>
+                              </>
+                            )
+                          ) : (
+                            // Visualização compacta
+                            <>
+                              <div className="text-gray-700 text-sm mb-2 truncate" style={{ maxHeight: '3.6em', overflow: 'hidden' }}>{preview}</div>
+                              <div className="flex items-center justify-between mt-2">
+                                <button onClick={() => setExpandedNoteId(note.id)} className="text-blue-600 hover:underline text-xs">Ver mais</button>
+                                <div className="flex gap-2">
+                                  <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600" title="Editar"><Edit className="w-4 h-4" /></button>
+                                  <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600" title="Excluir"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                               </div>
-                            )}
-                          </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
-                  )
-                })
-              )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )
@@ -737,6 +664,27 @@ export default function PatientProfile() {
             )}
           </div>
         )
+      case 'info':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Patient Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <div><span className="font-medium text-gray-900">Email:</span> <span className="text-gray-700">{patient.email || 'No email provided'}</span></div>
+                <div><span className="font-medium text-gray-900">Phone:</span> <span className="text-gray-700">{patient.phone || 'No phone provided'}</span></div>
+                <div><span className="font-medium text-gray-900">Age:</span> <span className="text-gray-700">{calculateAge(patient.dateOfBirth)} years</span></div>
+                <div><span className="font-medium text-gray-900">Date of Birth:</span> <span className="text-gray-700">{formatDate(patient.dateOfBirth)}</span></div>
+                <div><span className="font-medium text-gray-900">Address:</span> <span className="text-gray-700">{patient.address || 'Not provided'}</span></div>
+                <div><span className="font-medium text-gray-900">Specialty:</span> <span className="text-gray-700">{patient.specialty || 'Not specified'}</span></div>
+                <div><span className="font-medium text-gray-900">Session Type:</span> <span className="text-gray-700">{sessionTypeConfig.label}</span></div>
+              </div>
+              <div className="space-y-2">
+                <div><span className="font-medium text-gray-900">VAT Number:</span> <span className="text-gray-700">{patient.vatNumber || 'Not provided'}</span></div>
+                <div><span className="font-medium text-gray-900">Status:</span> <span className="text-gray-700">{statusConfig.label}</span></div>
+              </div>
+            </div>
+          </div>
+        )
       default:
         return null
     }
@@ -778,169 +726,93 @@ export default function PatientProfile() {
     vatNumber: `VAT${patient.id.toString().slice(-6)}`
   }
 
+  // Find next session (future, scheduled)
+  const nextSession = Array.isArray(sessions)
+    ? sessions
+        .filter(s => s.status === 'scheduled' && new Date(`${s.session_date}T${s.session_time}`) > new Date())
+        .sort((a, b) => new Date(`${a.session_date}T${a.session_time}`) - new Date(`${b.session_date}T${b.session_time}`))[0]
+    : null;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
-        <div className="max-w-full mx-auto">
-          
-          {/* Page Header */}
-          <div className="mb-6">
-            <div className="flex items-center space-x-4 mb-2">
-              <Link href="/patients" className="text-blue-600 hover:text-blue-700">
-                ← Back to Patients
-              </Link>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900">{patient.firstName} {patient.lastName}</h1>
+              <span className={`inline-flex items-center px-3 py-1 ml-2 rounded-full text-sm font-medium ${statusConfig.color}`}>{statusConfig.label}</span>
+            </div>
+            <div className="text-gray-600 mt-1 text-sm">
+              <span className="font-medium">Next Session:</span> {nextSession ? `${formatDate(nextSession.session_date)} at ${nextSession.session_time}` : 'No upcoming session'}
             </div>
           </div>
-          
-          {/* Patient Header Card */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-            <div className="relative">
-              <div className="relative p-8">
-                <div className="flex items-start justify-between mb-6">
-                  <div>
-                    <div className="flex items-center space-x-4 mb-3">
-                      <h2 className="text-3xl font-bold text-gray-900">{patient.firstName} {patient.lastName}</h2>
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-2 h-2 ${statusConfig.dot} rounded-full ${patient.status === 'active' ? 'animate-pulse' : ''}`}></div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color}`}>
-                          {statusConfig.label}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <SessionIcon className="w-4 h-4 text-gray-500" />
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${sessionTypeConfig.color}`}>
-                          {sessionTypeConfig.label}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-6 text-gray-600 mb-4">
-                      <span>{patient.email || 'No email provided'}</span>
-                      <span>•</span>
-                      <span>{patient.phone || 'No phone provided'}</span>
-                    </div>
-                    <div className="flex items-center space-x-6 text-gray-600 mb-2">
-                      <span>Next session: {genericData.nextSession}</span>
-                      <span>•</span>
-                      <span>Last session: {genericData.lastSession}</span>
-                      <span>•</span>
-                      <span>Total sessions: {genericData.totalSessions}</span>
-                    </div>
-                    <div>
-                      <button 
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className="text-blue-600 hover:text-blue-700 font-medium transition-colors text-gray-600"
-                      >
-                        {isExpanded ? 'View less' : 'View more'}
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {/* Action Buttons */}
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => setEditingPatient(patient)}
-                      className="w-12 h-12 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/80 transition-all hover:scale-105 shadow-sm"
-                    >
-                      <Edit className="w-5 h-5 text-gray-700" />
-                    </button>
-                    <button
-                      onClick={() => setShowScheduleSidebar(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
-                    >
-                      Schedule Session
-                    </button>
-                  </div>
-                </div>
-
-                {/* Expanded Information */}
-                {isExpanded && (
-                  <div className="animate-in slide-in-from-top-2 duration-300">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/20">
-                      {/* Left Column - Personal Details */}
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm text-gray-500 uppercase tracking-wide font-medium mb-3">Personal Details</p>
-                          <div className="space-y-2">
-                            <p><span className="font-medium text-gray-900">Age:</span> <span className="text-gray-700">{calculateAge(patient.dateOfBirth)} years</span></p>
-                            <p><span className="font-medium text-gray-900">Date of Birth:</span> <span className="text-gray-700">{formatDate(patient.dateOfBirth)}</span></p>
-                            <p><span className="font-medium text-gray-900">Address:</span> <span className="text-gray-700">{patient.address || 'Not provided'}</span></p>
-                            <p><span className="font-medium text-gray-900">Specialty:</span> <span className="text-gray-700">{patient.specialty || 'Not specified'}</span></p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right Column - VAT Information */}
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm text-gray-500 uppercase tracking-wide font-medium mb-3">VAT Information</p>
-                          <div className="space-y-2">
-                            <p><span className="font-medium text-gray-900">VAT Number:</span> <span className="text-gray-700">{genericData.vatNumber}</span></p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Tabbed Navigation */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="border-b border-gray-100">
-              <div className="flex space-x-0">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center space-x-3 px-8 py-6 font-semibold transition-all ${
-                        activeTab === tab.id
-                          ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50/50'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span>{tab.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Tab Content */}
-            <div className="p-8">
-              {renderTabContent()}
-            </div>
+          <div className="flex gap-2 mt-4 sm:mt-0">
+            <button
+              onClick={() => setEditingPatient(patient)}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => setShowScheduleSidebar(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+            >
+              Schedule Session
+            </button>
           </div>
         </div>
+
+        {/* Tabs */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100">
+          <div className="border-b border-gray-100 flex gap-0">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 px-6 py-4 font-semibold transition-all text-sm ${
+                    activeTab === tab.id
+                      ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50/50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </button>
+              )
+            })}
+          </div>
+          <div className="p-6">
+            {renderTabContent()}
+          </div>
+        </div>
+
+        {/* Sidebars */}
+        <ScheduleSessionSidebar 
+          isOpen={showScheduleSidebar}
+          onClose={() => setShowScheduleSidebar(false)}
+          onSuccess={() => {
+            setShowScheduleSidebar(false)
+            fetchSessions(patient.id)
+          }}
+          user={user}
+          patients={[patient]}
+          preSelectedPatient={patient.id}
+        />
+        <AddPatientSidebar
+          isOpen={!!editingPatient}
+          onClose={() => setEditingPatient(null)}
+          onSuccess={() => {
+            setEditingPatient(null)
+            fetchPatient(user.id, patient.id)
+          }}
+          user={user}
+          mode="edit"
+          existingPatient={editingPatient}
+        />
       </div>
-
-      {/* Schedule Session Sidebar */}
-      <ScheduleSessionSidebar 
-        isOpen={showScheduleSidebar}
-        onClose={() => setShowScheduleSidebar(false)}
-        onSuccess={() => {
-          setShowScheduleSidebar(false)
-          fetchSessions(patient.id)
-        }}
-        user={user}
-        patients={[patient]}
-        preSelectedPatient={patient.id}
-      />
-
-      <AddPatientSidebar
-        isOpen={!!editingPatient}
-        onClose={() => setEditingPatient(null)}
-        onSuccess={() => {
-          setEditingPatient(null)
-          fetchPatient(user.id, patient.id)
-        }}
-        user={user}
-        mode="edit"
-        existingPatient={editingPatient}
-      />
     </div>
   )
 }

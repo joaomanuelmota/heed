@@ -3,13 +3,20 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
+import { Calendar, Plus } from 'lucide-react'
+import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
+import SessionDetailsSidebar from '../../components/SessionDetailsSidebar'
 
 export default function Sessions() {
   const [user, setUser] = useState(null)
   const [sessions, setSessions] = useState([])
   const [patients, setPatients] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all') // all, upcoming, past, today
+  const [filter, setFilter] = useState('today')
+  const [showScheduleSidebar, setShowScheduleSidebar] = useState(false)
+  const [showSessionSidebar, setShowSessionSidebar] = useState(false)
+  const [selectedSessionId, setSelectedSessionId] = useState(null)
+  const [sidebarMode, setSidebarMode] = useState('view') // 'view' or 'edit'
   const router = useRouter()
 
   useEffect(() => {
@@ -146,16 +153,40 @@ export default function Sessions() {
     return sessionDateTime > now
   }
 
+  const isThisWeek = (session) => {
+    const sessionDate = new Date(session.session_date)
+    const today = new Date()
+    const startOfWeek = new Date(today)
+    startOfWeek.setDate(today.getDate() - today.getDay())
+    startOfWeek.setHours(0,0,0,0)
+    const endOfWeek = new Date(today)
+    endOfWeek.setDate(today.getDate() - today.getDay() + 6)
+    endOfWeek.setHours(23,59,59,999)
+    return sessionDate >= startOfWeek && sessionDate <= endOfWeek
+  }
+
+  const isThisMonth = (session) => {
+    const sessionDate = new Date(session.session_date)
+    const today = new Date()
+    return sessionDate.getMonth() === today.getMonth() && sessionDate.getFullYear() === today.getFullYear()
+  }
+
   const getFilteredSessions = () => {
-    switch (filter) {
+    switch(filter) {
       case 'today':
         return sessions.filter(isToday)
+      case 'week':
+        return sessions.filter(isThisWeek)
+      case 'month':
+        return sessions.filter(isThisMonth)
       case 'upcoming':
         return sessions.filter(isUpcoming)
       case 'past':
         return sessions.filter(isPast)
-      default:
+      case 'all':
         return sessions
+      default:
+        return sessions.filter(isToday)
     }
   }
 
@@ -200,46 +231,52 @@ export default function Sessions() {
   }
 
   const filteredSessions = getFilteredSessions()
+  console.log('Current filter:', filter, 'Filtered sessions:', filteredSessions)
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main key={filter} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-4 sm:mb-0">
+            <h1 className="text-2xl font-bold text-gray-900">Sessions</h1>
+            <div className="flex items-center mt-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                <Calendar className="w-4 h-4 mr-1" />
+                {sessions.filter(s => s.status === 'scheduled' && new Date(`${s.session_date}T${s.session_time}`) > new Date()).length} Scheduled Sessions
+              </span>
+            </div>
+          </div>
+          <button 
+            onClick={() => setShowScheduleSidebar(true)}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Schedule New Session
+          </button>
+        </div>
+      </div>
+
       {/* Stats & Filters */}
       <div className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-            <p className="text-2xl font-bold text-gray-900">{sessions.length}</p>
-            <p className="text-sm text-gray-600">Total Sessions</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-            <p className="text-2xl font-bold text-blue-600">{sessions.filter(isToday).length}</p>
-            <p className="text-sm text-gray-600">Today</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-            <p className="text-2xl font-bold text-green-600">{sessions.filter(isUpcoming).length}</p>
-            <p className="text-sm text-gray-600">Upcoming</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
-            <p className="text-2xl font-bold text-gray-600">{sessions.filter(isPast).length}</p>
-            <p className="text-sm text-gray-600">Past</p>
-          </div>
-        </div>
-
-        {/* Filter Buttons */}
-        <div className="flex flex-wrap gap-2">
+        {/* Filtros customizados */}
+        <div className="flex flex-wrap gap-2 mb-6">
           {[
-            { key: 'all', label: 'All Sessions' },
             { key: 'today', label: 'Today' },
+            { key: 'week', label: 'This Week' },
+            { key: 'month', label: 'This Month' },
             { key: 'upcoming', label: 'Upcoming' },
-            { key: 'past', label: 'Past' }
+            { key: 'past', label: 'Past' },
+            { key: 'all', label: 'All Sessions' }
           ].map((filterOption) => (
             <button
               key={filterOption.key}
               onClick={() => setFilter(filterOption.key)}
-              className={`px-4 py-2 rounded-lg font-medium ${
+              className={`px-4 py-2 rounded-lg font-medium border transition-colors duration-200 ${
                 filter === filterOption.key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-100'
               }`}
             >
               {filterOption.label}
@@ -250,36 +287,63 @@ export default function Sessions() {
 
       {/* Sessions List */}
       {filteredSessions.length === 0 ? (
-        <div className="bg-white p-12 rounded-lg shadow-sm border text-center">
-          <div className="text-gray-400 mb-4">
-            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+        patients.length === 0 ? (
+          <div className="bg-white p-12 rounded-lg shadow-sm border text-center">
+            <div className="text-gray-400 mb-4">
+              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM9 9a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {filter === 'today' ? 'No sessions today' : 
+               filter === 'week' ? 'No sessions this week' :
+               filter === 'month' ? 'No sessions this month' :
+               filter === 'upcoming' ? 'No upcoming sessions' :
+               'No sessions scheduled'}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {filter === 'all' 
+                ? 'Get started by scheduling your first session'
+                : `No sessions found for the ${filter} filter`
+              }
+            </p>
+            <Link 
+              href="/sessions/schedule"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-block"
+            >
+              Schedule Your First Session
+            </Link>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            {filter === 'all' ? 'No sessions scheduled' : `No ${filter} sessions`}
-          </h3>
-          <p className="text-gray-600 mb-6">
-            {filter === 'all' 
-              ? 'Get started by scheduling your first session'
-              : `No sessions found for the ${filter} filter`
-            }
-          </p>
-          <Link 
-            href="/sessions/schedule"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-block"
-          >
-            Schedule Your First Session
-          </Link>
-        </div>
+        ) : (
+          <div className="bg-white p-12 rounded-lg shadow-sm border text-center">
+            <div className="text-gray-400 mb-4">
+              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {filter === 'today' ? 'No sessions today' : 
+               filter === 'week' ? 'No sessions this week' :
+               filter === 'month' ? 'No sessions this month' :
+               filter === 'upcoming' ? 'No upcoming sessions' :
+               'No sessions scheduled'}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {filter === 'all' 
+                ? 'Get started by scheduling your first session'
+                : `No sessions found for the ${filter} filter`
+              }
+            </p>
+            <Link 
+              href="/sessions/schedule"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-block"
+            >
+              Schedule Your First Session
+            </Link>
+          </div>
+        )
       ) : (
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {filter === 'all' ? 'All Sessions' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Sessions`}
-            </h3>
-          </div>
-          
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -292,9 +356,6 @@ export default function Sessions() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Duration
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -323,22 +384,27 @@ export default function Sessions() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {session.duration_minutes} minutes
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getSessionStatusBadge(session)}
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Link 
-                        href={`/sessions/${session.id}`}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
+                      <button
+                        onClick={() => {
+                          setSelectedSessionId(session.id)
+                          setSidebarMode('view')
+                          setShowSessionSidebar(true)
+                        }}
+                        className="text-blue-600 hover:text-blue-900 mr-4 bg-transparent border-none cursor-pointer font-medium"
                       >
                         View
-                      </Link>
-                      <Link 
-                        href={`/sessions/${session.id}/edit`}
-                        className="text-green-600 hover:text-green-900"
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedSessionId(session.id)
+                          setSidebarMode('edit')
+                          setShowSessionSidebar(true)
+                        }}
+                        className="text-green-600 hover:text-green-900 bg-transparent border-none cursor-pointer font-medium"
                       >
                         Edit
-                      </Link>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -347,6 +413,36 @@ export default function Sessions() {
           </div>
         </div>
       )}
+
+      {/* Schedule Session Sidebar */}
+      <ScheduleSessionSidebar 
+        isOpen={showScheduleSidebar}
+        onClose={() => setShowScheduleSidebar(false)}
+        onSuccess={() => {
+          setShowScheduleSidebar(false)
+          fetchSessions(user.id)
+        }}
+        user={user}
+        patients={patients}
+      />
+
+      {/* Session Details Sidebar */}
+      <SessionDetailsSidebar 
+        isOpen={showSessionSidebar}
+        onClose={() => {
+          setShowSessionSidebar(false)
+          setSelectedSessionId(null)
+        }}
+        onSuccess={() => {
+          setShowSessionSidebar(false)
+          setSelectedSessionId(null)
+          fetchSessions(user.id)
+        }}
+        user={user}
+        patients={patients}
+        sessionId={selectedSessionId}
+        mode={sidebarMode}
+      />
     </main>
   )
 }

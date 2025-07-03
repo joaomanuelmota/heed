@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
+import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
+import SessionDetailsSidebar from '../../components/SessionDetailsSidebar'
 
 export default function Calendar() {
   const [user, setUser] = useState(null)
@@ -10,6 +12,10 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [view, setView] = useState('month') // month, week, day
+  const [showScheduleSidebar, setShowScheduleSidebar] = useState(false)
+  const [patients, setPatients] = useState([])
+  const [showSessionSidebar, setShowSessionSidebar] = useState(false)
+  const [selectedSessionId, setSelectedSessionId] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -23,6 +29,7 @@ export default function Calendar() {
       if (user) {
         setUser(user)
         fetchSessions(user.id)
+        fetchPatients(user.id)
       } else {
         router.push('/login')
       }
@@ -81,6 +88,23 @@ export default function Calendar() {
     setLoading(false)
   }
 
+  const fetchPatients = async (psychologistId) => {
+    try {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('id, firstName, lastName')
+        .eq('psychologist_id', psychologistId)
+        .order('firstName', { ascending: true })
+      if (error) {
+        console.error('Error fetching patients:', error)
+      } else {
+        setPatients(data || [])
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error)
+    }
+  }
+
   // Calendar helper functions
   const getDaysInMonth = (date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
@@ -137,6 +161,18 @@ export default function Calendar() {
 
   const goToToday = () => {
     setCurrentDate(new Date())
+    setView('day')
+  }
+
+  const getStatusBadge = (status) => {
+    const config = {
+      scheduled: { label: 'Scheduled', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+      completed: { label: 'Completed', color: 'bg-green-100 text-green-700 border-green-200' },
+      cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-700 border-red-200' },
+      'no-show': { label: 'No Show', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+    }
+    const c = config[status] || config.scheduled
+    return <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium border ${c.color}`}>{c.label}</span>
   }
 
   const renderMonthView = () => {
@@ -175,16 +211,17 @@ export default function Calendar() {
           
           <div className="space-y-1">
             {daySessions.slice(0, 2).map((session) => (
-              <Link
+              <button
                 key={session.id}
-                href={`/sessions/${session.id}`}
-                className={`block px-1 py-0.5 rounded text-xs border cursor-pointer hover:opacity-80 ${getStatusColor(session.status)}`}
+                type="button"
+                onClick={() => { setSelectedSessionId(session.id); setShowSessionSidebar(true); }}
+                className={`block w-full text-left px-2 py-1 rounded-lg text-xs border font-medium cursor-pointer hover:opacity-90 transition-all ${getStatusColor(session.status)} flex items-center justify-between`}
                 title={`${formatTime(session.session_time)} - ${session.patients.firstName} ${session.patients.lastName}`}
               >
-                <div className="truncate">
-                  {formatTime(session.session_time)} {session.patients.firstName}
-                </div>
-              </Link>
+                <span className="truncate">
+                  {session.patients.firstName} {session.patients.lastName}
+                </span>
+              </button>
             ))}
             {daySessions.length > 2 && (
               <div className="text-xs text-gray-500 px-1">
@@ -237,14 +274,15 @@ export default function Calendar() {
               
               <div className="space-y-1">
                 {daySessions.map((session) => (
-                  <Link
+                  <button
                     key={session.id}
-                    href={`/sessions/${session.id}`}
-                    className={`block p-1 rounded text-xs border cursor-pointer hover:opacity-80 ${getStatusColor(session.status)}`}
+                    type="button"
+                    onClick={() => { setSelectedSessionId(session.id); setShowSessionSidebar(true); }}
+                    className={`block w-full text-left p-1 rounded text-xs border cursor-pointer hover:opacity-80 ${getStatusColor(session.status)}`}
                   >
                     <div className="font-medium">{formatTime(session.session_time)}</div>
                     <div className="truncate">{session.patients.firstName} {session.patients.lastName}</div>
-                  </Link>
+                  </button>
                 ))}
               </div>
             </div>
@@ -278,16 +316,17 @@ export default function Calendar() {
           </div>
           <div className="flex-1 p-2 min-h-16">
             {slotSessions.map((session) => (
-              <Link
+              <button
                 key={session.id}
-                href={`/sessions/${session.id}`}
-                className={`block p-2 mb-1 rounded border cursor-pointer hover:opacity-80 ${getStatusColor(session.status)}`}
+                type="button"
+                onClick={() => { setSelectedSessionId(session.id); setShowSessionSidebar(true); }}
+                className={`block w-full text-left p-2 mb-1 rounded border cursor-pointer hover:opacity-80 ${getStatusColor(session.status)}`}
               >
                 <div className="font-medium text-sm">
                   {formatTime(session.session_time)} - {session.patients.firstName} {session.patients.lastName}
                 </div>
                 <div className="text-xs">{session.title}</div>
-              </Link>
+              </button>
             ))}
           </div>
         </div>
@@ -310,141 +349,72 @@ export default function Calendar() {
   }
 
   return (
-    <>
-      {/* Calendar Controls */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            
-            {/* Navigation */}
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigateMonth(-1)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              
-              <button
-                onClick={goToToday}
-                className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
-              >
-                Today
-              </button>
-              
-              <button
-                onClick={() => navigateMonth(1)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-              
-              <h2 className="text-xl font-semibold text-gray-900">
-                {currentDate.toLocaleDateString('en-US', { 
-                  month: 'long', 
-                  year: 'numeric',
-                  ...(view === 'day' && { day: 'numeric' })
-                })}
-              </h2>
-            </div>
-
-            {/* View Toggle */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              {[
-                { key: 'month', label: 'Month' },
-                { key: 'week', label: 'Week' },
-                { key: 'day', label: 'Day' }
-              ].map((viewOption) => (
-                <button
-                  key={viewOption.key}
-                  onClick={() => setView(viewOption.key)}
-                  className={`px-3 py-1 rounded font-medium text-sm ${
-                    view === viewOption.key
-                      ? 'bg-white text-gray-900 shadow'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  {viewOption.label}
-                </button>
-              ))}
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 p-0 md:p-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 md:gap-0 px-4 md:px-0 pt-6 md:pt-0">
+        <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowScheduleSidebar(true)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm"
+          >
+            Schedule Session
+          </button>
         </div>
       </div>
-
-      {/* Calendar Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* Legend */}
-        <div className="mb-6 flex flex-wrap gap-4 text-sm">
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-blue-100 border border-blue-200 rounded mr-2"></div>
-            <span>Scheduled</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-green-100 border border-green-200 rounded mr-2"></div>
-            <span>Completed</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-red-100 border border-red-200 rounded mr-2"></div>
-            <span>Cancelled</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded mr-2"></div>
-            <span>No Show</span>
-          </div>
+      {/* Navegação mês/semana/dia */}
+      <div className="flex items-center justify-between mb-4 px-4 md:px-0">
+        <div className="flex gap-2">
+          <button onClick={() => navigateMonth(-1)} className="px-3 py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-100">&lt;</button>
+          <span className="text-lg font-semibold text-gray-900 mx-2">
+            {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+          </span>
+          <button onClick={() => navigateMonth(1)} className="px-3 py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-100">&gt;</button>
         </div>
-
-        {/* Calendar Grid */}
-        {view === 'month' && (
-          <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-            {/* Day Headers */}
-            <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div key={day} className="p-3 text-center text-sm font-medium text-gray-700">
-                  {day}
-                </div>
-              ))}
-            </div>
-            
-            {/* Calendar Days */}
-            <div className="grid grid-cols-7">
-              {renderMonthView()}
-            </div>
+        <div className="flex gap-2">
+          <button onClick={goToToday} className={`px-3 py-1 rounded-lg font-medium ${view === 'today' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}>Today</button>
+          <button onClick={() => setView('week')} className={`px-3 py-1 rounded-lg font-medium ${view === 'week' ? 'bg-blue-600 text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Week</button>
+          <button onClick={() => setView('month')} className={`px-3 py-1 rounded-lg font-medium ${view === 'month' ? 'bg-blue-600 text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Month</button>
+        </div>
+      </div>
+      {/* Calendário */}
+      <div className="bg-white rounded-xl shadow border border-gray-200 p-4">
+        {loading ? (
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-4 text-gray-500">Loading calendar...</span>
           </div>
+        ) : (
+          <>
+            {view === 'month' && (
+              <div className="grid grid-cols-7 gap-2">
+                {/* Dias da semana */}
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                  <div key={d} className="text-xs font-semibold text-gray-500 text-center pb-2">{d}</div>
+                ))}
+                {renderMonthView()}
+              </div>
+            )}
+            {view === 'week' && renderWeekView()}
+            {view === 'day' && renderDayView()}
+          </>
         )}
-
-        {view === 'week' && (
-          <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-            {renderWeekView()}
-          </div>
-        )}
-
-        {view === 'day' && renderDayView()}
-
-        {/* Empty State */}
-        {sessions.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-400 mb-4">
-              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No sessions scheduled</h3>
-            <p className="text-gray-600 mb-6">Get started by scheduling your first session</p>
-            <Link 
-              href="/sessions/schedule"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-block"
-            >
-              Schedule Your First Session
-            </Link>
-          </div>
-        )}
-      </main>
-    </>
+      </div>
+      <ScheduleSessionSidebar
+        isOpen={showScheduleSidebar}
+        onClose={() => setShowScheduleSidebar(false)}
+        onSuccess={() => { setShowScheduleSidebar(false); fetchSessions(user.id); }}
+        user={user}
+        patients={patients}
+      />
+      <SessionDetailsSidebar
+        isOpen={showSessionSidebar}
+        onClose={() => setShowSessionSidebar(false)}
+        onSuccess={() => { setShowSessionSidebar(false); fetchSessions(user.id); }}
+        user={user}
+        patients={patients}
+        sessionId={selectedSessionId}
+      />
+    </div>
   )
 }

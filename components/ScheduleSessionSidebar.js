@@ -281,19 +281,19 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
               <label className="block text-gray-700 text-sm font-medium mb-2">
                 Duration (minutes)
               </label>
-              <select
-                name="duration_minutes"
+              <CustomDropdown
                 value={sessionData.duration_minutes}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+                options={[
+                  { value: 30, label: '30 minutes' },
+                  { value: 45, label: '45 minutes' },
+                  { value: 60, label: '60 minutes' },
+                  { value: 90, label: '90 minutes' },
+                  { value: 120, label: '2 hours' },
+                ]}
+                onChange={val => handleChange({ target: { name: 'duration_minutes', value: val } })}
                 disabled={loading}
-              >
-                <option value={30}>30 minutes</option>
-                <option value={45}>45 minutes</option>
-                <option value={60}>60 minutes</option>
-                <option value={90}>90 minutes</option>
-                <option value={120}>2 hours</option>
-              </select>
+                placeholder="Select duration"
+              />
             </div>
             <div>
               <label className="block text-gray-700 text-sm font-medium mb-2">
