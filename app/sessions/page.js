@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase'
 export default function Sessions() {
   const [user, setUser] = useState(null)
   const [sessions, setSessions] = useState([])
+  const [patients, setPatients] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // all, upcoming, past, today
   const router = useRouter()
@@ -22,6 +23,7 @@ export default function Sessions() {
       if (user) {
         setUser(user)
         fetchSessions(user.id)
+        fetchPatients(user.id)
       } else {
         router.push('/login')
       }
@@ -78,6 +80,25 @@ export default function Sessions() {
     }
     
     setLoading(false)
+  }
+
+  const fetchPatients = async (psychologistId) => {
+    try {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('id, firstName, lastName')
+        .eq('psychologist_id', psychologistId)
+        .eq('status', 'active')
+        .order('firstName', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching patients:', error)
+      } else {
+        setPatients(data || [])
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error)
+    }
   }
 
   const formatDate = (dateString) => {

@@ -13,6 +13,8 @@ import {
   MessageCircle, Shield, Star, Users, Timer,
   Bold, Italic, List, ListOrdered, Save, Type, Trash2
 } from 'lucide-react'
+import ScheduleSessionSidebar from '../../../components/ScheduleSessionSidebar'
+import AddPatientSidebar from '../../../components/AddPatientSidebar'
 
 export default function PatientProfile() {
   const [user, setUser] = useState(null)
@@ -43,6 +45,8 @@ export default function PatientProfile() {
     content: '',
     note_date: ''
   })
+  const [showScheduleSidebar, setShowScheduleSidebar] = useState(false)
+  const [editingPatient, setEditingPatient] = useState(null)
   
   const router = useRouter()
   const params = useParams()
@@ -833,18 +837,18 @@ export default function PatientProfile() {
                   
                   {/* Action Buttons */}
                   <div className="flex items-center space-x-3">
-                    <Link
-                      href={`/patients/${patient.id}/edit`}
+                    <button
+                      onClick={() => setEditingPatient(patient)}
                       className="w-12 h-12 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/80 transition-all hover:scale-105 shadow-sm"
                     >
                       <Edit className="w-5 h-5 text-gray-700" />
-                    </Link>
-                    <Link
-                      href={`/sessions/schedule?patient_id=${patient.id}`}
-                      className="px-6 py-3 bg-blue-500 text-white rounded-2xl font-semibold hover:bg-blue-600 transition-all hover:scale-105 shadow-lg inline-block text-center"
+                    </button>
+                    <button
+                      onClick={() => setShowScheduleSidebar(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
                     >
                       Schedule Session
-                    </Link>
+                    </button>
                   </div>
                 </div>
 
@@ -912,6 +916,31 @@ export default function PatientProfile() {
           </div>
         </div>
       </div>
+
+      {/* Schedule Session Sidebar */}
+      <ScheduleSessionSidebar 
+        isOpen={showScheduleSidebar}
+        onClose={() => setShowScheduleSidebar(false)}
+        onSuccess={() => {
+          setShowScheduleSidebar(false)
+          fetchSessions(patient.id)
+        }}
+        user={user}
+        patients={[patient]}
+        preSelectedPatient={patient.id}
+      />
+
+      <AddPatientSidebar
+        isOpen={!!editingPatient}
+        onClose={() => setEditingPatient(null)}
+        onSuccess={() => {
+          setEditingPatient(null)
+          fetchPatient(user.id, patient.id)
+        }}
+        user={user}
+        mode="edit"
+        existingPatient={editingPatient}
+      />
     </div>
   )
 }

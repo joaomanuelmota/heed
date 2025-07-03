@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
+import { UserCheck, Plus } from 'lucide-react'
+import AddPatientSidebar from '../../components/AddPatientSidebar'
 
 export default function Patients() {
   const [user, setUser] = useState(null)
@@ -12,6 +14,8 @@ export default function Patients() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [sessionTypeFilter, setSessionTypeFilter] = useState('all')
   const [specialtyFilter, setSpecialtyFilter] = useState('all')
+  const [showAddSidebar, setShowAddSidebar] = useState(false)
+  const [editingPatient, setEditingPatient] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -155,50 +159,28 @@ export default function Patients() {
   }
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 relative">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
       {/* Header */}
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Patients</h1>
-          <p className="text-gray-600">Manage your patient records</p>
-        </div>
-        <Link 
-          href="/patients/add"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-        >
-          Add New Patient
-        </Link>
-      </div>
-
-      {/* Stats */}
       <div className="mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Patient Overview</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Total Patients</p>
-              <p className="text-2xl font-bold text-gray-900">{patients.length}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Active Patients</p>
-              <p className="text-2xl font-bold text-green-600">
-                {patients.filter(p => p.status === 'active').length}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Remote Sessions</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {patients.filter(p => p.session_type === 'remote').length}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Hybrid Sessions</p>
-              <p className="text-2xl font-bold text-orange-600">
-                {patients.filter(p => p.session_type === 'hybrid').length}
-              </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-4 sm:mb-0">
+            <h1 className="text-2xl font-bold text-gray-900">Patients</h1>
+            <div className="flex items-center mt-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <UserCheck className="w-4 h-4 mr-1" />
+                {patients.filter(p => p.status === 'active').length} Active Patients
+              </span>
             </div>
           </div>
+          <button 
+            onClick={() => setShowAddSidebar(true)}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Add New Patient
+          </button>
         </div>
       </div>
 
@@ -373,12 +355,6 @@ export default function Patients() {
         )
       ) : (
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Patient List {hasActiveFilters && `(${filteredPatients.length} of ${patients.length} patients)`}
-            </h3>
-          </div>
-          
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -438,12 +414,12 @@ export default function Patients() {
                       >
                         View
                       </Link>
-                      <Link 
-                        href={`/patients/${patient.id}/edit`}
-                        className="text-green-600 hover:text-green-900"
+                      <button
+                        onClick={() => setEditingPatient(patient)}
+                        className="text-blue-600 hover:text-blue-800 bg-transparent border-none cursor-pointer font-medium"
                       >
                         Edit
-                      </Link>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -452,6 +428,32 @@ export default function Patients() {
           </div>
         </div>
       )}
-    </main>
+      </main>
+
+      {/* Overlay */}
+      {showAddSidebar && (
+        <div 
+          className="fixed inset-0 z-40"
+          onClick={() => setShowAddSidebar(false)}
+        />
+      )}
+
+      {/* Add Patient Sidebar */}
+      <AddPatientSidebar 
+        isOpen={showAddSidebar || editingPatient !== null}
+        onClose={() => {
+          setShowAddSidebar(false)
+          setEditingPatient(null)
+        }}
+        onSuccess={() => {
+          setShowAddSidebar(false)
+          setEditingPatient(null)
+          fetchPatients(user.id)
+        }}
+        user={user}
+        mode={editingPatient ? 'edit' : 'add'}
+        existingPatient={editingPatient}
+      />
+    </div>
   )
 }
