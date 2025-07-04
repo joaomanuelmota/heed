@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
-import RichTextEditor from '../../../components/RichTextEditor'
 import { 
   User, Mail, Phone, FileText, CreditCard, 
   MapPin, Calendar, Clock, Edit, ChevronRight, ChevronDown, ChevronUp,
@@ -418,11 +417,7 @@ export default function PatientProfile() {
                   />
                 </div>
                 <div className="mb-4">
-                  <RichTextEditor
-                    value={noteData.content}
-                    onChange={(content) => setNoteData({...noteData, content: content})}
-                    placeholder="Note Content..."
-                  />
+                  {/* Note content input */}
                 </div>
                 <div className="flex justify-end gap-2">
                   <button
@@ -501,11 +496,6 @@ export default function PatientProfile() {
                                   onChange={e => setEditNoteData({ ...editNoteData, note_date: e.target.value })}
                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                                   required
-                                />
-                                <RichTextEditor
-                                  value={editNoteData.content}
-                                  onChange={content => setEditNoteData({ ...editNoteData, content })}
-                                  placeholder="Edit your note content..."
                                 />
                                 <div className="flex items-center justify-between mt-2">
                                   <button type="button" onClick={cancelEditNote} className="text-gray-600 hover:underline text-xs">Cancelar</button>
