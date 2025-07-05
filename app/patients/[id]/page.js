@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import ScheduleSessionSidebar from '../../../components/ScheduleSessionSidebar'
 import AddPatientSidebar from '../../../components/AddPatientSidebar'
+import RichTextEditor from '../../../components/RichTextEditor'
+import ReactDOM from 'react-dom'
 
 export default function PatientProfile() {
   const [user, setUser] = useState(null)
@@ -50,6 +52,37 @@ export default function PatientProfile() {
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [expandedNoteId, setExpandedNoteId] = useState(null);
   
+  // Estados para treatment plans  
+  const [showAddTreatmentPlan, setShowAddTreatmentPlan] = useState(false)
+  const [treatmentPlans, setTreatmentPlans] = useState([])
+  const [treatmentPlansLoading, setTreatmentPlansLoading] = useState(false)
+  const [treatmentPlanData, setTreatmentPlanData] = useState({
+    title: '',
+    content: '',
+    plan_date: new Date().toISOString().split('T')[0]
+  })
+
+  // Estados para edição de treatment plans
+  const [editingTreatmentPlanId, setEditingTreatmentPlanId] = useState(null)
+  const [editTreatmentPlanData, setEditTreatmentPlanData] = useState({
+    title: '',
+    content: '',
+    plan_date: ''
+  })
+  
+  // Adicionar estados para edição do status
+  const [editingStatusId, setEditingStatusId] = useState(null);
+  const statusOptions = [
+    { value: 'to pay', label: 'To Pay' },
+    { value: 'paid', label: 'Paid' },
+    { value: 'invoice issued', label: 'Invoice Issued' },
+    { value: 'cancelled', label: 'Cancelled' },
+  ];
+
+  // Novo estado para coordenadas do dropdown
+  const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0, width: 0 });
+  const badgeRefs = useRef({});
+
   const router = useRouter()
   const params = useParams()
 
@@ -102,6 +135,7 @@ export default function PatientProfile() {
     if (patient && user) {
       fetchNotes(patient.id)
       fetchSessions(patient.id)
+      fetchTreatmentPlans(patient.id)
     }
   }, [patient, user])
 
@@ -160,6 +194,39 @@ export default function PatientProfile() {
     setNotesLoading(false)
   }
 
+  const fetchTreatmentPlans = async (patientId) => {
+    console.log('fetchTreatmentPlans called with:', { patientId, user: !!user })
+    
+    if (!user) {
+      console.log('No user, skipping fetchTreatmentPlans')
+      return
+    }
+    
+    setTreatmentPlansLoading(true)
+    try {
+      console.log('Fetching treatment plans for patient:', patientId, 'psychologist:', user.id)
+      
+      const { data, error } = await supabase
+        .from('treatment_plans')
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('psychologist_id', user.id)
+        .order('plan_date', { ascending: false })
+
+      console.log('Treatment plans fetch result:', { data, error })
+
+      if (error) {
+        console.error('Error fetching treatment plans:', error)
+      } else {
+        setTreatmentPlans(data || [])
+        console.log('Treatment plans set to:', data?.length || 0, 'plans')
+      }
+    } catch (error) {
+      console.error('Unexpected error fetching treatment plans:', error)
+    }
+    setTreatmentPlansLoading(false)
+  }
+
   const fetchSessions = async (patientId) => {
     if (!user) return
     
@@ -183,42 +250,43 @@ export default function PatientProfile() {
     setSessionsLoading(false)
   }
 
-  const updatePaymentStatus = async (sessionId, newStatus) => {
-    try {
-      const { error } = await supabase
-        .from('sessions')
-        .update({ 
-          payment_status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', sessionId)
-        .eq('psychologist_id', user.id)
-
-      if (error) {
-        console.error('Error updating payment status:', error)
-        alert('Error updating payment status: ' + error.message)
-      } else {
-        // Atualizar a sessão na lista local
-        setSessions(sessions.map(session => 
-          session.id === sessionId 
-            ? { ...session, payment_status: newStatus }
-            : session
-        ))
-      }
-    } catch (error) {
-      console.error('Unexpected error:', error)
-      alert('Unexpected error updating payment status')
+  const getStatusBadge = (status) => {
+    let badgeClass = "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border cursor-pointer transition-all duration-150 group relative";
+    let colorClass = "";
+    if (status === 'paid') {
+      colorClass = "bg-green-100 text-green-800 border-green-200 group-hover:bg-green-200 group-hover:shadow";
+    } else if (status === 'cancelled') {
+      colorClass = "bg-red-100 text-red-800 border-red-200 group-hover:bg-red-200 group-hover:shadow";
+    } else if (status === 'invoice issued') {
+      colorClass = "bg-blue-100 text-blue-800 border-blue-200 group-hover:bg-blue-200 group-hover:shadow";
+    } else if (status === 'to pay') {
+      colorClass = "bg-yellow-100 text-yellow-800 border-yellow-200 group-hover:bg-yellow-200 group-hover:shadow";
+    } else {
+      colorClass = "bg-gray-100 text-gray-800 border-gray-200 group-hover:bg-gray-200 group-hover:shadow";
     }
+    return (
+      <span className={`${badgeClass} ${colorClass}`} tabIndex={0}>
+        {status === 'invoice issued' ? 'Invoice Issued' : status === 'to pay' ? 'To Pay' : status === 'cancelled' ? 'Cancelled' : status.charAt(0).toUpperCase() + status.slice(1)}
+        <span className="flex flex-col ml-1">
+          <ChevronUp className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mb-1" />
+          <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mt-1" />
+        </span>
+        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-30">Click to edit status</span>
+      </span>
+    );
   }
 
-  const getPaymentStatusBadge = (status) => {
-    const statusConfig = {
-      pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-      paid: { label: 'Paid', color: 'bg-green-100 text-green-800 border-green-200' },
-      'invoice issued': { label: 'Invoice Issued', color: 'bg-blue-100 text-blue-800 border-blue-200' }
-    }
-    return statusConfig[status] || statusConfig.pending
-  }
+  const handleStatusChange = async (sessionId, newStatus) => {
+    await supabase
+      .from('sessions')
+      .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', sessionId);
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId ? { ...s, payment_status: newStatus } : s
+      )
+    );
+  };
 
   const saveNote = async () => {
     if (!noteData.title.trim()) {
@@ -355,6 +423,139 @@ export default function PatientProfile() {
     fetchSessions(patient.id)
   }
 
+  const saveTreatmentPlan = async () => {
+    if (!treatmentPlanData.title.trim()) {
+      alert('Please enter a treatment plan title')
+      return
+    }
+    
+    if (!patient) {
+      alert('Patient information not available')
+      return
+    }
+
+    try {
+      const newTreatmentPlan = {
+        psychologist_id: user.id,
+        patient_id: patient.id,
+        title: treatmentPlanData.title.trim(),
+        content: treatmentPlanData.content || '',
+        plan_date: treatmentPlanData.plan_date,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      const { data, error } = await supabase
+        .from('treatment_plans')
+        .insert([newTreatmentPlan])
+        .select()
+
+      if (error) {
+        console.error('Error saving treatment plan:', error)
+      } else {
+        // Adicionar o novo treatment plan à lista
+        setTreatmentPlans([data[0], ...treatmentPlans])
+        
+        // Limpar formulário
+        setTreatmentPlanData({
+          title: '',
+          content: '',
+          plan_date: new Date().toISOString().split('T')[0]
+        })
+        
+        // Fechar formulário
+        setShowAddTreatmentPlan(false)
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error)
+      alert('Unexpected error saving treatment plan')
+    }
+  }
+
+  const deleteTreatmentPlan = async (treatmentPlanId) => {
+    if (!confirm('Are you sure you want to delete this treatment plan? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('treatment_plans')
+        .delete()
+        .eq('id', treatmentPlanId)
+        .eq('psychologist_id', user.id)
+
+      if (error) {
+        console.error('Error deleting treatment plan:', error)
+        alert('Error deleting treatment plan: ' + error.message)
+      } else {
+        // Remove o treatment plan da lista local
+        setTreatmentPlans(treatmentPlans.filter(plan => plan.id !== treatmentPlanId))
+        alert('Treatment plan deleted successfully!')
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error)
+      alert('Unexpected error deleting treatment plan')
+    }
+  }
+
+  const startEditTreatmentPlan = (treatmentPlan) => {
+    setEditingTreatmentPlanId(treatmentPlan.id)
+    setEditTreatmentPlanData({
+      title: treatmentPlan.title,
+      content: treatmentPlan.content || '',
+      plan_date: treatmentPlan.plan_date
+    })
+  }
+
+  const cancelEditTreatmentPlan = () => {
+    setEditingTreatmentPlanId(null)
+    setEditTreatmentPlanData({
+      title: '',
+      content: '',
+      plan_date: ''
+    })
+  }
+
+  const saveEditTreatmentPlan = async (treatmentPlanId) => {
+    if (!editTreatmentPlanData.title.trim()) {
+      alert('Please enter a treatment plan title')
+      return
+    }
+
+    try {
+      const updateData = {
+        title: editTreatmentPlanData.title.trim(),
+        content: editTreatmentPlanData.content || '',
+        plan_date: editTreatmentPlanData.plan_date,
+        updated_at: new Date().toISOString()
+      }
+
+      const { data, error } = await supabase
+        .from('treatment_plans')
+        .update(updateData)
+        .eq('id', treatmentPlanId)
+        .eq('psychologist_id', user.id)
+        .select()
+
+      if (error) {
+        console.error('Error updating treatment plan:', error)
+        alert('Error updating treatment plan: ' + error.message)
+      } else {
+        // Atualizar o treatment plan na lista local
+        setTreatmentPlans(treatmentPlans.map(plan => 
+          plan.id === treatmentPlanId ? { ...plan, ...updateData } : plan
+        ))
+        
+        // Sair do modo de edição
+        setEditingTreatmentPlanId(null)
+        setEditTreatmentPlanData({ title: '', content: '', plan_date: '' })
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error)
+      alert('Unexpected error updating treatment plan')
+    }
+  }
+
   const getStatusDisplay = (status) => {
     const statusConfig = {
       active: { label: 'Active', color: 'bg-green-100 text-green-700', dot: 'bg-green-400' },
@@ -417,7 +618,11 @@ export default function PatientProfile() {
                   />
                 </div>
                 <div className="mb-4">
-                  {/* Note content input */}
+                  <RichTextEditor
+                    value={noteData.content}
+                    onChange={(content) => setNoteData({...noteData, content})}
+                    placeholder="Write your clinical notes here..."
+                  />
                 </div>
                 <div className="flex justify-end gap-2">
                   <button
@@ -497,6 +702,11 @@ export default function PatientProfile() {
                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                                   required
                                 />
+                                <RichTextEditor
+                                  value={editNoteData.content}
+                                  onChange={(content) => setEditNoteData({ ...editNoteData, content })}
+                                  placeholder="Write your clinical notes here..."
+                                />
                                 <div className="flex items-center justify-between mt-2">
                                   <button type="button" onClick={cancelEditNote} className="text-gray-600 hover:underline text-xs">Cancelar</button>
                                   <div className="flex gap-2">
@@ -541,15 +751,210 @@ export default function PatientProfile() {
         )
       case 'treatment':
         return (
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Stethoscope className="w-8 h-8 text-gray-400" />
+          <div className="space-y-6">
+            {/* Add Treatment Plan Button */}
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Treatment Plans</h3>
+              <button 
+                onClick={() => setShowAddTreatmentPlan(!showAddTreatmentPlan)}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{showAddTreatmentPlan ? 'Cancel' : 'Add Treatment Plan'}</span>
+              </button>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Treatment Plan</h3>
-            <p className="text-gray-600 mb-4">
-              Treatment plan management will be available once the treatment_plans table is created.
-            </p>
-            <p className="text-sm text-gray-500">Coming Soon</p>
+
+            {/* Add Treatment Plan Form */}
+            {showAddTreatmentPlan && (
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className="flex flex-col md:flex-row gap-4 mb-4">
+                  <input
+                    type="text"
+                    value={treatmentPlanData.title}
+                    onChange={(e) => setTreatmentPlanData({...treatmentPlanData, title: e.target.value})}
+                    placeholder="Plan Title *"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                  <input
+                    type="date"
+                    value={treatmentPlanData.plan_date}
+                    onChange={(e) => setTreatmentPlanData({...treatmentPlanData, plan_date: e.target.value})}
+                    className="w-40 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="mb-4">
+                  <RichTextEditor
+                    value={treatmentPlanData.content}
+                    onChange={(content) => setTreatmentPlanData({...treatmentPlanData, content})}
+                    placeholder="Describe the treatment plan, goals, methods, timeline..."
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setShowAddTreatmentPlan(false)}
+                    className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveTreatmentPlan}
+                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                  >
+                    Save Treatment Plan
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Treatment Plans List */}
+            {treatmentPlansLoading ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-500 mt-2">Loading treatment plans...</p>
+                </div>
+              </div>
+            ) : treatmentPlans.length === 0 ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="text-center py-8">
+                  <Stethoscope className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Treatment Plans Yet</h4>
+                  <p className="text-gray-500 mb-4">Start by creating your first treatment plan for this patient.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-10">
+                {treatmentPlans.map((plan, index) => {
+                  const isEditing = editingTreatmentPlanId === plan.id;
+                  const isExpanded = expandedNoteId === plan.id; // Reusing the same state for simplicity
+                  const planDate = new Date(plan.plan_date)
+                  const prevPlan = index > 0 ? treatmentPlans[index - 1] : null
+                  const prevDate = prevPlan ? new Date(prevPlan.plan_date) : null
+                  const showDateHeader = !prevDate || planDate.toDateString() !== prevDate.toDateString()
+                  
+                  return (
+                    <div key={plan.id}>
+                      {/* Date Header - só mostra se for uma data diferente da anterior */}
+                      {showDateHeader && (
+                        <div className="flex items-center mb-4 mt-6 first:mt-0">
+                          <div className="flex-shrink-0 w-24 text-right pr-4">
+                            <div className="text-sm font-semibold text-blue-600">
+                              {planDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {planDate.getFullYear()}
+                            </div>
+                          </div>
+                          <div className="flex-grow h-px bg-gray-200"></div>
+                        </div>
+                      )}
+                      
+                      {/* Treatment Plan Card */}
+                      <div className="flex">
+                        <div className="flex-shrink-0 w-24 flex justify-center">
+                          <div className="w-px bg-gray-200 h-full relative">
+                            <div className="absolute top-4 -left-1.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow"></div>
+                          </div>
+                        </div>
+                        <div className="flex-1 ml-4 mb-6">
+                          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow group relative">
+                            <div className="space-y-4">
+                        {isEditing ? (
+                          <div className="space-y-4">
+                            <div className="flex flex-col md:flex-row gap-4 mb-4">
+                              <input
+                                type="text"
+                                value={editTreatmentPlanData.title}
+                                onChange={(e) => setEditTreatmentPlanData({...editTreatmentPlanData, title: e.target.value})}
+                                placeholder="Plan Title *"
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                              />
+                              <input
+                                type="date"
+                                value={editTreatmentPlanData.plan_date}
+                                onChange={(e) => setEditTreatmentPlanData({...editTreatmentPlanData, plan_date: e.target.value})}
+                                className="w-40 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                              />
+                            </div>
+                            <div className="mb-4">
+                              <RichTextEditor
+                                value={editTreatmentPlanData.content}
+                                onChange={(content) => setEditTreatmentPlanData({...editTreatmentPlanData, content})}
+                                placeholder="Describe the treatment plan, goals, methods, timeline..."
+                              />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={cancelEditTreatmentPlan}
+                                className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm font-medium"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => saveEditTreatmentPlan(plan.id)}
+                                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                              >
+                                Save Changes
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="text-lg font-medium text-gray-900 mb-2">{plan.title}</h4>
+                                <div className="flex items-center text-sm text-gray-500 mb-3">
+                                  <Calendar className="w-4 h-4 mr-1" />
+                                  <span>{new Date(plan.plan_date).toLocaleDateString()}</span>
+                                  <span className="mx-2">•</span>
+                                  <span>Created {new Date(plan.created_at).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => startEditTreatmentPlan(plan)}
+                                  className="text-gray-400 hover:text-blue-600 transition-colors"
+                                  title="Edit treatment plan"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => deleteTreatmentPlan(plan.id)}
+                                  className="text-gray-400 hover:text-red-600 transition-colors"
+                                  title="Delete treatment plan"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {plan.content && (
+                              <div className="bg-gray-50 rounded-lg p-4">
+                                <div className="text-gray-700">
+                                  {isExpanded || !plan.content || plan.content.length <= 150 ? (
+                                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: plan.content }} />
+                                  ) : (
+                                    <>
+                                      <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: plan.content.substring(0, 150) + '...' }} />
+                                      <div className="flex items-center justify-between mt-2">
+                                        <button onClick={() => setExpandedNoteId(plan.id)} className="text-blue-600 hover:underline text-xs">Ver mais</button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )
       case 'payments':
@@ -593,11 +998,11 @@ export default function PatientProfile() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Duration
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Cost
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amount
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Payment Status
+                          Status
                         </th>
                       </tr>
                     </thead>
@@ -633,17 +1038,55 @@ export default function PatientProfile() {
                             €{session.session_fee || '0.00'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <select
-                              value={session.payment_status || 'pending'}
-                              onChange={(e) => updatePaymentStatus(session.id, e.target.value)}
-                              className={`text-xs font-medium px-2 py-1 rounded-full border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                getPaymentStatusBadge(session.payment_status || 'pending').color
-                              }`}
-                            >
-                              <option value="pending">Pending</option>
-                              <option value="paid">Paid</option>
-                              <option value="invoice issued">Invoice Issued</option>
-                            </select>
+                            {editingStatusId === session.id ? (
+                              <>
+                                <span
+                                  ref={el => badgeRefs.current[session.id] = el}
+                                  style={{ visibility: 'hidden', position: 'absolute' }}
+                                >
+                                  {getStatusBadge(session.payment_status)}
+                                </span>
+                                {ReactDOM.createPortal(
+                                  <div
+                                    className="fixed min-w-[140px] bg-white border border-gray-200 rounded shadow-lg z-[9999] drop-shadow-lg"
+                                    style={{
+                                      top: dropdownCoords.top,
+                                      left: dropdownCoords.left,
+                                      width: dropdownCoords.width
+                                    }}
+                                  >
+                                    {statusOptions.map(opt => (
+                                      <button
+                                        key={opt.value}
+                                        className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${session.payment_status === opt.value ? 'font-semibold text-blue-600' : 'text-gray-900'}`}
+                                        onClick={async () => {
+                                          await handleStatusChange(session.id, opt.value);
+                                          setEditingStatusId(null);
+                                        }}
+                                      >
+                                        {opt.label}
+                                      </button>
+                                    ))}
+                                  </div>,
+                                  document.body
+                                )}
+                              </>
+                            ) : (
+                              <span
+                                ref={el => badgeRefs.current[session.id] = el}
+                                onClick={() => {
+                                  const rect = badgeRefs.current[session.id].getBoundingClientRect();
+                                  setDropdownCoords({
+                                    top: rect.bottom + window.scrollY + 4,
+                                    left: rect.left + window.scrollX,
+                                    width: rect.width
+                                  });
+                                  setEditingStatusId(session.id);
+                                }}
+                              >
+                                {getStatusBadge(session.payment_status)}
+                              </span>
+                            )}
                           </td>
                         </tr>
                       ))}
