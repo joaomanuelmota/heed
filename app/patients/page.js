@@ -11,7 +11,7 @@ export default function Patients() {
   const [patients, setPatients] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('active')
   const [sessionTypeFilter, setSessionTypeFilter] = useState('all')
   const [specialtyFilter, setSpecialtyFilter] = useState('all')
   const [showAddSidebar, setShowAddSidebar] = useState(false)
@@ -109,8 +109,15 @@ export default function Patients() {
     return specialtyMap[specialty] || specialty
   }
 
+  // Ordenar pacientes alfabeticamente por nome
+  const sortedPatients = [...patients].sort((a, b) => {
+    const nameA = `${a.firstName || ''} ${a.lastName || ''}`.toLowerCase();
+    const nameB = `${b.firstName || ''} ${b.lastName || ''}`.toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+
   // Filter patients based on search term and filter dropdowns
-  const filteredPatients = patients.filter(patient => {
+  const filteredPatients = sortedPatients.filter(patient => {
     // Search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();

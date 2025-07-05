@@ -191,8 +191,7 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
       {/* Header */}
       <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <User className="w-6 h-6 text-blue-600 mr-3" />
+          <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-6">
               {mode === 'edit' ? 'Edit Patient' : 'Add New Patient'}
             </h2>

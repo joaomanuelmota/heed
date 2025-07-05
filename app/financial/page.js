@@ -1,9 +1,9 @@
 "use client"
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 export default function FinancialOverview() {
   const [user, setUser] = useState(null);
@@ -12,6 +12,9 @@ export default function FinancialOverview() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const router = useRouter();
+  const [editingStatusIdAllSessions, setEditingStatusIdAllSessions] = useState(null);
+  const [editingStatusIdUnpaidSessions, setEditingStatusIdUnpaidSessions] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     checkUser();
@@ -34,13 +37,47 @@ export default function FinancialOverview() {
   const fetchSessions = async (psychologistId) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("sessions")
-        .select("*, patients(id, firstName, lastName)")
-        .eq("psychologist_id", psychologistId)
-        .order("session_date", { ascending: false });
-      if (!error) setSessions(data || []);
-    } catch (error) {}
+      // Buscar todas as sessões do psicólogo
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('psychologist_id', psychologistId)
+        .order('session_date', { ascending: false });
+
+      if (sessionsError) {
+        setSessions([]);
+        setLoading(false);
+        return;
+      }
+
+      if (sessionsData && sessionsData.length > 0) {
+        // Buscar os pacientes associados
+        const patientIds = [...new Set(sessionsData.map(session => session.patient_id))];
+        let patientsData = [];
+        if (patientIds.length > 0) {
+          const { data: patients, error: patientsError } = await supabase
+            .from('patients')
+            .select('id, firstName, lastName')
+            .in('id', patientIds);
+          if (!patientsError) {
+            patientsData = patients;
+          }
+        }
+        // Merge manual dos dados do paciente
+        const sessionsWithPatients = sessionsData.map(session => {
+          const patient = patientsData.find(p => p.id === session.patient_id);
+          return {
+            ...session,
+            patients: patient || { firstName: 'Unknown', lastName: 'Patient' }
+          };
+        });
+        setSessions(sessionsWithPatients);
+      } else {
+        setSessions([]);
+      }
+    } catch (error) {
+      setSessions([]);
+    }
     setLoading(false);
   };
 
@@ -48,18 +85,59 @@ export default function FinancialOverview() {
   const today = new Date();
   const thisMonth = today.getMonth();
   const thisYear = today.getFullYear();
-  const defaultAmount = 150;
 
-  const unpaidSessions = sessions.filter(s => s.payment_status !== "paid");
+  const isPaid = s => s.payment_status === "paid" || s.payment_status === "invoice issued";
+
+  const unpaidSessions = sessions.filter(s => !isPaid(s));
   const paidThisMonth = sessions.filter(s => {
-    if (s.payment_status !== "paid") return false;
+    if (!isPaid(s)) return false;
     const d = new Date(s.session_date);
     return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
   });
-  const revenueThisMonth = paidThisMonth.length * defaultAmount;
-  const totalOutstanding = unpaidSessions.length * defaultAmount;
+  const revenueThisMonth = paidThisMonth.reduce((sum, s) => sum + (s.session_fee || 0), 0);
+  const totalOutstanding = unpaidSessions.reduce((sum, s) => sum + (s.session_fee || 0), 0);
 
+  // Card 1: Faturação do mês atual
+  const faturacaoMesAtual = sessions.filter(s => {
+    if (!isPaid(s)) return false;
+    const d = new Date(s.session_date);
+    return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+  }).reduce((sum, s) => sum + (s.session_fee || 0), 0);
 
+  // Card 2: Pagamentos em falta (sessões não pagas com data passada)
+  const pagamentosEmFalta = sessions.filter(s => {
+    if (isPaid(s)) return false;
+    const d = new Date(s.session_date);
+    return d < today;
+  }).reduce((sum, s) => sum + (s.session_fee || 0), 0);
+
+  // Card 3: Unrealized Sessions
+  const unrealizedProfit = sessions.filter(s => {
+    if (isPaid(s)) return false;
+    const d = new Date(s.session_date);
+    return d >= today;
+  }).reduce((sum, s) => sum + (s.session_fee || 0), 0);
+
+  // Total realizado este ano
+  const realizadoAno = sessions.filter(s => {
+    if (!isPaid(s)) return false;
+    const d = new Date(s.session_date);
+    return d.getFullYear() === thisYear;
+  }).reduce((sum, s) => sum + (s.session_fee || 0), 0);
+
+  // Contagem de sessões em falta (pagamentos em falta)
+  const countPagamentosEmFalta = sessions.filter(s => {
+    if (isPaid(s)) return false;
+    const d = new Date(s.session_date);
+    return d < today;
+  }).length;
+
+  // Contagem de unrealized sessions
+  const countUnrealizedProfit = sessions.filter(s => {
+    if (isPaid(s)) return false;
+    const d = new Date(s.session_date);
+    return d >= today;
+  }).length;
 
   // Generate month and year options
   const months = [
@@ -81,38 +159,38 @@ export default function FinancialOverview() {
 
   // Calculate revenue for selected month
   const selectedMonthSessions = sessions.filter(s => {
-    if (s.payment_status !== "paid") return false;
+    if (!isPaid(s)) return false;
     const sessionDate = new Date(s.session_date);
     return sessionDate.getMonth() === selectedMonth && sessionDate.getFullYear() === selectedYear;
   });
-  const selectedMonthRevenue = selectedMonthSessions.length * defaultAmount;
+  const selectedMonthRevenue = selectedMonthSessions.reduce((sum, s) => sum + (s.session_fee || 0), 0);
 
   // Calculate revenue for selected year
   const selectedYearSessions = sessions.filter(s => {
-    if (s.payment_status !== "paid") return false;
+    if (!isPaid(s)) return false;
     const sessionDate = new Date(s.session_date);
     return sessionDate.getFullYear() === selectedYear;
   });
-  const selectedYearRevenue = selectedYearSessions.length * defaultAmount;
+  const selectedYearRevenue = selectedYearSessions.reduce((sum, s) => sum + (s.session_fee || 0), 0);
 
   // Calculate previous month comparison
   const prevMonth = selectedMonth === 0 ? 11 : selectedMonth - 1;
   const prevMonthYear = selectedMonth === 0 ? selectedYear - 1 : selectedYear;
   const prevMonthSessions = sessions.filter(s => {
-    if (s.payment_status !== "paid") return false;
+    if (!isPaid(s)) return false;
     const sessionDate = new Date(s.session_date);
     return sessionDate.getMonth() === prevMonth && sessionDate.getFullYear() === prevMonthYear;
   });
-  const prevMonthRevenue = prevMonthSessions.length * defaultAmount;
+  const prevMonthRevenue = prevMonthSessions.reduce((sum, s) => sum + (s.session_fee || 0), 0);
   const monthComparison = prevMonthRevenue > 0 ? ((selectedMonthRevenue - prevMonthRevenue) / prevMonthRevenue * 100).toFixed(0) : 0;
 
   // Calculate previous year comparison
   const prevYearSessions = sessions.filter(s => {
-    if (s.payment_status !== "paid") return false;
+    if (!isPaid(s)) return false;
     const sessionDate = new Date(s.session_date);
     return sessionDate.getFullYear() === selectedYear - 1;
   });
-  const prevYearRevenue = prevYearSessions.length * defaultAmount;
+  const prevYearRevenue = prevYearSessions.reduce((sum, s) => sum + (s.session_fee || 0), 0);
   const yearComparison = prevYearRevenue > 0 ? ((selectedYearRevenue - prevYearRevenue) / prevYearRevenue * 100).toFixed(0) : 0;
 
   // Generate monthly revenue data for chart (6 months starting from selected month/year)
@@ -126,10 +204,10 @@ export default function FinancialOverview() {
       const yearKey = date.getFullYear();
       
       const monthRevenue = sessions.filter(s => {
-        if (s.payment_status !== "paid") return false;
+        if (!isPaid(s)) return false;
         const sessionDate = new Date(s.session_date);
         return sessionDate.getMonth() === monthKey && sessionDate.getFullYear() === yearKey;
-      }).length * defaultAmount;
+      }).reduce((sum, s) => sum + (s.session_fee || 0), 0);
       
       months.push({
         month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
@@ -142,6 +220,105 @@ export default function FinancialOverview() {
 
   const monthlyRevenueData = generateMonthlyRevenueData();
 
+  // CustomDropdown para status
+  function CustomDropdown({ value, options, onChange, disabled, placeholder }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    useEffect(() => {
+      function handleClickOutside(event) {
+        if (ref.current && !ref.current.contains(event.target)) {
+          setOpen(false);
+        }
+      }
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const selected = options.find((opt) => opt.value === value);
+
+    return (
+      <div className="relative" ref={ref}>
+        <button
+          type="button"
+          className={`w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none ${
+            disabled ? "bg-gray-100 cursor-not-allowed" : "hover:bg-gray-50"
+          }`}
+          onClick={() => !disabled && setOpen(!open)}
+          disabled={disabled}
+        >
+          <span>{selected ? selected.label : placeholder}</span>
+          <ChevronDown className="w-5 h-5 text-gray-400" />
+        </button>
+        {open && (
+          <div className="absolute left-0 bottom-full mb-2 w-full bg-white border border-gray-200 rounded shadow-lg z-50">
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={`w-full px-4 py-2 text-left hover:bg-gray-100 ${
+                  value === opt.value ? "font-semibold text-blue-600" : "text-gray-900"
+                }`}
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Adicionar função handleStatusChange
+  const statusOptions = [
+    { value: "paid", label: "Paid" },
+    { value: "to pay", label: "To Pay" },
+    { value: "invoice issued", label: "Invoice Issued" },
+    { value: "cancelled", label: "Cancelled" },
+  ];
+
+  const handleStatusChange = async (sessionId, newStatus) => {
+    await supabase
+      .from("sessions")
+      .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
+      .eq("id", sessionId);
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId ? { ...s, payment_status: newStatus } : s
+      )
+    );
+  };
+
+  function getStatusBadge(status) {
+    let badgeClass = "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border cursor-pointer transition-all duration-150 group relative";
+    let colorClass = "";
+    if (status === 'paid') {
+      colorClass = "bg-green-100 text-green-800 border-green-200 group-hover:bg-green-200 group-hover:shadow";
+    } else if (status === 'cancelled') {
+      colorClass = "bg-red-100 text-red-800 border-red-200 group-hover:bg-red-200 group-hover:shadow";
+    } else if (status === 'invoice issued') {
+      colorClass = "bg-blue-100 text-blue-800 border-blue-200 group-hover:bg-blue-200 group-hover:shadow";
+    } else if (status === 'to pay') {
+      colorClass = "bg-gray-100 text-gray-600 border-gray-300 group-hover:bg-gray-200 group-hover:shadow";
+    } else {
+      colorClass = "bg-gray-100 text-gray-800 border-gray-200 group-hover:bg-gray-200 group-hover:shadow";
+    }
+    return (
+      <span className={`${badgeClass} ${colorClass}`} tabIndex={0}>
+        {status === 'invoice issued' ? 'Invoice Issued' : status === 'to pay' ? 'To Pay' : status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unpaid'}
+        <span className="flex flex-col ml-1">
+          <ChevronUp className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mb-1" />
+          <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mt-1" />
+        </span>
+        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-30">Click to edit status</span>
+      </span>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-0 md:p-8">
       {/* Header */}
@@ -149,22 +326,21 @@ export default function FinancialOverview() {
         <h1 className="text-2xl font-bold text-gray-900">Financial Overview</h1>
       </div>
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 px-4 md:px-0">
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
-          <div className="text-sm text-gray-500 mb-1">Total Outstanding</div>
-          <div className="text-2xl font-bold text-red-600">€{totalOutstanding}</div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
-          <div className="text-sm text-gray-500 mb-1">Paid This Month</div>
-          <div className="text-2xl font-bold text-green-600">€{paidThisMonth.length * defaultAmount}</div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
-          <div className="text-sm text-gray-500 mb-1">Unpaid Sessions</div>
-          <div className="text-2xl font-bold text-yellow-600">{unpaidSessions.length}</div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 px-4 md:px-0">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center relative">
           <div className="text-sm text-gray-500 mb-1">This Month's Revenue</div>
-          <div className="text-2xl font-bold text-blue-600">€{revenueThisMonth}</div>
+          <div className="text-2xl font-bold text-blue-600">€{faturacaoMesAtual}</div>
+          <div className="absolute bottom-2 right-4 text-xs text-gray-400">This Year Revenue: €{realizadoAno}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center relative">
+          <div className="text-sm text-gray-500 mb-1">Outstanding Payments</div>
+          <div className="text-2xl font-bold text-red-600">€{pagamentosEmFalta}</div>
+          <div className="absolute bottom-2 right-4 text-xs text-gray-400">Sessions: {countPagamentosEmFalta}</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center relative">
+          <div className="text-sm text-gray-500 mb-1">Unrealized Sessions</div>
+          <div className="text-2xl font-bold text-yellow-600">€{unrealizedProfit}</div>
+          <div className="absolute bottom-2 right-4 text-xs text-gray-400">Sessions: {countUnrealizedProfit}</div>
         </div>
       </div>
       
@@ -267,36 +443,53 @@ export default function FinancialOverview() {
         </div>
       </div>
       
-      {/* All Sessions Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">All Sessions</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+      {/* Unpaid Sessions Table */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-md p-6 mb-8">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">
+          Unpaid Sessions
+        </h2>
+        <div className="overflow-visible">
+          <table className="w-full min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Patient</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Patient</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Date</th>
+                <th className="px-4 py-2 text-right text-sm font-semibold text-gray-600 w-1/4 pr-8">Amount</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4 pl-8">Status</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {sessions.length === 0 ? (
+              {unpaidSessions.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center text-gray-500 py-8">No sessions found</td>
+                  <td colSpan={4} className="text-center text-gray-500 py-8">No unpaid sessions 🎉</td>
                 </tr>
               ) : (
-                sessions.map(session => (
+                unpaidSessions.map(session => (
                   <tr key={session.id}>
-                    <td className="px-4 py-2 whitespace-nowrap">{session.patients?.firstName} {session.patients?.lastName}</td>
-                    <td className="px-4 py-2 whitespace-nowrap">{new Date(session.session_date).toLocaleDateString()}</td>
-                    <td className="px-4 py-2 whitespace-nowrap">€150</td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium 
-                        ${session.payment_status === 'paid' ? 'bg-green-100 text-green-800 border border-green-200' : session.payment_status === 'cancelled' ? 'bg-gray-100 text-gray-800 border border-gray-200' : 'bg-yellow-100 text-yellow-800 border border-yellow-200'}`}
-                      >
-                        {session.payment_status || 'unpaid'}
-                      </span>
+                    <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.patients?.firstName || '—'} {session.patients?.lastName || ''}</td>
+                    <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.session_date ? new Date(session.session_date).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-right font-mono w-1/4 pr-8">{typeof session.session_fee === 'number' ? `€${session.session_fee}` : '—'}</td>
+                    <td className="px-4 py-2 whitespace-nowrap w-1/4 pl-8">
+                      {editingStatusIdUnpaidSessions === session.id ? (
+                        <div className="relative">
+                          <div className="absolute left-0 bottom-full mb-2 w-full bg-white border border-gray-200 rounded shadow-lg z-50">
+                            {statusOptions.map(opt => (
+                              <button
+                                key={opt.value}
+                                className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${session.payment_status === opt.value ? 'font-semibold text-blue-600' : 'text-gray-900'}`}
+                                onClick={async () => {
+                                  await handleStatusChange(session.id, opt.value);
+                                  setEditingStatusIdUnpaidSessions(null);
+                                }}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <span onClick={() => setEditingStatusIdUnpaidSessions(session.id)}>{getStatusBadge(session.payment_status)}</span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -305,64 +498,74 @@ export default function FinancialOverview() {
           </table>
         </div>
       </div>
-      
-      {/* Unpaid Sessions Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Unpaid Sessions</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+      {/* All Sessions Table */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-md p-6 mb-12">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">
+          All Sessions
+        </h2>
+        {/* Filtros de status */}
+        <div className="flex flex-wrap gap-2 mb-6 justify-end">
+          {[
+            { key: 'all', label: 'All Sessions' },
+            { key: 'to pay', label: 'To Pay' },
+            { key: 'paid', label: 'Paid' },
+            { key: 'invoice issued', label: 'Invoice Issued' },
+            { key: 'cancelled', label: 'Cancelled' },
+          ].map(f => (
+            <button
+              key={f.key}
+              onClick={() => setStatusFilter(f.key)}
+              className={`px-3 py-2 text-sm font-medium rounded-lg border transition-colors duration-200
+                ${statusFilter === f.key
+                  ? 'text-blue-600 bg-blue-50 border-blue-200'
+                  : 'text-gray-600 bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <div className="overflow-visible">
+          <table className="w-full min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Patient</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-2"></th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Patient</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Date</th>
+                <th className="px-4 py-2 text-right text-sm font-semibold text-gray-600 w-1/4 pr-8">Amount</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4 pl-8">Status</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {unpaidSessions.length === 0 ? (
+              {(statusFilter === 'all' ? sessions : sessions.filter(s => s.payment_status === statusFilter)).length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center text-gray-500 py-8">No unpaid sessions 🎉</td>
+                  <td colSpan={4} className="text-center text-gray-500 py-8">No sessions found</td>
                 </tr>
               ) : (
-                unpaidSessions.map(session => (
+                (statusFilter === 'all' ? sessions : sessions.filter(s => s.payment_status === statusFilter)).map(session => (
                   <tr key={session.id}>
-                    <td className="px-4 py-2 whitespace-nowrap">{session.patients?.firstName} {session.patients?.lastName}</td>
-                    <td className="px-4 py-2 whitespace-nowrap">{new Date(session.session_date).toLocaleDateString()}</td>
-                    <td className="px-4 py-2 whitespace-nowrap">€150</td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium 
-                        ${session.payment_status === 'paid' ? 'bg-green-100 text-green-800 border border-green-200' : session.payment_status === 'cancelled' ? 'bg-gray-100 text-gray-800 border border-gray-200' : 'bg-yellow-100 text-yellow-800 border border-yellow-200'}`}
-                      >
-                        {session.payment_status || 'unpaid'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      <button
-                        onClick={async () => {
-                          await supabase
-                            .from('sessions')
-                            .update({ payment_status: 'paid', updated_at: new Date().toISOString() })
-                            .eq('id', session.id);
-                          fetchSessions(user.id);
-                        }}
-                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium mr-2"
-                      >
-                        Mark as Paid
-                      </button>
-                      <button
-                        onClick={async () => {
-                          await supabase
-                            .from('sessions')
-                            .update({ payment_status: 'cancelled', updated_at: new Date().toISOString() })
-                            .eq('id', session.id);
-                          fetchSessions(user.id);
-                        }}
-                        className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-xs font-medium"
-                      >
-                        Cancel
-                      </button>
+                    <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.patients?.firstName || '—'} {session.patients?.lastName || ''}</td>
+                    <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.session_date ? new Date(session.session_date).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-right font-mono w-1/4 pr-8">{typeof session.session_fee === 'number' ? `€${session.session_fee}` : '—'}</td>
+                    <td className="px-4 py-2 whitespace-nowrap w-1/4 pl-8">
+                      {editingStatusIdAllSessions === session.id ? (
+                        <div className="relative">
+                          <div className="absolute left-0 bottom-full mb-2 w-full bg-white border border-gray-200 rounded shadow-lg z-50">
+                            {statusOptions.map(opt => (
+                              <button
+                                key={opt.value}
+                                className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${session.payment_status === opt.value ? 'font-semibold text-blue-600' : 'text-gray-900'}`}
+                                onClick={async () => {
+                                  await handleStatusChange(session.id, opt.value);
+                                  setEditingStatusIdAllSessions(null);
+                                }}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <span onClick={() => setEditingStatusIdAllSessions(session.id)}>{getStatusBadge(session.payment_status)}</span>
+                      )}
                     </td>
                   </tr>
                 ))
