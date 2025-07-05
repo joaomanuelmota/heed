@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
+import { formatDate } from '../../lib/dateUtils'
 import { CalendarDays, Euro, Users, Clock, Plus, FileText, ChevronDown, ChevronUp } from "lucide-react"
 import AddPatientSidebar from '../../components/AddPatientSidebar'
 import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
@@ -32,6 +33,7 @@ export default function Dashboard() {
       
       if (user) {
         setUser(user)
+        fetchPatients(user.id)
         fetchSessions(user.id)
       } else {
         router.push('/login')
@@ -41,6 +43,23 @@ export default function Dashboard() {
       router.push('/login')
     }
     setLoading(false)
+  }
+
+  const fetchPatients = async (psychologistId) => {
+    try {
+      const { data: patientsData, error: patientsError } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('psychologist_id', psychologistId)
+        .order('created_at', { ascending: false })
+      if (!patientsError && patientsData) {
+        setPatients(patientsData)
+      } else {
+        setPatients([])
+      }
+    } catch (error) {
+      setPatients([])
+    }
   }
 
   const fetchSessions = async (psychologistId) => {
@@ -161,10 +180,10 @@ export default function Dashboard() {
   const unpaidSessions = sessions.filter(s => !isPaid(s))
 
   const statusOptions = [
-    { value: "paid", label: "Paid" },
-    { value: "to pay", label: "To Pay" },
-    { value: "invoice issued", label: "Invoice Issued" },
-    { value: "cancelled", label: "Cancelled" },
+    { value: "paid", label: "Pago" },
+    { value: "to pay", label: "A Pagar" },
+    { value: "invoice issued", label: "Fatura Emitida" },
+    { value: "cancelled", label: "Cancelado" },
   ]
 
   const handleStatusChange = async (sessionId, newStatus) => {
@@ -195,25 +214,25 @@ export default function Dashboard() {
     }
     return (
       <span className={`${badgeClass} ${colorClass}`} tabIndex={0}>
-        {status === 'invoice issued' ? 'Invoice Issued' : status === 'to pay' ? 'To Pay' : status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unpaid'}
+        {status === 'invoice issued' ? 'Fatura Emitida' : status === 'to pay' ? 'A Pagar' : status === 'paid' ? 'Pago' : status === 'cancelled' ? 'Cancelado' : 'Não Pago'}
         <span className="flex flex-col ml-1">
           <ChevronUp className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mb-1" />
           <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mt-1" />
         </span>
-        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-30">Click to edit status</span>
+        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-30">Clicar para editar estado</span>
       </span>
     )
   }
 
   // Format date
-  const dateString = today.toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+  const dateString = formatDate(today.toISOString(), { weekday: "long", year: "numeric", month: "long", day: "numeric" })
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">A carregar...</p>
         </div>
       </div>
     )
@@ -225,11 +244,11 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 md:gap-0 px-4 md:px-0 pt-6 md:pt-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Dashboard</h1>
-          <div className="text-gray-500 text-sm">Today: {dateString}</div>
+          <div className="text-gray-500 text-sm">Hoje: {dateString}</div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowAddPatient(true)} className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium flex items-center gap-2"><Plus size={18}/> Add Patient</button>
-          <button onClick={() => setShowScheduleSession(true)} className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium flex items-center gap-2"><CalendarDays size={18}/> Schedule Session</button>
+          <button onClick={() => setShowAddPatient(true)} className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium flex items-center gap-2"><Plus size={18}/> Adicionar Paciente</button>
+          <button onClick={() => setShowScheduleSession(true)} className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium flex items-center gap-2"><CalendarDays size={18}/> Agendar Sessão</button>
         </div>
       </div>
 
@@ -253,22 +272,22 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 px-4 md:px-0">
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
           <Users className="w-7 h-7 text-blue-600 mb-2" />
-          <div className="text-sm text-gray-500 mb-1">Total Patients</div>
+          <div className="text-sm text-gray-500 mb-1">Total de Pacientes</div>
           <div className="text-2xl font-bold text-gray-900">{patients.length}</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
           <Clock className="w-7 h-7 text-green-600 mb-2" />
-          <div className="text-sm text-gray-500 mb-1">Sessions Today</div>
+                      <div className="text-sm text-gray-500 mb-1">Sessões Hoje</div>
           <div className="text-2xl font-bold text-gray-900">{getSessionsToday()}</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
           <CalendarDays className="w-7 h-7 text-yellow-600 mb-2" />
-          <div className="text-sm text-gray-500 mb-1">Upcoming Sessions</div>
+          <div className="text-sm text-gray-500 mb-1">Próximas Sessões</div>
           <div className="text-2xl font-bold text-gray-900">{getUpcomingSessions()}</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
           <Euro className="w-7 h-7 text-blue-700 mb-2" />
-          <div className="text-sm text-gray-500 mb-1">This Month Revenue</div>
+          <div className="text-sm text-gray-500 mb-1">Receita do Mês</div>
           <div className="text-2xl font-bold text-gray-900">€{getOutstandingRevenue().toFixed(2)}</div>
         </div>
       </div>
@@ -278,7 +297,7 @@ export default function Dashboard() {
         {/* Today's Schedule */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Schedule</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Agenda de Hoje</h2>
             {getTodaysSessions().length > 0 ? (
               <div className="space-y-3">
                 {getTodaysSessions().map((session) => (
@@ -304,35 +323,35 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <div className="text-gray-500 text-sm">No sessions scheduled for today.</div>
+              <div className="text-gray-500 text-sm">Nenhuma sessão agendada para hoje.</div>
             )}
           </div>
 
           {/* Outstanding Payments */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-md p-6 mb-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
-              Unpaid Sessions
+              Sessões Não Pagas
             </h2>
             <div className="overflow-visible">
               <table className="w-full min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Patient</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Date</th>
-                    <th className="px-4 py-2 text-right text-sm font-semibold text-gray-600 w-1/4 pr-8">Amount</th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Paciente</th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Data</th>
+                    <th className="px-4 py-2 text-right text-sm font-semibold text-gray-600 w-1/4 pr-8">Valor</th>
                     <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4 pl-8">Status</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {unpaidSessions.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center text-gray-500 py-8">No unpaid sessions 🎉</td>
+                      <td colSpan={4} className="text-center text-gray-500 py-8">Nenhuma sessão não paga 🎉</td>
                     </tr>
                   ) : (
                     unpaidSessions.map(session => (
                       <tr key={session.id}>
                         <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.patients?.firstName || '—'} {session.patients?.lastName || ''}</td>
-                        <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.session_date ? new Date(session.session_date).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}</td>
+                        <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.session_date ? formatDate(session.session_date) : '—'}</td>
                         <td className="px-4 py-2 whitespace-nowrap text-right font-mono w-1/4 pr-8">{typeof session.session_fee === 'number' ? `€${session.session_fee}` : '—'}</td>
                         <td className="px-4 py-2 whitespace-nowrap w-1/4 pl-8">
                           {editingStatusIdUnpaidSessions === session.id ? (
@@ -369,28 +388,28 @@ export default function Dashboard() {
         <div className="flex flex-col gap-8">
           {/* Financial Overview */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Financial Overview</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Visão Geral Financeira</h2>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">This Month:</span>
+                <span className="text-sm text-gray-600">Este Mês:</span>
                 <span className="text-sm font-medium">€0.00</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">This Year:</span>
+                <span className="text-sm text-gray-600">Este Ano:</span>
                 <span className="text-sm font-medium">€0.00</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Outstanding:</span>
+                <span className="text-sm text-gray-600">Pendente:</span>
                 <span className="text-sm font-medium text-red-600">€{getOutstandingRevenue().toFixed(2)}</span>
               </div>
             </div>
           </div>
           {/* Patient Insights */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Patient Insights</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Insights dos Pacientes</h2>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">New This Month:</span>
+                <span className="text-sm text-gray-600">Novos Este Mês:</span>
                 <span className="text-sm font-medium">{patients.filter(p => {
                   const created = new Date(p.created_at)
                   const now = new Date()
@@ -398,7 +417,7 @@ export default function Dashboard() {
                 }).length}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Active Patients:</span>
+                <span className="text-sm text-gray-600">Pacientes Ativos:</span>
                 <span className="text-sm font-medium">{patients.length}</span>
               </div>
             </div>

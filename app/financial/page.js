@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "next/navigation";
+import { formatDate, formatDateMonthYear } from "../../lib/dateUtils";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChevronDown, ChevronUp } from "lucide-react";
 
@@ -141,18 +142,18 @@ export default function FinancialOverview() {
 
   // Generate month and year options
   const months = [
-    { value: 0, label: 'January' },
-    { value: 1, label: 'February' },
-    { value: 2, label: 'March' },
-    { value: 3, label: 'April' },
-    { value: 4, label: 'May' },
-    { value: 5, label: 'June' },
-    { value: 6, label: 'July' },
-    { value: 7, label: 'August' },
-    { value: 8, label: 'September' },
-    { value: 9, label: 'October' },
-    { value: 10, label: 'November' },
-    { value: 11, label: 'December' }
+    { value: 0, label: 'Janeiro' },
+    { value: 1, label: 'Fevereiro' },
+    { value: 2, label: 'Março' },
+    { value: 3, label: 'Abril' },
+    { value: 4, label: 'Maio' },
+    { value: 5, label: 'Junho' },
+    { value: 6, label: 'Julho' },
+    { value: 7, label: 'Agosto' },
+    { value: 8, label: 'Setembro' },
+    { value: 9, label: 'Outubro' },
+    { value: 10, label: 'Novembro' },
+    { value: 11, label: 'Dezembro' }
   ];
 
   const years = [2023, 2024, 2025];
@@ -210,7 +211,7 @@ export default function FinancialOverview() {
       }).reduce((sum, s) => sum + (s.session_fee || 0), 0);
       
       months.push({
-        month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        month: formatDateMonthYear(date.toISOString()),
         revenue: monthRevenue
       });
     }
@@ -275,10 +276,10 @@ export default function FinancialOverview() {
 
   // Adicionar função handleStatusChange
   const statusOptions = [
-    { value: "paid", label: "Paid" },
-    { value: "to pay", label: "To Pay" },
-    { value: "invoice issued", label: "Invoice Issued" },
-    { value: "cancelled", label: "Cancelled" },
+    { value: "paid", label: "Pago" },
+    { value: "to pay", label: "A Pagar" },
+    { value: "invoice issued", label: "Fatura Emitida" },
+    { value: "cancelled", label: "Cancelado" },
   ];
 
   const handleStatusChange = async (sessionId, newStatus) => {
@@ -309,12 +310,12 @@ export default function FinancialOverview() {
     }
     return (
       <span className={`${badgeClass} ${colorClass}`} tabIndex={0}>
-        {status === 'invoice issued' ? 'Invoice Issued' : status === 'to pay' ? 'To Pay' : status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unpaid'}
+        {status === 'invoice issued' ? 'Fatura Emitida' : status === 'to pay' ? 'A Pagar' : status === 'paid' ? 'Pago' : status === 'cancelled' ? 'Cancelado' : 'Não Pago'}
         <span className="flex flex-col ml-1">
           <ChevronUp className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mb-1" />
           <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mt-1" />
         </span>
-        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-30">Click to edit status</span>
+        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-30">Clique para editar o estado</span>
       </span>
     );
   }
@@ -323,24 +324,24 @@ export default function FinancialOverview() {
     <div className="min-h-screen bg-gray-50 p-0 md:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 md:gap-0 px-4 md:px-0 pt-6 md:pt-0">
-        <h1 className="text-2xl font-bold text-gray-900">Financial Overview</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Resumo Financeiro</h1>
       </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 px-4 md:px-0">
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center relative">
-          <div className="text-sm text-gray-500 mb-1">This Month's Revenue</div>
+          <div className="text-sm text-gray-500 mb-1">Receita deste Mês</div>
           <div className="text-2xl font-bold text-blue-600">€{faturacaoMesAtual}</div>
-          <div className="absolute bottom-2 right-4 text-xs text-gray-400">This Year Revenue: €{realizadoAno}</div>
+          <div className="absolute bottom-2 right-4 text-xs text-gray-400">Receita deste Ano: €{realizadoAno}</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center relative">
-          <div className="text-sm text-gray-500 mb-1">Outstanding Payments</div>
+          <div className="text-sm text-gray-500 mb-1">Pagamentos em Falta</div>
           <div className="text-2xl font-bold text-red-600">€{pagamentosEmFalta}</div>
-          <div className="absolute bottom-2 right-4 text-xs text-gray-400">Sessions: {countPagamentosEmFalta}</div>
+          <div className="absolute bottom-2 right-4 text-xs text-gray-400">Sessões: {countPagamentosEmFalta}</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center relative">
-          <div className="text-sm text-gray-500 mb-1">Unrealized Sessions</div>
+          <div className="text-sm text-gray-500 mb-1">Sessões Futuras Não Pagas</div>
           <div className="text-2xl font-bold text-yellow-600">€{unrealizedProfit}</div>
-          <div className="absolute bottom-2 right-4 text-xs text-gray-400">Sessions: {countUnrealizedProfit}</div>
+          <div className="absolute bottom-2 right-4 text-xs text-gray-400">Sessões: {countUnrealizedProfit}</div>
         </div>
       </div>
       
@@ -349,7 +350,7 @@ export default function FinancialOverview() {
       {/* Monthly Revenue Chart */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-6">
-          Revenue Trends - Starting from {months.find(m => m.value === selectedMonth)?.label} {selectedYear}
+          Evolução da Receita - Desde {months.find(m => m.value === selectedMonth)?.label} {selectedYear}
         </h2>
         
         {/* Time Controls */}
@@ -365,7 +366,7 @@ export default function FinancialOverview() {
               }}
               className="px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
             >
-              Current Month
+              Mês Atual
             </button>
             <button
               onClick={() => {
@@ -377,7 +378,7 @@ export default function FinancialOverview() {
               }}
               className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              Last Month
+              Mês Anterior
             </button>
             <button
               onClick={() => {
@@ -387,7 +388,7 @@ export default function FinancialOverview() {
               }}
               className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              This Year
+              Este Ano
             </button>
             <button
               onClick={() => {
@@ -397,7 +398,7 @@ export default function FinancialOverview() {
               }}
               className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              Last Year
+              Ano Anterior
             </button>
           </div>
         </div>
@@ -427,7 +428,7 @@ export default function FinancialOverview() {
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}
-                formatter={(value) => [`€${value}`, 'Revenue']}
+                formatter={(value) => [`€${value}`, 'Receita']}
                 labelStyle={{ color: '#374151', fontWeight: '600' }}
               />
               <Line 
@@ -446,28 +447,28 @@ export default function FinancialOverview() {
       {/* Unpaid Sessions Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-md p-6 mb-8">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
-          Unpaid Sessions
+          Sessões Não Pagas
         </h2>
         <div className="overflow-visible">
           <table className="w-full min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Patient</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Date</th>
-                <th className="px-4 py-2 text-right text-sm font-semibold text-gray-600 w-1/4 pr-8">Amount</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4 pl-8">Status</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Paciente</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Data</th>
+                <th className="px-4 py-2 text-right text-sm font-semibold text-gray-600 w-1/4 pr-8">Valor</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4 pl-8">Estado</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {unpaidSessions.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center text-gray-500 py-8">No unpaid sessions 🎉</td>
+                  <td colSpan={4} className="text-center text-gray-500 py-8">Nenhuma sessão não paga 🎉</td>
                 </tr>
               ) : (
                 unpaidSessions.map(session => (
                   <tr key={session.id}>
                     <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.patients?.firstName || '—'} {session.patients?.lastName || ''}</td>
-                    <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.session_date ? new Date(session.session_date).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}</td>
+                    <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.session_date ? formatDate(session.session_date) : '—'}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-right font-mono w-1/4 pr-8">{typeof session.session_fee === 'number' ? `€${session.session_fee}` : '—'}</td>
                     <td className="px-4 py-2 whitespace-nowrap w-1/4 pl-8">
                       {editingStatusIdUnpaidSessions === session.id ? (
@@ -501,16 +502,16 @@ export default function FinancialOverview() {
       {/* All Sessions Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-md p-6 mb-12">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
-          All Sessions
+          Todas as Sessões
         </h2>
         {/* Filtros de status */}
         <div className="flex flex-wrap gap-2 mb-6 justify-end">
           {[
-            { key: 'all', label: 'All Sessions' },
-            { key: 'to pay', label: 'To Pay' },
-            { key: 'paid', label: 'Paid' },
-            { key: 'invoice issued', label: 'Invoice Issued' },
-            { key: 'cancelled', label: 'Cancelled' },
+            { key: 'all', label: 'Todas as Sessões' },
+            { key: 'to pay', label: 'A Pagar' },
+            { key: 'paid', label: 'Pago' },
+            { key: 'invoice issued', label: 'Fatura Emitida' },
+            { key: 'cancelled', label: 'Cancelado' },
           ].map(f => (
             <button
               key={f.key}
@@ -528,22 +529,22 @@ export default function FinancialOverview() {
           <table className="w-full min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Patient</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Date</th>
-                <th className="px-4 py-2 text-right text-sm font-semibold text-gray-600 w-1/4 pr-8">Amount</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4 pl-8">Status</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Paciente</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Data</th>
+                <th className="px-4 py-2 text-right text-sm font-semibold text-gray-600 w-1/4 pr-8">Valor</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4 pl-8">Estado</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {(statusFilter === 'all' ? sessions : sessions.filter(s => s.payment_status === statusFilter)).length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center text-gray-500 py-8">No sessions found</td>
+                  <td colSpan={4} className="text-center text-gray-500 py-8">Nenhuma sessão encontrada</td>
                 </tr>
               ) : (
                 (statusFilter === 'all' ? sessions : sessions.filter(s => s.payment_status === statusFilter)).map(session => (
                   <tr key={session.id}>
                     <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.patients?.firstName || '—'} {session.patients?.lastName || ''}</td>
-                    <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.session_date ? new Date(session.session_date).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}</td>
+                    <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.session_date ? formatDate(session.session_date) : '—'}</td>
                     <td className="px-4 py-2 whitespace-nowrap text-right font-mono w-1/4 pr-8">{typeof session.session_fee === 'number' ? `€${session.session_fee}` : '—'}</td>
                     <td className="px-4 py-2 whitespace-nowrap w-1/4 pl-8">
                       {editingStatusIdAllSessions === session.id ? (

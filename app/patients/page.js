@@ -84,26 +84,26 @@ export default function Patients() {
   }
 
   const formatSpecialty = (specialty) => {
-    if (!specialty) return 'Not specified'
+    if (!specialty) return 'Não especificado'
     
     const specialtyMap = {
-      'clinical': 'Clinical Psychology',
-      'counseling': 'Counseling Psychology',
-      'cognitive': 'Cognitive Psychology',
-      'behavioral': 'Behavioral Psychology',
-      'developmental': 'Developmental Psychology',
-      'forensic': 'Forensic Psychology',
-      'health': 'Health Psychology',
-      'neuropsychology': 'Neuropsychology',
-      'school': 'School Psychology',
-      'social': 'Social Psychology',
-      'sport': 'Sport Psychology',
-      'trauma': 'Trauma Psychology',
-      'addiction': 'Addiction Psychology',
-      'family': 'Family Therapy',
-      'couples': 'Couples Therapy',
-      'group': 'Group Therapy',
-      'other': 'Other'
+      'clinical': 'Psicologia Clínica',
+      'counseling': 'Psicologia de Aconselhamento',
+      'cognitive': 'Psicologia Cognitiva',
+      'behavioral': 'Psicologia Comportamental',
+      'developmental': 'Psicologia do Desenvolvimento',
+      'forensic': 'Psicologia Forense',
+      'health': 'Psicologia da Saúde',
+      'neuropsychology': 'Neuropsicologia',
+      'school': 'Psicologia Escolar',
+      'social': 'Psicologia Social',
+      'sport': 'Psicologia do Desporto',
+      'trauma': 'Psicologia do Trauma',
+      'addiction': 'Psicologia das Adições',
+      'family': 'Terapia Familiar',
+      'couples': 'Terapia de Casal',
+      'group': 'Terapia de Grupo',
+      'other': 'Outro'
     }
     
     return specialtyMap[specialty] || specialty
@@ -173,11 +173,11 @@ export default function Patients() {
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="mb-4 sm:mb-0">
-            <h1 className="text-2xl font-bold text-gray-900">Patients</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Pacientes</h1>
             <div className="flex items-center mt-2">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                 <UserCheck className="w-4 h-4 mr-1" />
-                {patients.filter(p => p.status === 'active').length} Active Patients
+                {patients.filter(p => p.status === 'active').length} Pacientes Ativos
               </span>
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function Patients() {
             className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Add New Patient
+            Adicionar Novo Paciente
           </button>
         </div>
       </div>
@@ -209,7 +209,7 @@ export default function Patients() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-gray-900"
-                placeholder="Search patients by name, email, or specialty..."
+                placeholder="Pesquisar pacientes por nome, email ou especialidade..."
               />
             </div>
           </div>
@@ -227,9 +227,9 @@ export default function Patients() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="block w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none bg-white text-gray-900"
               >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="all">Todos os Estados</option>
+                <option value="active">Ativo</option>
+                <option value="inactive">Inativo</option>
               </select>
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -252,10 +252,10 @@ export default function Patients() {
                 onChange={(e) => setSessionTypeFilter(e.target.value)}
                 className="block w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none bg-white text-gray-900"
               >
-                <option value="all">All Session Types</option>
-                <option value="on-site">On-Site</option>
-                <option value="remote">Remote</option>
-                <option value="hybrid">Hybrid</option>
+                <option value="all">Todos os Tipos de Sessão</option>
+                <option value="on-site">Presencial</option>
+                <option value="remote">Remoto</option>
+                <option value="hybrid">Híbrido</option>
               </select>
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -278,25 +278,25 @@ export default function Patients() {
                 onChange={(e) => setSpecialtyFilter(e.target.value)}
                 className="block w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none bg-white text-gray-900"
               >
-                <option value="all">All Specialties</option>
-                <option value="">Not Specified</option>
-                <option value="clinical">Clinical Psychology</option>
-                <option value="counseling">Counseling Psychology</option>
-                <option value="cognitive">Cognitive Psychology</option>
-                <option value="behavioral">Behavioral Psychology</option>
-                <option value="developmental">Developmental Psychology</option>
-                <option value="forensic">Forensic Psychology</option>
-                <option value="health">Health Psychology</option>
-                <option value="neuropsychology">Neuropsychology</option>
-                <option value="school">School Psychology</option>
-                <option value="social">Social Psychology</option>
-                <option value="sport">Sport Psychology</option>
-                <option value="trauma">Trauma Psychology</option>
-                <option value="addiction">Addiction Psychology</option>
-                <option value="family">Family Therapy</option>
-                <option value="couples">Couples Therapy</option>
-                <option value="group">Group Therapy</option>
-                <option value="other">Other</option>
+                <option value="all">Todas as Especialidades</option>
+                <option value="">Não Especificado</option>
+                <option value="clinical">Psicologia Clínica</option>
+                <option value="counseling">Psicologia de Aconselhamento</option>
+                <option value="cognitive">Psicologia Cognitiva</option>
+                <option value="behavioral">Psicologia Comportamental</option>
+                <option value="developmental">Psicologia do Desenvolvimento</option>
+                <option value="forensic">Psicologia Forense</option>
+                <option value="health">Psicologia da Saúde</option>
+                <option value="neuropsychology">Neuropsicologia</option>
+                <option value="school">Psicologia Escolar</option>
+                <option value="social">Psicologia Social</option>
+                <option value="sport">Psicologia do Desporto</option>
+                <option value="trauma">Psicologia do Trauma</option>
+                <option value="addiction">Psicologia das Adições</option>
+                <option value="family">Terapia Familiar</option>
+                <option value="couples">Terapia de Casal</option>
+                <option value="group">Terapia de Grupo</option>
+                <option value="other">Outro</option>
               </select>
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -319,7 +319,7 @@ export default function Patients() {
               }}
               className="text-sm text-gray-600 hover:text-gray-800 underline"
             >
-              Clear all filters
+              Limpar todos os filtros
             </button>
           </div>
         )}
@@ -334,13 +334,13 @@ export default function Patients() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM9 9a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No patients yet</h3>
-            <p className="text-gray-600 mb-6">Get started by adding your first patient</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ainda não há pacientes</h3>
+            <p className="text-gray-600 mb-6">Comece por adicionar o seu primeiro paciente</p>
             <Link 
               href="/patients/add"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-block"
             >
-              Add Your First Patient
+              Adicionar o Primeiro Paciente
             </Link>
           </div>
         ) : (
@@ -350,13 +350,13 @@ export default function Patients() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No patients found</h3>
-            <p className="text-gray-600 mb-6">No patients match your search for "{searchTerm}"</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum paciente encontrado</h3>
+            <p className="text-gray-600 mb-6">Nenhum paciente corresponde à sua pesquisa por "{searchTerm}"</p>
             <button 
               onClick={() => setSearchTerm('')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
             >
-              Clear Search
+              Limpar Pesquisa
             </button>
           </div>
         )
@@ -367,19 +367,16 @@ export default function Patients() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
+                    Nome
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    Estado
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Session Type
+                    Tipo de Sessão
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Specialty
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    Ações
                   </th>
                 </tr>
               </thead>
@@ -409,24 +406,13 @@ export default function Patients() {
                          patient.session_type || 'Not set'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {formatSpecialty(patient.specialty)}
-                      </div>
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <Link 
                         href={`/patients/${patient.id}`}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
+                        className="text-blue-600 hover:text-blue-900"
                       >
-                        View
+                        Ver
                       </Link>
-                      <button
-                        onClick={() => setEditingPatient(patient)}
-                        className="text-blue-600 hover:text-blue-800 bg-transparent border-none cursor-pointer font-medium"
-                      >
-                        Edit
-                      </button>
                     </td>
                   </tr>
                 ))}

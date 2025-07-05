@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
+import { formatTime12Hour, getWeekdayShort, getMonthLong, isToday, isCurrentMonth } from '../../lib/dateUtils'
 import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
 import SessionDetailsSidebar from '../../components/SessionDetailsSidebar'
 
@@ -121,14 +122,7 @@ export default function Calendar() {
 
   const formatTime = (timeString) => {
     if (!timeString) return ''
-    const [hours, minutes] = timeString.split(':')
-    const date = new Date()
-    date.setHours(hours, minutes)
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    })
+    return formatTime12Hour(timeString)
   }
 
   const getStatusColor = (status) => {
@@ -144,13 +138,8 @@ export default function Calendar() {
     }
   }
 
-  const isToday = (date) => {
-    const today = new Date()
-    return date.toDateString() === today.toDateString()
-  }
-
-  const isCurrentMonth = (date) => {
-    return date.getMonth() === currentDate.getMonth() && date.getFullYear() === currentDate.getFullYear()
+  const isCurrentMonthLocal = (date) => {
+    return isCurrentMonth(date, currentDate)
   }
 
   const navigateMonth = (direction) => {
@@ -205,7 +194,7 @@ export default function Calendar() {
           }`}>
             {day}
             {isCurrentDay && (
-              <span className="ml-1 px-1 py-0.5 text-xs bg-blue-600 text-white rounded">Today</span>
+              <span className="ml-1 px-1 py-0.5 text-xs bg-blue-600 text-white rounded">Hoje</span>
             )}
           </div>
           
@@ -265,7 +254,7 @@ export default function Calendar() {
               <div className={`text-sm font-medium mb-2 text-center ${
                 isCurrentDay ? 'text-blue-600' : 'text-gray-900'
               }`}>
-                {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                {getWeekdayShort(date)}
                 <br />
                 <span className={`text-lg ${isCurrentDay ? 'font-bold' : ''}`}>
                   {date.getDate()}
@@ -299,10 +288,7 @@ export default function Calendar() {
     // Generate hourly time slots from 8 AM to 8 PM
     for (let hour = 8; hour < 20; hour++) {
       const timeString = `${hour.toString().padStart(2, '0')}:00`
-      const displayTime = new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        hour12: true
-      })
+      const displayTime = formatTime12Hour(timeString)
 
       const slotSessions = daySessions.filter(session => {
         const sessionHour = parseInt(session.session_time?.split(':')[0] || '0')
@@ -352,13 +338,13 @@ export default function Calendar() {
     <div className="min-h-screen bg-gray-50 p-0 md:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 md:gap-0 px-4 md:px-0 pt-6 md:pt-0">
-        <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Calendário</h1>
         <div className="flex gap-2">
           <button
             onClick={() => setShowScheduleSidebar(true)}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm"
           >
-            Schedule Session
+            Agendar Sessão
           </button>
         </div>
       </div>
@@ -367,14 +353,14 @@ export default function Calendar() {
         <div className="flex gap-2">
           <button onClick={() => navigateMonth(-1)} className="px-3 py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-100">&lt;</button>
           <span className="text-lg font-semibold text-gray-900 mx-2">
-            {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+            {getMonthLong(currentDate)}
           </span>
           <button onClick={() => navigateMonth(1)} className="px-3 py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-100">&gt;</button>
         </div>
         <div className="flex gap-2">
-          <button onClick={goToToday} className={`px-3 py-1 rounded-lg font-medium ${view === 'today' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}>Today</button>
-          <button onClick={() => setView('week')} className={`px-3 py-1 rounded-lg font-medium ${view === 'week' ? 'bg-blue-600 text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Week</button>
-          <button onClick={() => setView('month')} className={`px-3 py-1 rounded-lg font-medium ${view === 'month' ? 'bg-blue-600 text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Month</button>
+          <button onClick={goToToday} className={`px-3 py-1 rounded-lg font-medium ${view === 'today' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}>Hoje</button>
+          <button onClick={() => setView('week')} className={`px-3 py-1 rounded-lg font-medium ${view === 'week' ? 'bg-blue-600 text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Semana</button>
+          <button onClick={() => setView('month')} className={`px-3 py-1 rounded-lg font-medium ${view === 'month' ? 'bg-blue-600 text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Mês</button>
         </div>
       </div>
       {/* Calendário */}
@@ -382,14 +368,14 @@ export default function Calendar() {
         {loading ? (
           <div className="flex justify-center items-center py-16">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-4 text-gray-500">Loading calendar...</span>
+            <span className="ml-4 text-gray-500">Carregando calendário...</span>
           </div>
         ) : (
           <>
             {view === 'month' && (
               <div className="grid grid-cols-7 gap-2">
                 {/* Dias da semana */}
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
                   <div key={d} className="text-xs font-semibold text-gray-500 text-center pb-2">{d}</div>
                 ))}
                 {renderMonthView()}

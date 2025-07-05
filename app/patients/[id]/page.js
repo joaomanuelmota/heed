@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
+import { formatDateLong, formatDateMonthShort } from '../../../lib/dateUtils'
 import { 
   User, Mail, Phone, FileText, CreditCard, 
   MapPin, Calendar, Clock, Edit, ChevronRight, ChevronDown, ChevronUp,
@@ -73,10 +74,10 @@ export default function PatientProfile() {
   // Adicionar estados para edição do status
   const [editingStatusId, setEditingStatusId] = useState(null);
   const statusOptions = [
-    { value: 'to pay', label: 'To Pay' },
-    { value: 'paid', label: 'Paid' },
-    { value: 'invoice issued', label: 'Invoice Issued' },
-    { value: 'cancelled', label: 'Cancelled' },
+    { value: 'to pay', label: 'A Pagar' },
+    { value: 'paid', label: 'Pago' },
+    { value: 'invoice issued', label: 'Fatura Emitida' },
+    { value: 'cancelled', label: 'Cancelado' },
   ];
 
   // Novo estado para coordenadas do dropdown
@@ -153,12 +154,7 @@ export default function PatientProfile() {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Not provided'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+    return formatDateLong(dateString)
   }
 
   const fetchNotes = async (patientId) => {
@@ -266,12 +262,12 @@ export default function PatientProfile() {
     }
     return (
       <span className={`${badgeClass} ${colorClass}`} tabIndex={0}>
-        {status === 'invoice issued' ? 'Invoice Issued' : status === 'to pay' ? 'To Pay' : status === 'cancelled' ? 'Cancelled' : status.charAt(0).toUpperCase() + status.slice(1)}
+        {status === 'invoice issued' ? 'Fatura Emitida' : status === 'to pay' ? 'A Pagar' : status === 'paid' ? 'Pago' : status === 'cancelled' ? 'Cancelado' : 'Não Pago'}
         <span className="flex flex-col ml-1">
           <ChevronUp className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mb-1" />
           <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mt-1" />
         </span>
-        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-30">Click to edit status</span>
+        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-30">Clique para editar o estado</span>
       </span>
     );
   }
@@ -558,9 +554,9 @@ export default function PatientProfile() {
 
   const getStatusDisplay = (status) => {
     const statusConfig = {
-      active: { label: 'Active', color: 'bg-green-100 text-green-700', dot: 'bg-green-400' },
-      inactive: { label: 'Inactive', color: 'bg-gray-100 text-gray-700', dot: 'bg-gray-400' },
-      'on-hold': { label: 'On Hold', color: 'bg-yellow-100 text-yellow-700', dot: 'bg-yellow-400' }
+      active: { label: 'Ativo', color: 'bg-green-100 text-green-700', dot: 'bg-green-400' },
+      inactive: { label: 'Inativo', color: 'bg-gray-100 text-gray-700', dot: 'bg-gray-400' },
+      'on-hold': { label: 'Em Espera', color: 'bg-yellow-100 text-yellow-700', dot: 'bg-yellow-400' }
     }
     return statusConfig[status] || statusConfig.active
   }
@@ -575,10 +571,10 @@ export default function PatientProfile() {
   }
 
   const tabs = [
-    { id: 'notes', label: 'Note Taking', icon: FileText },
-    { id: 'treatment', label: 'Treatment Plan', icon: Stethoscope },
-    { id: 'payments', label: 'Payments', icon: CreditCard },
-    { id: 'info', label: 'Info', icon: User }
+    { id: 'notes', label: 'Notas Clínicas', icon: FileText },
+    { id: 'treatment', label: 'Plano Terapêutico', icon: Brain },
+    { id: 'payments', label: 'Pagamentos', icon: CreditCard },
+    { id: 'info', label: 'Informação', icon: User }
   ]
 
   const renderTabContent = () => {
@@ -588,13 +584,13 @@ export default function PatientProfile() {
           <div className="space-y-6">
             {/* Add Note Button */}
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">Clinical Notes</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Notas Clínicas</h3>
               <button 
                 onClick={() => setShowAddNote(!showAddNote)}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                <span>{showAddNote ? 'Cancel' : 'Add New Note'}</span>
+                <span>{showAddNote ? 'Cancelar' : 'Nova Nota'}</span>
               </button>
             </div>
 
@@ -606,14 +602,14 @@ export default function PatientProfile() {
                     type="text"
                     value={noteData.title}
                     onChange={(e) => setNoteData({...noteData, title: e.target.value})}
-                    placeholder="Note Title *"
+                    placeholder="Título da Nota *"
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                   />
                   <input
                     type="date"
                     value={noteData.note_date}
                     onChange={(e) => setNoteData({...noteData, note_date: e.target.value})}
-                    placeholder="Note Date *"
+                    placeholder="Data da Nota *"
                     className="w-40 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -621,7 +617,7 @@ export default function PatientProfile() {
                   <RichTextEditor
                     value={noteData.content}
                     onChange={(content) => setNoteData({...noteData, content})}
-                    placeholder="Write your clinical notes here..."
+                    placeholder="Escreva aqui as suas notas clínicas..."
                   />
                 </div>
                 <div className="flex justify-end gap-2">
@@ -629,13 +625,13 @@ export default function PatientProfile() {
                     onClick={() => setShowAddNote(false)}
                     className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm font-medium"
                   >
-                    Cancel
+                    Cancelar
                   </button>
                   <button
                     onClick={saveNote}
                     className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
                   >
-                    Save Note
+                    Guardar Nota
                   </button>
                 </div>
               </div>
@@ -644,7 +640,7 @@ export default function PatientProfile() {
             {/* Lista de notas redesenhada */}
             <div className="space-y-10">
               {notes.length === 0 && (
-                <div className="text-gray-500 text-center py-12">No notes found.</div>
+                <div className="text-gray-500 text-center py-12">Nenhuma nota encontrada.</div>
               )}
               {notes.map((note, index) => {
                 const noteDate = new Date(note.note_date)
@@ -662,7 +658,7 @@ export default function PatientProfile() {
                       <div className="flex items-center mb-4 mt-6 first:mt-0">
                         <div className="flex-shrink-0 w-24 text-right pr-4">
                           <div className="text-sm font-semibold text-blue-600">
-                            {noteDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            {formatDateMonthShort(noteDate.toISOString())}
                           </div>
                           <div className="text-xs text-gray-500">
                             {noteDate.getFullYear()}
@@ -839,7 +835,7 @@ export default function PatientProfile() {
                         <div className="flex items-center mb-4 mt-6 first:mt-0">
                           <div className="flex-shrink-0 w-24 text-right pr-4">
                             <div className="text-sm font-semibold text-blue-600">
-                              {planDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              {formatDateMonthShort(planDate.toISOString())}
                             </div>
                             <div className="text-xs text-gray-500">
                               {planDate.getFullYear()}
@@ -905,9 +901,9 @@ export default function PatientProfile() {
                                 <h4 className="text-lg font-medium text-gray-900 mb-2">{plan.title}</h4>
                                 <div className="flex items-center text-sm text-gray-500 mb-3">
                                   <Calendar className="w-4 h-4 mr-1" />
-                                  <span>{new Date(plan.plan_date).toLocaleDateString()}</span>
+                                  <span>{formatDate(plan.plan_date)}</span>
                                   <span className="mx-2">•</span>
-                                  <span>Created {new Date(plan.created_at).toLocaleDateString()}</span>
+                                  <span>Created {formatDate(plan.created_at)}</span>
                                 </div>
                               </div>
                               <div className="flex items-center space-x-2">
@@ -1019,11 +1015,7 @@ export default function PatientProfile() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {new Date(session.session_date).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
+                              {formatDate(session.session_date)}
                             </div>
                             {session.session_time && (
                               <div className="text-sm text-gray-500">
@@ -1177,7 +1169,7 @@ export default function PatientProfile() {
               <span className={`inline-flex items-center px-3 py-1 ml-2 rounded-full text-sm font-medium ${statusConfig.color}`}>{statusConfig.label}</span>
             </div>
             <div className="text-gray-600 mt-1 text-sm">
-              <span className="font-medium">Next Session:</span> {nextSession ? `${formatDate(nextSession.session_date)} at ${nextSession.session_time}` : 'No upcoming session'}
+              <span className="font-medium">Próxima Sessão:</span> {nextSession ? `${formatDate(nextSession.session_date)} às ${nextSession.session_time}` : 'Nenhuma sessão agendada'}
             </div>
           </div>
           <div className="flex gap-2 mt-4 sm:mt-0">
@@ -1185,13 +1177,13 @@ export default function PatientProfile() {
               onClick={() => setEditingPatient(patient)}
               className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium"
             >
-              Edit
+              Editar
             </button>
             <button
               onClick={() => setShowScheduleSidebar(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
             >
-              Schedule Session
+              Agendar Sessão
             </button>
           </div>
         </div>

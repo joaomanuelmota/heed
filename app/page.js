@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
@@ -9,7 +9,18 @@ export default function HomePage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [userName, setUserName] = useState('')
   const router = useRouter()
+
+  useEffect(() => {
+    async function fetchUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserName(user.user_metadata?.full_name || user.email || 'User')
+      }
+    }
+    fetchUser()
+  }, [])
 
   const handleLogin = async () => {
     console.log('Login button clicked!') // Debug
@@ -75,7 +86,7 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                 </svg>
               </div>
-              <span className="text-2xl font-bold text-gray-900">heed</span>
+              <span className="text-2xl font-bold text-gray-900">{userName || 'heed'}</span>
             </div>
           </div>
         </div>

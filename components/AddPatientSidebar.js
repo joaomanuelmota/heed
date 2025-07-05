@@ -152,7 +152,7 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
       if (result.error) {
         setMessage(`Error: ${result.error.message}`)
       } else {
-        setMessage(mode === 'edit' ? 'Patient updated successfully!' : 'Patient added successfully!')
+        setMessage(mode === 'edit' ? 'Paciente atualizado com sucesso!' : 'Paciente adicionado com sucesso!')
         setTimeout(() => {
           onSuccess()
         }, 1000)
@@ -193,7 +193,7 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              {mode === 'edit' ? 'Edit Patient' : 'Add New Patient'}
+              {mode === 'edit' ? 'Editar Paciente' : 'Adicionar Novo Paciente'}
             </h2>
           </div>
           <button
@@ -224,18 +224,18 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <User className="w-5 h-5 mr-2 text-blue-600" />
-              Basic Information
+              Informação Básica
             </h3>
             
             <div className="space-y-4">
               <div>
-                <input type="text" name="firstName" value={patientData.firstName} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" required disabled={loading} placeholder="First Name *" />
+                <input type="text" name="firstName" value={patientData.firstName} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" required disabled={loading} placeholder="Nome *" />
               </div>
               <div>
-                <input type="text" name="lastName" value={patientData.lastName} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" required disabled={loading} placeholder="Last Name *" />
+                <input type="text" name="lastName" value={patientData.lastName} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" required disabled={loading} placeholder="Apelido *" />
               </div>
               <div>
-                <input type="date" name="dateOfBirth" value={patientData.dateOfBirth} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Date of Birth" />
+                <input type="date" name="dateOfBirth" value={patientData.dateOfBirth} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Data de Nascimento" />
               </div>
               <div>
                 <input 
@@ -245,11 +245,11 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
                   onChange={handleChange} 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" 
                   disabled={loading} 
-                  placeholder="Enter VAT number" 
+                  placeholder="Número de contribuinte" 
                 />
               </div>
               <div>
-                <input type="text" name="address" value={patientData.address} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="City" />
+                <input type="text" name="address" value={patientData.address} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Cidade" />
               </div>
             </div>
           </div>
@@ -258,14 +258,14 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Mail className="w-5 h-5 mr-2 text-blue-600" />
-              Contact Information
+              Informação de Contacto
             </h3>
             <div className="space-y-4">
               <div>
-                <input type="email" name="email" value={patientData.email} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Email Address" />
+                <input type="email" name="email" value={patientData.email} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Endereço de Email" />
               </div>
               <div>
-                <input type="tel" name="phone" value={patientData.phone} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Phone Number" />
+                <input type="tel" name="phone" value={patientData.phone} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Número de Telefone" />
               </div>
             </div>
           </div>
@@ -274,32 +274,32 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-              Session Preferences
+              Preferências de Sessão
             </h3>
             <div className="space-y-4">
               <div>
                 <CustomDropdown
                   value={patientData.status}
                   options={[
-                    { value: 'active', label: 'Active' },
-                    { value: 'inactive', label: 'Inactive' }
+                    { value: 'active', label: 'Ativo' },
+                    { value: 'inactive', label: 'Inativo' }
                   ]}
                   onChange={val => setPatientData({ ...patientData, status: val })}
                   disabled={loading}
-                  placeholder="Status"
+                  placeholder="Estado"
                 />
               </div>
               <div>
                 <CustomDropdown
                   value={patientData.sessionType}
                   options={[
-                    { value: 'on-site', label: 'On-Site' },
-                    { value: 'remote', label: 'Remote' },
-                    { value: 'hybrid', label: 'Hybrid' }
+                    { value: 'on-site', label: 'Presencial' },
+                    { value: 'remote', label: 'Remoto' },
+                    { value: 'hybrid', label: 'Híbrido' }
                   ]}
                   onChange={val => setPatientData({ ...patientData, sessionType: val })}
                   disabled={loading}
-                  placeholder="Session Type"
+                  placeholder="Tipo de Sessão"
                 />
               </div>
             </div>
@@ -313,7 +313,7 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
               className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
             >
               <X className="w-4 h-4 mr-2" />
-              Cancel
+              Cancelar
             </button>
             
             <button
@@ -326,8 +326,8 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
               }`}
             >
               {loading
-                ? (mode === 'edit' ? 'Saving Changes...' : 'Adding Patient...')
-                : (mode === 'edit' ? 'Save Changes' : 'Add Patient')}
+                ? (mode === 'edit' ? 'A guardar alterações...' : 'A adicionar paciente...')
+                : (mode === 'edit' ? 'Guardar Alterações' : 'Adicionar Paciente')}
             </button>
           </div>
         </form>

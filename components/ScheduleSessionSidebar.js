@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Save, Calendar, Clock, User, FileText, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { generateTimeSlots } from '../lib/dateUtils'
 
 export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, user, patients, preSelectedPatient = null }) {
   const [loading, setLoading] = useState(false)
@@ -14,7 +15,8 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
     session_time: '',
     duration_minutes: 60,
     status: 'scheduled',
-    notes: ''
+    notes: '',
+    session_fee: ''
   })
 
   useEffect(() => {
@@ -68,6 +70,12 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
       return
     }
 
+    if (!sessionData.session_fee || isNaN(Number(sessionData.session_fee))) {
+      setMessage('Por favor, insira o valor da sessão')
+      setLoading(false)
+      return
+    }
+
     try {
       const submitData = {
         patient_id: parseInt(sessionData.patient_id),
@@ -77,6 +85,7 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
         duration_minutes: parseInt(sessionData.duration_minutes),
         status: sessionData.status,
         notes: sessionData.notes || null,
+        session_fee: Number(sessionData.session_fee),
         psychologist_id: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -89,7 +98,7 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
       if (error) {
         setMessage(`Error: ${error.message}`)
       } else {
-        setMessage('Session scheduled successfully!')
+        setMessage('Sessão agendada com sucesso!')
         
         // Reset form
         setSessionData({
@@ -99,7 +108,8 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
           session_time: '',
           duration_minutes: 60,
           status: 'scheduled',
-          notes: ''
+          notes: '',
+          session_fee: ''
         })
         
         setTimeout(() => {
@@ -120,20 +130,8 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
   }
 
   // Gerar horários disponíveis
-  const generateTimeSlots = () => {
-    const slots = []
-    for (let hour = 8; hour < 20; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-        const displayTime = new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true
-        })
-        slots.push({ value: timeString, display: displayTime })
-      }
-    }
-    return slots
+  const generateTimeSlotsLocal = () => {
+    return generateTimeSlots()
   }
 
   // CustomDropdown copiado do AddPatientSidebar
@@ -194,7 +192,7 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Schedule Session</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Agendar Sessão</h2>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
           </button>
@@ -212,11 +210,11 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Session Details */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Session Details</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Detalhes da Sessão</h3>
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
-                Patient *
-              </label>
+                              <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Paciente *
+                </label>
               {preSelectedPatient && patients.length > 0 ? (
                 <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed">
                   {patients.find(p => p.id == preSelectedPatient)?.firstName} {patients.find(p => p.id == preSelectedPatient)?.lastName}
@@ -227,7 +225,7 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
                   options={patients.map(p => ({ value: p.id, label: `${p.firstName} ${p.lastName}` }))}
                   onChange={val => handleChange({ target: { name: 'patient_id', value: val } })}
                   disabled={loading}
-                  placeholder="Select a patient"
+                  placeholder="Selecionar um paciente"
                 />
               )}
             </div>
@@ -235,23 +233,23 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
           {/* Session Info */}
           <div className="space-y-4">
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
-                Session Title
-              </label>
+                              <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Título da Sessão
+                </label>
               <input
                 type="text"
                 name="title"
                 value={sessionData.title}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
-                placeholder="e.g., Therapy Session, Follow-up, Initial Consultation"
+                placeholder="ex: Sessão de Terapia, Acompanhamento, Consulta Inicial"
                 disabled={loading}
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Date *
+                  Data *
                 </label>
                 <input
                   type="date"
@@ -266,45 +264,64 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
               </div>
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Time *
+                  Hora *
                 </label>
                 <CustomDropdown
                   value={sessionData.session_time}
-                  options={generateTimeSlots().map(slot => ({ value: slot.value, label: slot.display }))}
+                  options={generateTimeSlotsLocal().map(slot => ({ value: slot.value, label: slot.display }))}
                   onChange={val => handleChange({ target: { name: 'session_time', value: val } })}
                   disabled={loading}
-                  placeholder="Select time"
+                  placeholder="Hora"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Valor da Sessão (€) *
+                </label>
+                <input
+                  type="number"
+                  name="session_fee"
+                  value={sessionData.session_fee}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+                  placeholder="Valor (€)"
+                  min="0"
+                  step="0.01"
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Duração (minutos)
+                </label>
+                <CustomDropdown
+                  value={sessionData.duration_minutes}
+                  options={[
+                    { value: 30, label: '30 minutos' },
+                    { value: 45, label: '45 minutos' },
+                    { value: 60, label: '60 minutos' },
+                    { value: 90, label: '90 minutos' },
+                    { value: 120, label: '2 horas' },
+                  ]}
+                  onChange={val => handleChange({ target: { name: 'duration_minutes', value: val } })}
+                  disabled={loading}
+                  placeholder="Selecionar duração"
                 />
               </div>
             </div>
             <div>
               <label className="block text-gray-700 text-sm font-medium mb-2">
-                Duration (minutes)
-              </label>
-              <CustomDropdown
-                value={sessionData.duration_minutes}
-                options={[
-                  { value: 30, label: '30 minutes' },
-                  { value: 45, label: '45 minutes' },
-                  { value: 60, label: '60 minutes' },
-                  { value: 90, label: '90 minutes' },
-                  { value: 120, label: '2 hours' },
-                ]}
-                onChange={val => handleChange({ target: { name: 'duration_minutes', value: val } })}
-                disabled={loading}
-                placeholder="Select duration"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2">
-                Session Notes (Optional)
+                Notas da Sessão (Opcional)
               </label>
               <textarea
                 name="notes"
                 value={sessionData.notes}
                 onChange={handleChange}
                 rows="3"
-                placeholder="Any notes about this session..."
+                placeholder="Qualquer nota sobre esta sessão..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                 disabled={loading}
               />
@@ -317,7 +334,7 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
               onClick={onClose}
               className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-medium"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
@@ -328,7 +345,7 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
                   : 'bg-blue-600 hover:bg-blue-700'
               } text-white`}
             >
-              {loading ? 'Scheduling...' : 'Schedule Session'}
+              {loading ? 'A agendar...' : 'Agendar Sessão'}
             </button>
           </div>
         </form>

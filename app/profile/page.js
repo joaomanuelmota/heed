@@ -68,7 +68,7 @@ export default function UserProfile() {
       if (metaError) {
         setError('Error updating profile: ' + metaError.message)
       } else {
-        setMessage('Profile updated successfully!')
+        setMessage('Perfil atualizado com sucesso!')
         setEditing(false)
         checkUser()
       }
@@ -89,17 +89,17 @@ export default function UserProfile() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
       <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-lg border border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">My Profile</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">O Meu Perfil</h1>
         {error && <div className="mb-4 text-red-600">{error}</div>}
         {message && <div className="mb-4 text-green-600">{message}</div>}
         <form className="space-y-4" onSubmit={e => { e.preventDefault(); handleSave() }}>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">First Name</label>
+              <label className="block text-sm font-medium text-gray-700">Nome</label>
               <input type="text" name="firstName" value={profile.firstName} onChange={handleChange} disabled={!editing} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Last Name</label>
+              <label className="block text-sm font-medium text-gray-700">Apelido</label>
               <input type="text" name="lastName" value={profile.lastName} onChange={handleChange} disabled={!editing} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 disabled:bg-gray-100" />
             </div>
           </div>
@@ -110,11 +110,11 @@ export default function UserProfile() {
           <div className="flex gap-2 mt-6">
             {editing ? (
               <>
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium" disabled={loading}>Save</button>
-                <button type="button" className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium" onClick={() => setEditing(false)} disabled={loading}>Cancel</button>
+                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium" disabled={loading}>Guardar</button>
+                <button type="button" className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium" onClick={() => setEditing(false)} disabled={loading}>Cancelar</button>
               </>
             ) : (
-              <button type="button" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium" onClick={() => setEditing(true)}>Edit Profile</button>
+              <button type="button" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium" onClick={() => setEditing(true)}>Editar Perfil</button>
             )}
           </div>
         </form>

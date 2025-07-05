@@ -51,7 +51,7 @@ function LayoutContent({ children }) {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="pt">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

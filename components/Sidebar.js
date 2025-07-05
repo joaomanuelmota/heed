@@ -2,10 +2,26 @@
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '../lib/supabase'
+import { useEffect, useState } from 'react'
 
 export default function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
+  const [userName, setUserName] = useState('Heed')
+
+  useEffect(() => {
+    async function fetchUser() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        // Tenta pegar o nome do usuário do metadata ou usa o email
+        const name = user.user_metadata?.name || user.user_metadata?.full_name || user.email
+        setUserName(name || 'Heed')
+      } else {
+        setUserName('Heed')
+      }
+    }
+    fetchUser()
+  }, [])
 
   // Função para logout
   const handleLogout = async () => {
@@ -35,7 +51,7 @@ export default function Sidebar() {
       )
     },
     {
-      name: 'Patients',
+      name: 'Pacientes',
       href: '/patients',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,7 +60,7 @@ export default function Sidebar() {
       )
     },
     {
-      name: 'Sessions',
+      name: 'Sessões',
       href: '/sessions',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,7 +69,7 @@ export default function Sidebar() {
       )
     },
     {
-      name: 'Calendar',
+      name: 'Calendário',
       href: '/calendar',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,7 +78,7 @@ export default function Sidebar() {
       )
     },
     {
-      name: 'Financial',
+      name: 'Financeiro',
       href: '/financial',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,7 +91,7 @@ export default function Sidebar() {
     <div className="h-screen fixed left-0 top-0 flex flex-col bg-[#ffffff] border-r border-gray-200 w-64">
       {/* Logo/Header da Sidebar */}
       <div className="flex items-center justify-center h-20 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-800">Heed</h1>
+        <h1 className="text-2xl font-bold text-gray-800 truncate max-w-[200px]" title={userName}>{userName}</h1>
       </div>
 
       {/* Menu Items */}
@@ -106,7 +122,7 @@ export default function Sidebar() {
           <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
-          Profile
+          Perfil
         </Link>
 
         {/* Logout Button */}
@@ -117,7 +133,7 @@ export default function Sidebar() {
           <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          Logout
+          Terminar Sessão
         </button>
       </div>
     </div>

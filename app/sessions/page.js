@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
+import { formatDateShort, formatTime12Hour } from '../../lib/dateUtils'
 import { Calendar, Plus } from 'lucide-react'
 import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
 import SessionDetailsSidebar from '../../components/SessionDetailsSidebar'
@@ -109,25 +110,12 @@ export default function Sessions() {
   }
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+    return formatDateShort(dateString)
   }
 
   const formatTime = (timeString) => {
-    if (!timeString) return 'No time set'
-    const [hours, minutes] = timeString.split(':')
-    const date = new Date()
-    date.setHours(hours, minutes)
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    })
+    if (!timeString) return 'Sem horário definido'
+    return formatTime12Hour(timeString)
   }
 
   const getSessionDateTime = (session) => {
@@ -192,11 +180,11 @@ export default function Sessions() {
 
   const getSessionStatusBadge = (session) => {
     if (isToday(session)) {
-      return <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">Today</span>
+      return <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">Hoje</span>
     } else if (isPast(session)) {
-      return <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">Past</span>
+      return <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">Passado</span>
     } else {
-      return <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Upcoming</span>
+              return <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Próximas</span>
     }
   }
 
@@ -240,11 +228,11 @@ export default function Sessions() {
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="mb-4 sm:mb-0">
-            <h1 className="text-2xl font-bold text-gray-900">Sessions</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Sessões</h1>
             <div className="flex items-center mt-2">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                 <Calendar className="w-4 h-4 mr-1" />
-                {sessions.filter(s => s.status === 'scheduled' && new Date(`${s.session_date}T${s.session_time}`) > new Date()).length} Scheduled Sessions
+                {sessions.filter(s => s.status === 'scheduled' && new Date(`${s.session_date}T${s.session_time}`) > new Date()).length} Sessões Agendadas
               </span>
             </div>
           </div>
@@ -253,7 +241,7 @@ export default function Sessions() {
             className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Schedule New Session
+            Agendar Nova Sessão
           </button>
         </div>
       </div>
@@ -263,12 +251,12 @@ export default function Sessions() {
         {/* Filtros customizados */}
         <div className="flex flex-wrap gap-2 mb-6">
           {[
-            { key: 'today', label: 'Today' },
-            { key: 'week', label: 'This Week' },
-            { key: 'month', label: 'This Month' },
-            { key: 'upcoming', label: 'Upcoming' },
-            { key: 'past', label: 'Past' },
-            { key: 'all', label: 'All Sessions' }
+            { key: 'today', label: 'Hoje' },
+            { key: 'week', label: 'Esta Semana' },
+            { key: 'month', label: 'Este Mês' },
+            { key: 'upcoming', label: 'Próximas' },
+            { key: 'past', label: 'Passado' },
+            { key: 'all', label: 'Todas as Sessões' }
           ].map((filterOption) => (
             <button
               key={filterOption.key}
@@ -295,23 +283,23 @@ export default function Sessions() {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {filter === 'today' ? 'No sessions today' : 
-               filter === 'week' ? 'No sessions this week' :
-               filter === 'month' ? 'No sessions this month' :
-               filter === 'upcoming' ? 'No upcoming sessions' :
-               'No sessions scheduled'}
+              {filter === 'today' ? 'Nenhuma sessão hoje' : 
+               filter === 'week' ? 'Nenhuma sessão esta semana' :
+               filter === 'month' ? 'Nenhuma sessão este mês' :
+               filter === 'upcoming' ? 'Nenhuma sessão próxima' :
+               'Nenhuma sessão agendada'}
             </h3>
             <p className="text-gray-600 mb-6">
               {filter === 'all' 
-                ? 'Get started by scheduling your first session'
-                : `No sessions found for the ${filter} filter`
+                ? 'Comece por agendar a sua primeira sessão'
+                : `Nenhuma sessão encontrada para o filtro ${filter}`
               }
             </p>
             <Link 
               href="/sessions/schedule"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-block"
             >
-              Schedule Your First Session
+              Agendar a Primeira Sessão
             </Link>
           </div>
         ) : (
@@ -322,23 +310,23 @@ export default function Sessions() {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {filter === 'today' ? 'No sessions today' : 
-               filter === 'week' ? 'No sessions this week' :
-               filter === 'month' ? 'No sessions this month' :
-               filter === 'upcoming' ? 'No upcoming sessions' :
-               'No sessions scheduled'}
+              {filter === 'today' ? 'Nenhuma sessão hoje' : 
+               filter === 'week' ? 'Nenhuma sessão esta semana' :
+               filter === 'month' ? 'Nenhuma sessão este mês' :
+               filter === 'upcoming' ? 'Nenhuma sessão próxima' :
+               'Nenhuma sessão agendada'}
             </h3>
             <p className="text-gray-600 mb-6">
               {filter === 'all' 
-                ? 'Get started by scheduling your first session'
-                : `No sessions found for the ${filter} filter`
+                ? 'Comece por agendar a sua primeira sessão'
+                : `Nenhuma sessão encontrada para o filtro ${filter}`
               }
             </p>
             <Link 
               href="/sessions/schedule"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-block"
             >
-              Schedule Your First Session
+              Agendar a Primeira Sessão
             </Link>
           </div>
         )
@@ -349,16 +337,16 @@ export default function Sessions() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Patient
+                    Paciente
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date & Time
+                    Data & Hora
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Duration
+                    Duração
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    Ações
                   </th>
                 </tr>
               </thead>
@@ -370,7 +358,7 @@ export default function Sessions() {
                         {session.patients.firstName} {session.patients.lastName}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {session.title || 'No title'}
+                        {session.title || 'Sem título'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -382,7 +370,7 @@ export default function Sessions() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {session.duration_minutes} minutes
+                      {session.duration_minutes} minutos
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -393,7 +381,7 @@ export default function Sessions() {
                         }}
                         className="text-blue-600 hover:text-blue-900 mr-4 bg-transparent border-none cursor-pointer font-medium"
                       >
-                        View
+                        Ver
                       </button>
                       <button
                         onClick={() => {
@@ -403,7 +391,7 @@ export default function Sessions() {
                         }}
                         className="text-green-600 hover:text-green-900 bg-transparent border-none cursor-pointer font-medium"
                       >
-                        Edit
+                        Editar
                       </button>
                     </td>
                   </tr>

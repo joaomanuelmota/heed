@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Save, Calendar, Clock, User, FileText, ChevronDown, Edit, Eye } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { formatDateLong, formatTime12Hour, generateTimeSlots } from '../lib/dateUtils'
 import Link from 'next/link'
 
 export default function SessionDetailsSidebar({ 
@@ -27,7 +28,8 @@ export default function SessionDetailsSidebar({
     session_time: '',
     duration_minutes: 60,
     status: 'scheduled',
-    notes: ''
+    notes: '',
+    session_fee: ''
   })
 
   useEffect(() => {
@@ -61,7 +63,8 @@ export default function SessionDetailsSidebar({
           session_time: data.session_time || '',
           duration_minutes: data.duration_minutes || 60,
           status: data.status || 'scheduled',
-          notes: data.notes || ''
+          notes: data.notes || '',
+          session_fee: data.session_fee !== undefined && data.session_fee !== null ? data.session_fee : ''
         })
 
         // Find the patient
@@ -87,6 +90,12 @@ export default function SessionDetailsSidebar({
     setSaving(true)
     setMessage('')
 
+    if (!sessionData.session_fee || isNaN(Number(sessionData.session_fee))) {
+      setMessage('Por favor, insira o valor da sessão')
+      setSaving(false)
+      return
+    }
+
     try {
       const updateData = {
         patient_id: parseInt(sessionData.patient_id),
@@ -96,6 +105,7 @@ export default function SessionDetailsSidebar({
         duration_minutes: parseInt(sessionData.duration_minutes),
         status: sessionData.status,
         notes: sessionData.notes || null,
+        session_fee: Number(sessionData.session_fee),
         updated_at: new Date().toISOString()
       }
 
@@ -108,7 +118,7 @@ export default function SessionDetailsSidebar({
       if (error) {
         setMessage(`Error: ${error.message}`)
       } else {
-        setMessage('Session updated successfully!')
+        setMessage('Sessão atualizada com sucesso!')
         setTimeout(() => {
           onSuccess()
         }, 1000)
@@ -149,25 +159,12 @@ export default function SessionDetailsSidebar({
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Not set'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+    return formatDateLong(dateString)
   }
 
   const formatTime = (timeString) => {
     if (!timeString) return 'Not set'
-    const [hours, minutes] = timeString.split(':')
-    const date = new Date()
-    date.setHours(hours, minutes)
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    })
+    return formatTime12Hour(timeString)
   }
 
   const isSessionToday = () => {
@@ -181,20 +178,8 @@ export default function SessionDetailsSidebar({
     return '2020-01-01'
   }
 
-  const generateTimeSlots = () => {
-    const slots = []
-    for (let hour = 8; hour < 20; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-        const displayTime = new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true
-        })
-        slots.push({ value: timeString, display: displayTime })
-      }
-    }
-    return slots
+  const generateTimeSlotsLocal = () => {
+    return generateTimeSlots()
   }
 
   function CustomDropdown({ value, options, onChange, disabled, placeholder }) {
@@ -265,7 +250,7 @@ export default function SessionDetailsSidebar({
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <h2 className="text-xl font-semibold text-gray-900">
-              {currentMode === 'view' ? 'Session Details' : 'Edit Session'}
+              {currentMode === 'view' ? 'Detalhes da Sessão' : 'Editar Sessão'}
             </h2>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600">
@@ -288,29 +273,29 @@ export default function SessionDetailsSidebar({
             {currentMode === 'view' ? (
               <form className="space-y-6">
                 <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Patient</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">Paciente</label>
                   <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
                     {patient ? `${patient.firstName} ${patient.lastName}` : ''}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Session Title</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">Título da Sessão</label>
                   <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                    {session.title || 'No title'}
+                    {session.title || 'Sem título'}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Date</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Data</label>
                     <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
                       {formatDate(session.session_date)}
-                      {isSessionToday() && (
-                        <span className="inline-block ml-2 px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">Today</span>
-                      )}
+                                      {isSessionToday() && (
+                  <span className="inline-block ml-2 px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">Hoje</span>
+                )}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Time</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Hora</label>
                     <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
                       {formatTime(session.session_time)}
                     </div>
@@ -318,26 +303,34 @@ export default function SessionDetailsSidebar({
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Duration (minutes)</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Valor da Sessão (€)</label>
                     <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                      {session.duration_minutes} minutes
+                      {typeof session.session_fee === 'number' ? `€${session.session_fee.toFixed(2)}` : '—'}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Status</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Duração (minutos)</label>
+                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
+                      {session.duration_minutes} minutos
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Estado</label>
                     <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
                       {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Session Notes</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">Notas da Sessão</label>
                   <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 whitespace-pre-wrap min-h-[60px]">
                     {session.notes || '—'}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Created</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">Criado</label>
                   <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
                     {formatDate(session.created_at)}
                   </div>
@@ -346,7 +339,7 @@ export default function SessionDetailsSidebar({
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Patient</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">Paciente</label>
                   {patient ? (
                     <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed">
                       {patient.firstName} {patient.lastName}
@@ -357,27 +350,27 @@ export default function SessionDetailsSidebar({
                       options={patients.map(p => ({ value: p.id, label: `${p.firstName} ${p.lastName}` }))}
                       onChange={val => handleChange({ target: { name: 'patient_id', value: val } })}
                       disabled={saving}
-                      placeholder="Select a patient"
+                      placeholder="Selecionar um paciente"
                     />
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Session Title</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">Título da Sessão</label>
                   <input
                     type="text"
                     name="title"
                     value={sessionData.title}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
-                    placeholder="e.g., Therapy Session, Follow-up"
+                    placeholder="ex: Sessão de Terapia, Acompanhamento"
                     disabled={saving}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Date</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Data</label>
                     <input
                       type="date"
                       name="session_date"
@@ -389,59 +382,77 @@ export default function SessionDetailsSidebar({
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Time</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Hora</label>
                     <CustomDropdown
                       value={sessionData.session_time}
-                      options={generateTimeSlots().map(slot => ({ value: slot.value, label: slot.display }))}
+                      options={generateTimeSlotsLocal().map(slot => ({ value: slot.value, label: slot.display }))}
                       onChange={val => handleChange({ target: { name: 'session_time', value: val } })}
                       disabled={saving}
-                      placeholder="Select time"
+                      placeholder="Selecionar hora"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Duration (minutes)</label>
-                    <CustomDropdown
-                      value={sessionData.duration_minutes}
-                      options={[
-                        { value: 30, label: '30 minutes' },
-                        { value: 45, label: '45 minutes' },
-                        { value: 60, label: '60 minutes' },
-                        { value: 90, label: '90 minutes' },
-                        { value: 120, label: '2 hours' }
-                      ]}
-                      onChange={val => handleChange({ target: { name: 'duration_minutes', value: val } })}
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Valor da Sessão (€) *</label>
+                    <input
+                      type="number"
+                      name="session_fee"
+                      value={sessionData.session_fee}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+                      placeholder="Valor (€)"
+                      min="0"
+                      step="0.01"
+                      required
                       disabled={saving}
-                      placeholder="Select duration"
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Status</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Duração (minutos)</label>
+                    <CustomDropdown
+                      value={sessionData.duration_minutes}
+                      options={[
+                        { value: 30, label: '30 minutos' },
+                        { value: 45, label: '45 minutos' },
+                        { value: 60, label: '60 minutos' },
+                        { value: 90, label: '90 minutos' },
+                        { value: 120, label: '2 horas' }
+                      ]}
+                      onChange={val => handleChange({ target: { name: 'duration_minutes', value: val } })}
+                      disabled={saving}
+                      placeholder="Selecionar duração"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Estado</label>
                     <CustomDropdown
                       value={sessionData.status}
                       options={[
-                        { value: 'scheduled', label: 'Scheduled' },
-                        { value: 'completed', label: 'Completed' },
-                        { value: 'cancelled', label: 'Cancelled' },
-                        { value: 'no-show', label: 'No Show' }
+                        { value: 'scheduled', label: 'Agendada' },
+                        { value: 'completed', label: 'Concluída' },
+                        { value: 'cancelled', label: 'Cancelada' },
+                        { value: 'no-show', label: 'Não Compareceu' }
                       ]}
                       onChange={val => handleChange({ target: { name: 'status', value: val } })}
                       disabled={saving}
-                      placeholder="Select status"
+                      placeholder="Selecionar estado"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Session Notes</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">Notas da Sessão</label>
                   <textarea
                     name="notes"
                     value={sessionData.notes}
                     onChange={handleChange}
                     rows="4"
-                    placeholder="Any notes about this session..."
+                    placeholder="Qualquer nota sobre esta sessão..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                     disabled={saving}
                   />
@@ -454,7 +465,7 @@ export default function SessionDetailsSidebar({
                     className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-medium"
                     disabled={saving}
                   >
-                    Cancel
+                    Cancelar
                   </button>
                   <button
                     type="submit"
@@ -463,7 +474,7 @@ export default function SessionDetailsSidebar({
                       saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                     } text-white`}
                   >
-                    {saving ? 'Saving...' : 'Save Changes'}
+                    {saving ? 'A guardar...' : 'Guardar Alterações'}
                   </button>
                 </div>
               </form>

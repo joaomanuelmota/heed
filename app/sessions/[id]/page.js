@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
+import { formatDateLong, formatTime12Hour } from '../../../lib/dateUtils'
 
 export default function SessionDetails() {
   const [user, setUser] = useState(null)
@@ -135,25 +136,12 @@ export default function SessionDetails() {
   }
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+    return formatDateLong(dateString)
   }
 
   const formatTime = (timeString) => {
     if (!timeString) return 'No time set'
-    const [hours, minutes] = timeString.split(':')
-    const date = new Date()
-    date.setHours(hours, minutes)
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    })
+    return formatTime12Hour(timeString)
   }
 
   const getSessionDateTime = () => {
@@ -285,7 +273,7 @@ export default function SessionDetails() {
                   <p className="text-gray-900">{formatDate(session.session_date)}</p>
                   {isSessionToday() && (
                     <span className="inline-block mt-1 px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
-                      Today
+                      Hoje
                     </span>
                   )}
                 </div>
