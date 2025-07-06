@@ -12,7 +12,7 @@ export default function Button({ children, variant = 'primary', size = 'md', cla
   const variants = {
     primary: 'bg-black text-white hover:bg-gray-900',
     secondary: 'bg-white text-black border border-black hover:bg-gray-100',
-    danger: 'bg-red-600 text-white hover:bg-red-700',
+    danger: 'bg-red-200 text-red-800 hover:bg-red-300',
   };
   
   return (

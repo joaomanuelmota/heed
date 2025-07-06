@@ -2,8 +2,10 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import { Bold, Italic, Underline as UnderlineIcon } from 'lucide-react'
+import { useState } from 'react'
 
 const RichTextEditor = ({ value, onChange, placeholder = "Write your content here..." }) => {
+  const [isFocused, setIsFocused] = useState(false)
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -16,6 +18,10 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
     editorProps: {
       attributes: {
         class: 'prose prose-sm max-w-none focus:outline-none min-h-[120px] px-3 py-2',
+      },
+      handleDOMEvents: {
+        focus: () => { setIsFocused(true); return false; },
+        blur: () => { setIsFocused(false); return false; },
       },
     },
   })
@@ -72,7 +78,7 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write your content her
           editor={editor} 
           className="min-h-[120px] px-4 py-3 prose prose-sm max-w-none"
         />
-        {!editor.getText() && (
+        {!editor.getText() && !isFocused && (
           <div className="absolute top-3 left-4 pointer-events-none text-gray-400">
             {placeholder}
           </div>

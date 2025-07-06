@@ -19,7 +19,9 @@ const geistMono = Geist_Mono({
 const pagesWithoutSidebar = [
   '/',
   '/login',
-  '/signup'
+  '/signup',
+  '/forgot-password',
+  '/reset-password'
 ];
 
 function LayoutContent({ children }) {

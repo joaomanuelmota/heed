@@ -358,7 +358,7 @@ export default function Calendar() {
           <button onClick={() => navigateMonth(1)} className="px-3 py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-100">&gt;</button>
         </div>
         <div className="flex gap-2">
-          <button onClick={goToToday} className={`px-3 py-1 rounded-lg font-medium ${view === 'today' ? 'bg-black text-white' : 'bg-gray-200 text-gray-800'}`}>Hoje</button>
+          <button onClick={goToToday} className={`px-3 py-1 rounded-lg font-medium ${view === 'today' ? 'bg-black text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Hoje</button>
           <button onClick={() => setView('week')} className={`px-3 py-1 rounded-lg font-medium ${view === 'week' ? 'bg-black text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Semana</button>
           <button onClick={() => setView('month')} className={`px-3 py-1 rounded-lg font-medium ${view === 'month' ? 'bg-black text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Mês</button>
         </div>

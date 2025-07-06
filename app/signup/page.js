@@ -11,8 +11,7 @@ export default function SignUp() {
     lastName: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    licenseNumber: ''
+    confirmPassword: ''
   })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
@@ -51,7 +50,6 @@ export default function SignUp() {
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
-            license_number: formData.licenseNumber,
             full_name: `${formData.firstName} ${formData.lastName}`
           }
         }
@@ -67,8 +65,7 @@ export default function SignUp() {
           lastName: '',
           email: '',
           password: '',
-          confirmPassword: '',
-          licenseNumber: ''
+          confirmPassword: ''
         })
       }
     } catch (error) {
@@ -98,28 +95,14 @@ export default function SignUp() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-lg w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                </svg>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">heed</span>
-            </div>
-          </div>
-        </div>
-
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 px-8 py-10">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              Juntar-se ao Heed
+              Experimente 30 Dias Grátis
             </h2>
             <p className="text-gray-600">
-              Criar conta de prática de psicologia
+              Sem compromisso, cancele quando quiser!
             </p>
           </div>
 
@@ -164,28 +147,24 @@ export default function SignUp() {
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nome
-                </label>
                 <input
                   type="text"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
+                  placeholder="Nome"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
                   required
                   disabled={loading}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Apelido
-                </label>
                 <input
                   type="text"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
+                  placeholder="Apelido"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
                   required
                   disabled={loading}
@@ -195,67 +174,46 @@ export default function SignUp() {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                placeholder="Email"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
                 required
                 disabled={loading}
               />
             </div>
 
-            {/* Professional Fields */}
-            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Número de Cédula
-                </label>
-              <input
-                type="text"
-                name="licenseNumber"
-                value={formData.licenseNumber}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
-                placeholder="Número de cédula profissional"
-                required
-                disabled={loading}
-              />
-            </div>
+
 
             {/* Password Fields */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Palavra-passe
-              </label>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
+                placeholder="Palavra-passe"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
                 required
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirmar Palavra-passe
-              </label>
               <input
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                placeholder="Confirmar Palavra-passe"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
                 required
                 disabled={loading}
               />
+              <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
             </div>
           </div>
 
@@ -282,12 +240,12 @@ export default function SignUp() {
           {/* Login Link */}
           <div className="text-center mt-6">
             <p className="text-gray-600">
-              Já tem uma conta?{' '}
+              Já tem uma conta Heed?{' '}
               <Link
-                href="/"
+                href="/login"
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
-                Iniciar sessão aqui
+                Iniciar Sessão
               </Link>
             </p>
           </div>

@@ -59,39 +59,39 @@ export default function LoginPage() {
   }
 
   const handleGoogleLogin = async () => {
+    setLoading(true)
+    setMessage('')
+    
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: `${window.location.origin}/dashboard`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       })
 
       if (error) {
-        setMessage(`Error: ${error.message}`)
+        console.error('Google login error:', error)
+        setMessage(`Erro no login com Google: ${error.message}`)
+      } else {
+        console.log('Google login initiated successfully')
+        // O redirecionamento acontece automaticamente
       }
     } catch (error) {
-      setMessage(`Unexpected error: ${error.message}`)
+      console.error('Unexpected Google login error:', error)
+      setMessage(`Erro inesperado: ${error.message}`)
     }
+    
+    setLoading(false)
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                </svg>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">{userName || 'heed'}</span>
-            </div>
-          </div>
-        </div>
-
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 px-8 py-10">
           <div className="text-center mb-8">
@@ -115,11 +115,10 @@ export default function LoginPage() {
           )}
 
           {/* Google Login Button */}
-          <Button
+          <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex justify-center items-center mb-6 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-            variant="secondary"
+            className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -127,8 +126,8 @@ export default function LoginPage() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Login com Google
-          </Button>
+            {loading ? 'A processar...' : 'Continuar com Google'}
+          </button>
 
           {/* Divider */}
           <div className="relative mb-6">
@@ -142,15 +141,12 @@ export default function LoginPage() {
 
           {/* Email Input */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
-            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
-              placeholder=""
               required
               disabled={loading}
             />
@@ -158,10 +154,16 @@ export default function LoginPage() {
 
           {/* Password Input */}
           <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Palavra-passe
-              </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Palavra-passe"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
+              required
+              disabled={loading}
+            />
+            <div className="flex justify-end mt-2">
               <Link
                 href="/forgot-password"
                 className="text-sm text-blue-600 hover:text-blue-800 font-medium"
@@ -169,15 +171,6 @@ export default function LoginPage() {
                 Esqueceu a palavra-passe?
               </Link>
             </div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
-              placeholder=""
-              required
-              disabled={loading}
-            />
           </div>
 
           {/* Login Button */}

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { X, Save, Calendar, Clock, User, FileText, ChevronDown, Edit, Eye } from 'lucide-react'
+import { X, Save, Calendar, Clock, User, FileText, ChevronDown, Edit, Eye, AlertTriangle, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatDateLong, formatTime12Hour, generateTimeSlots } from '../lib/dateUtils'
 import Link from 'next/link'
@@ -21,6 +21,7 @@ export default function SessionDetailsSidebar({
   const [currentMode, setCurrentMode] = useState(mode)
   const [session, setSession] = useState(null)
   const [patient, setPatient] = useState(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const [sessionData, setSessionData] = useState({
     patient_id: '',
@@ -164,9 +165,39 @@ export default function SessionDetailsSidebar({
     setSaving(false)
   }
 
+  const handleDeleteSession = async () => {
+    if (!session) return
+    setSaving(true)
+    setMessage('')
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('id', session.id)
+        .eq('psychologist_id', user.id)
+      if (error) {
+        setMessage(`Erro ao apagar sessão: ${error.message}`)
+      } else {
+        setMessage('Sessão apagada com sucesso!')
+        setTimeout(() => {
+          setShowDeleteConfirm(false)
+          onSuccess()
+          onClose()
+        }, 1000)
+      }
+    } catch (error) {
+      setMessage(`Erro inesperado: ${error.message}`)
+    }
+    setSaving(false)
+  }
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Not set'
-    return formatDateLong(dateString)
+    const date = new Date(dateString)
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = date.getFullYear()
+    return `${day}/${month}/${year}`
   }
 
   const formatTime = (timeString) => {
@@ -326,7 +357,9 @@ export default function SessionDetailsSidebar({
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-2">Estado</label>
                     <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                      {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+                      {session.status === 'scheduled' && 'Agendada'}
+                      {session.status === 'completed' && 'Realizada'}
+                      {session.status === 'cancelled' && 'Cancelada'}
                     </div>
                   </div>
                 </div>
@@ -334,12 +367,6 @@ export default function SessionDetailsSidebar({
                   <label className="block text-gray-700 text-sm font-medium mb-2">Notas da Sessão</label>
                   <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 whitespace-pre-wrap min-h-[60px]">
                     {session.notes || '—'}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Criado</label>
-                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                    {formatDate(session.created_at)}
                   </div>
                 </div>
               </form>
@@ -441,9 +468,8 @@ export default function SessionDetailsSidebar({
                       value={sessionData.status}
                       options={[
                         { value: 'scheduled', label: 'Agendada' },
-                        { value: 'completed', label: 'Concluída' },
-                        { value: 'cancelled', label: 'Cancelada' },
-                        { value: 'no-show', label: 'Não Compareceu' }
+                        { value: 'completed', label: 'Realizada' },
+                        { value: 'cancelled', label: 'Cancelada' }
                       ]}
                       onChange={val => handleChange({ target: { name: 'status', value: val } })}
                       disabled={saving}
@@ -465,19 +491,64 @@ export default function SessionDetailsSidebar({
                   />
                 </div>
 
-                <div className="flex justify-end space-x-4 pt-6">
-                  <Button type="submit" disabled={saving}>
-                    {saving ? 'A guardar...' : 'Guardar'}
+                <div className="flex justify-between items-center pt-6">
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={saving}
+                    className="flex items-center gap-2"
+                  >
+                    Apagar
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => setCurrentMode('view')} disabled={saving}>
-                    Cancelar
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button type="button" variant="secondary" onClick={() => setCurrentMode('view')} disabled={saving}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={saving}>
+                      {saving ? 'A guardar...' : 'Guardar'}
+                    </Button>
+                  </div>
                 </div>
               </form>
             )}
           </>
         )}
       </div>
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-gray-200 bg-opacity-80 flex items-center justify-center z-50" style={{ backdropFilter: 'blur(4px)' }}>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Apagar Sessão
+              </h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Tem a certeza que pretende apagar esta sessão?<br /><br />
+              <strong>Esta ação não pode ser desfeita.</strong>
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={saving}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={handleDeleteSession}
+                disabled={saving}
+              >
+                {saving ? 'A apagar...' : 'Apagar Definitivamente'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

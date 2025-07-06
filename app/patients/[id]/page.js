@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
-import { formatDateLong, formatDateMonthShort, formatDate } from '../../../lib/dateUtils'
+import { formatDateLong, formatDateMonthShort, formatDate as formatDateUtil } from '../../../lib/dateUtils'
 import { 
   User, Mail, Phone, FileText, CreditCard, 
   MapPin, Calendar, Clock, Edit, ChevronRight, ChevronDown, ChevronUp,
@@ -579,7 +579,7 @@ export default function PatientProfile() {
   const tabs = [
     { id: 'notes', label: 'Notas Clínicas', icon: FileText },
     { id: 'treatment', label: 'Plano Terapêutico', icon: Brain },
-    { id: 'payments', label: 'Pagamentos', icon: CreditCard },
+    { id: 'payments', label: 'Sessões', icon: Calendar },
     { id: 'info', label: 'Informação', icon: User }
   ]
 
@@ -663,8 +663,12 @@ export default function PatientProfile() {
                     {/* Note Card Redesigned */}
                     <div className="flex">
                       <div className="flex-shrink-0 w-24 flex justify-center">
-                        <div className="w-px bg-gray-200 h-full relative">
-                          <div className="absolute top-4 -left-1.5 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow"></div>
+                        <div className="w-px h-full relative flex flex-col items-center">
+                          <div className="bg-gray-200" style={{ height: '22px', width: '2px' }} />
+                          <div className="text-xs text-gray-500 whitespace-nowrap select-none font-medium my-1">
+                            {formatDateUtil(note.note_date, { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          </div>
+                          <div className="bg-gray-200 flex-1 w-[2px]" />
                         </div>
                       </div>
                       <div className="flex-1 ml-4 mb-6">
@@ -714,10 +718,10 @@ export default function PatientProfile() {
                               <>
                                 <div className="prose prose-sm max-w-none text-gray-700 mb-2" dangerouslySetInnerHTML={{ __html: note.content }} />
                                 <div className="flex items-center justify-between mt-2">
-                                  <Button onClick={() => setExpandedNoteId(null)} variant="secondary" className="text-xs">Ver menos</Button>
+                                  <button onClick={() => setExpandedNoteId(null)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver menos</button>
                                   <div className="flex gap-2">
-                                    <Button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400" title="Editar"><Edit className="w-4 h-4" /></Button>
-                                    <Button onClick={() => deleteNote(note.id)} variant="danger" className="text-gray-400" title="Excluir"><Trash2 className="w-4 h-4" /></Button>
+                                    <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors" title="Editar"><Edit className="w-4 h-4" /></button>
+                                    <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600 p-1 rounded transition-colors" title="Excluir"><Trash2 className="w-4 h-4" /></button>
                                   </div>
                                 </div>
                               </>
@@ -727,10 +731,10 @@ export default function PatientProfile() {
                             <>
                               <div className="text-gray-700 text-sm mb-2 truncate" style={{ maxHeight: '3.6em', overflow: 'hidden' }}>{preview}</div>
                               <div className="flex items-center justify-between mt-2">
-                                <Button onClick={() => setExpandedNoteId(note.id)} variant="secondary" className="text-xs">Ver mais</Button>
+                                <button onClick={() => setExpandedNoteId(note.id)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver mais</button>
                                 <div className="flex gap-2">
-                                  <Button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400" title="Editar"><Edit className="w-4 h-4" /></Button>
-                                  <Button onClick={() => deleteNote(note.id)} variant="danger" className="text-gray-400" title="Excluir"><Trash2 className="w-4 h-4" /></Button>
+                                  <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors" title="Editar"><Edit className="w-4 h-4" /></button>
+                                  <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600 p-1 rounded transition-colors" title="Excluir"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                               </div>
                             </>
@@ -806,16 +810,21 @@ export default function PatientProfile() {
             {treatmentPlansLoading ? (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-gray-500 mt-2">Loading treatment plans...</p>
+                  <div className="flex justify-center items-center mb-4 gap-2">
+                    <Brain className="w-12 h-12 text-gray-400" />
+                  </div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">Ainda não existem planos terapêuticos</h4>
+                  <p className="text-gray-500 mb-4">Comece por criar o primeiro plano terapêutico para este paciente.</p>
                 </div>
               </div>
             ) : treatmentPlans.length === 0 ? (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="text-center py-8">
-                  <Stethoscope className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Treatment Plans Yet</h4>
-                  <p className="text-gray-500 mb-4">Start by creating your first treatment plan for this patient.</p>
+                  <div className="flex justify-center items-center mb-4 gap-2">
+                    <Brain className="w-12 h-12 text-gray-400" />
+                  </div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">Ainda não existem planos terapêuticos</h4>
+                  <p className="text-gray-500 mb-4">Comece por criar o primeiro plano terapêutico para este paciente.</p>
                 </div>
               </div>
             ) : (
@@ -882,7 +891,7 @@ export default function PatientProfile() {
                                         <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: plan.content }} />
                                         {plan.content.length > 150 && (
                                           <div className="flex items-center justify-between mt-2">
-                                            <button onClick={() => setExpandedNoteId(null)} className="text-blue-600 hover:underline text-xs">Ver menos</button>
+                                            <button onClick={() => setExpandedNoteId(null)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver menos</button>
                                           </div>
                                         )}
                                       </>
@@ -890,7 +899,7 @@ export default function PatientProfile() {
                                       <>
                                         <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: plan.content.substring(0, 150) + '...' }} />
                                         <div className="flex items-center justify-between mt-2">
-                                          <button onClick={() => setExpandedNoteId(plan.id)} className="text-blue-600 hover:underline text-xs">Ver mais</button>
+                                          <button onClick={() => setExpandedNoteId(plan.id)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver mais</button>
                                         </div>
                                       </>
                                     )}
@@ -979,9 +988,6 @@ export default function PatientProfile() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
                               {session.title || 'Sessão'}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {session.notes ? `${session.notes.substring(0, 50)}...` : 'Sem notas'}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -1076,21 +1082,39 @@ export default function PatientProfile() {
         )
       case 'info':
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Patient Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <div><span className="font-medium text-gray-900">Email:</span> <span className="text-gray-700">{patient.email || 'No email provided'}</span></div>
-                <div><span className="font-medium text-gray-900">Phone:</span> <span className="text-gray-700">{patient.phone || 'No phone provided'}</span></div>
-                <div><span className="font-medium text-gray-900">Age:</span> <span className="text-gray-700">{calculateAge(patient.dateOfBirth)} years</span></div>
-                <div><span className="font-medium text-gray-900">Date of Birth:</span> <span className="text-gray-700">{formatDate(patient.dateOfBirth)}</span></div>
-                <div><span className="font-medium text-gray-900">Address:</span> <span className="text-gray-700">{patient.address || 'Not provided'}</span></div>
-                <div><span className="font-medium text-gray-900">Specialty:</span> <span className="text-gray-700">{patient.specialty || 'Not specified'}</span></div>
-                <div><span className="font-medium text-gray-900">Session Type:</span> <span className="text-gray-700">{sessionTypeConfig.label}</span></div>
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+              <div>
+                <span className="block text-gray-500 text-sm">Email</span>
+                <span className="block text-gray-900">{patient.email || 'Não fornecido'}</span>
               </div>
-              <div className="space-y-2">
-                <div><span className="font-medium text-gray-900">VAT Number:</span> <span className="text-gray-700">{patient.vatNumber || 'Not provided'}</span></div>
-                <div><span className="font-medium text-gray-900">Status:</span> <span className="text-gray-700">{statusConfig.label}</span></div>
+              <div>
+                <span className="block text-gray-500 text-sm">NIF</span>
+                <span className="block text-gray-900">{patient.vatNumber || 'Não fornecido'}</span>
+              </div>
+              <div>
+                <span className="block text-gray-500 text-sm">Telefone</span>
+                <span className="block text-gray-900">{patient.phone || 'Não fornecido'}</span>
+              </div>
+              <div>
+                <span className="block text-gray-500 text-sm">Estado</span>
+                <span className="block text-gray-900">{statusConfig.label}</span>
+              </div>
+              <div>
+                <span className="block text-gray-500 text-sm">Data de Nascimento</span>
+                <span className="block text-gray-900">{patient.dateOfBirth ? formatDate(patient.dateOfBirth) : 'Não fornecida'}</span>
+              </div>
+              <div>
+                <span className="block text-gray-500 text-sm">Morada</span>
+                <span className="block text-gray-900">{patient.address || 'Não fornecida'}</span>
+              </div>
+              <div>
+                <span className="block text-gray-500 text-sm">Tipo de Sessão</span>
+                <span className="block text-gray-900">{sessionTypeConfig.label}</span>
+              </div>
+              <div>
+                <span className="block text-gray-500 text-sm">Especialidade</span>
+                <span className="block text-gray-900">{patient.specialty || 'Não especificada'}</span>
               </div>
             </div>
           </div>
@@ -1217,9 +1241,13 @@ export default function PatientProfile() {
         <AddPatientSidebar
           isOpen={!!editingPatient}
           onClose={() => setEditingPatient(null)}
-          onSuccess={() => {
+          onSuccess={(deleted = false) => {
             setEditingPatient(null)
-            fetchPatient(user.id, patient.id)
+            if (deleted) {
+              router.push('/patients')
+            } else {
+              fetchPatient(user.id, patient.id)
+            }
           }}
           user={user}
           mode="edit"

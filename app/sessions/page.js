@@ -189,6 +189,23 @@ export default function Sessions() {
     }
   }
 
+  const getSessionStateBadge = (session) => {
+    const status = session.status || 'scheduled'
+    
+    switch(status) {
+      case 'scheduled':
+        return <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">Agendada</span>
+      case 'completed':
+        return <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Concluída</span>
+      case 'cancelled':
+        return <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded-full">Cancelada</span>
+      case 'no-show':
+        return <span className="px-2 py-1 text-xs font-semibold bg-orange-100 text-orange-800 rounded-full">Não Compareceu</span>
+      default:
+        return <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">Agendada</span>
+    }
+  }
+
   const handleStatusUpdate = async (sessionId, newStatus) => {
     try {
       const { error } = await supabase
@@ -255,14 +272,12 @@ export default function Sessions() {
             { key: 'today', label: 'Hoje' },
             { key: 'week', label: 'Esta Semana' },
             { key: 'month', label: 'Este Mês' },
-            { key: 'upcoming', label: 'Próximas' },
-            { key: 'past', label: 'Passado' },
             { key: 'all', label: 'Todas as Sessões' }
           ].map((filterOption) => (
             <button
               key={filterOption.key}
               onClick={() => setFilter(filterOption.key)}
-              className={`px-4 py-2 rounded-lg font-medium border transition-colors duration-200 ${
+              className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors duration-200 ${
                 filter === filterOption.key
                   ? 'bg-black text-white border-black'
                   : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-100'
@@ -296,11 +311,6 @@ export default function Sessions() {
                 : `Nenhuma sessão encontrada para o filtro ${filter}`
               }
             </p>
-            <Link href="/sessions/schedule">
-              <Button size="lg">
-                Agendar a Primeira Sessão
-              </Button>
-            </Link>
           </div>
         ) : (
           <div className="bg-white p-12 rounded-lg shadow-sm border text-center">
@@ -322,11 +332,6 @@ export default function Sessions() {
                 : `Nenhuma sessão encontrada para o filtro ${filter}`
               }
             </p>
-            <Link href="/sessions/schedule">
-              <Button size="lg">
-                Agendar a Primeira Sessão
-              </Button>
-            </Link>
           </div>
         )
       ) : (
@@ -338,6 +343,7 @@ export default function Sessions() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PACIENTE</th>
                   <th className="px-8 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3 min-w-[220px]">DATA & HORA</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DURAÇÃO</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ESTADO</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AÇÕES</th>
                 </tr>
               </thead>
@@ -362,6 +368,9 @@ export default function Sessions() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {session.duration_minutes} minutos
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {getSessionStateBadge(session)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
