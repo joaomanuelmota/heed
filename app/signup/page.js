@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
+import Button from '../../components/Button'
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -259,14 +260,11 @@ export default function SignUp() {
           </div>
 
           {/* Create Account Button */}
-          <button
+          <Button
             onClick={handleSignUp}
             disabled={loading}
-            className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-all duration-200 mt-6 ${
-              loading
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
+            className="w-full mt-6"
+            size="lg"
           >
             {loading ? (
               <div className="flex items-center justify-center">
@@ -279,7 +277,7 @@ export default function SignUp() {
             ) : (
               'Criar Conta'
             )}
-          </button>
+          </Button>
 
           {/* Login Link */}
           <div className="text-center mt-6">

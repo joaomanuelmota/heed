@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatDate, formatDateMonthYear } from "../../lib/dateUtils";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChevronDown, ChevronUp } from "lucide-react";
+import Button from '../../components/Button'
 
 export default function FinancialOverview() {
   const [user, setUser] = useState(null);
@@ -358,17 +359,17 @@ export default function FinancialOverview() {
           <div className="flex-1"></div>
           {/* Quick Period Buttons */}
           <div className="flex flex-wrap gap-2 justify-end">
-            <button
+            <Button
               onClick={() => {
                 const now = new Date();
                 setSelectedMonth(now.getMonth());
                 setSelectedYear(now.getFullYear());
               }}
-              className="px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+              size="sm"
             >
               Mês Atual
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 const now = new Date();
                 const prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
@@ -376,20 +377,22 @@ export default function FinancialOverview() {
                 setSelectedMonth(prevMonth);
                 setSelectedYear(prevYear);
               }}
-              className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+              size="sm"
+              variant="secondary"
             >
               Mês Anterior
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 const now = new Date();
                 setSelectedMonth(0); // January
                 setSelectedYear(now.getFullYear());
               }}
-              className="px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+              size="sm"
+              variant="secondary"
             >
               Este Ano
-            </button>
+            </Button>
             <button
               onClick={() => {
                 const now = new Date();
@@ -516,10 +519,10 @@ export default function FinancialOverview() {
             <button
               key={f.key}
               onClick={() => setStatusFilter(f.key)}
-              className={`px-3 py-2 text-sm font-medium rounded-lg border transition-colors duration-200
+              className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors duration-200
                 ${statusFilter === f.key
-                  ? 'text-blue-600 bg-blue-50 border-blue-200'
-                  : 'text-gray-600 bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-100'}`}
             >
               {f.label}
             </button>

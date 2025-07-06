@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
-import { formatDateLong, formatDateMonthShort } from '../../../lib/dateUtils'
+import { formatDateLong, formatDateMonthShort, formatDate } from '../../../lib/dateUtils'
 import { 
   User, Mail, Phone, FileText, CreditCard, 
   MapPin, Calendar, Clock, Edit, ChevronRight, ChevronDown, ChevronUp,
@@ -17,6 +17,8 @@ import ScheduleSessionSidebar from '../../../components/ScheduleSessionSidebar'
 import AddPatientSidebar from '../../../components/AddPatientSidebar'
 import RichTextEditor from '../../../components/RichTextEditor'
 import ReactDOM from 'react-dom'
+import Button from '../../../components/Button'
+import SessionDetailsSidebar from '../../../components/SessionDetailsSidebar'
 
 export default function PatientProfile() {
   const [user, setUser] = useState(null)
@@ -83,6 +85,10 @@ export default function PatientProfile() {
   // Novo estado para coordenadas do dropdown
   const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0, width: 0 });
   const badgeRefs = useRef({});
+
+  // Adicionar estados no PatientProfile
+  const [showEditSessionSidebar, setShowEditSessionSidebar] = useState(false);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
 
   const router = useRouter()
   const params = useParams()
@@ -583,15 +589,15 @@ export default function PatientProfile() {
         return (
           <div className="space-y-6">
             {/* Add Note Button */}
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">Notas Clínicas</h3>
-              <button 
+            <div className="flex justify-end items-center">
+              <Button 
                 onClick={() => setShowAddNote(!showAddNote)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                className="flex items-center space-x-2"
+                variant={showAddNote ? 'secondary' : 'primary'}
               >
                 <Plus className="w-4 h-4" />
                 <span>{showAddNote ? 'Cancelar' : 'Nova Nota'}</span>
-              </button>
+              </Button>
             </div>
 
             {/* Formulário de criação de nota - aparece quando showAddNote é true */}
@@ -621,18 +627,19 @@ export default function PatientProfile() {
                   />
                 </div>
                 <div className="flex justify-end gap-2">
-                  <button
+                  <Button
                     onClick={() => setShowAddNote(false)}
-                    className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm font-medium"
+                    variant="secondary"
+                    className="text-xs"
                   >
                     Cancelar
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={saveNote}
                     className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
                   >
                     Guardar Nota
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -640,7 +647,7 @@ export default function PatientProfile() {
             {/* Lista de notas redesenhada */}
             <div className="space-y-10">
               {notes.length === 0 && (
-                <div className="text-gray-500 text-center py-12">Nenhuma nota encontrada.</div>
+                <div className="text-gray-500 text-center py-12">Adiciona uma nota</div>
               )}
               {notes.map((note, index) => {
                 const noteDate = new Date(note.note_date)
@@ -653,20 +660,6 @@ export default function PatientProfile() {
                 const isExpanded = expandedNoteId === note.id;
                 return (
                   <div key={note.id}>
-                    {/* Date Header - só mostra se for uma data diferente da anterior */}
-                    {showDateHeader && (
-                      <div className="flex items-center mb-4 mt-6 first:mt-0">
-                        <div className="flex-shrink-0 w-24 text-right pr-4">
-                          <div className="text-sm font-semibold text-blue-600">
-                            {formatDateMonthShort(noteDate.toISOString())}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {noteDate.getFullYear()}
-                          </div>
-                        </div>
-                        <div className="flex-grow h-px bg-gray-200"></div>
-                      </div>
-                    )}
                     {/* Note Card Redesigned */}
                     <div className="flex">
                       <div className="flex-shrink-0 w-24 flex justify-center">
@@ -704,9 +697,15 @@ export default function PatientProfile() {
                                   placeholder="Write your clinical notes here..."
                                 />
                                 <div className="flex items-center justify-between mt-2">
-                                  <button type="button" onClick={cancelEditNote} className="text-gray-600 hover:underline text-xs">Cancelar</button>
+                                  <Button
+                                    onClick={cancelEditNote}
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    Cancelar
+                                  </Button>
                                   <div className="flex gap-2">
-                                    <button type="submit" className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">Salvar</button>
+                                    <Button type="submit" className="px-3 py-1 text-sm font-medium">Salvar</Button>
                                   </div>
                                 </div>
                               </form>
@@ -715,10 +714,10 @@ export default function PatientProfile() {
                               <>
                                 <div className="prose prose-sm max-w-none text-gray-700 mb-2" dangerouslySetInnerHTML={{ __html: note.content }} />
                                 <div className="flex items-center justify-between mt-2">
-                                  <button onClick={() => setExpandedNoteId(null)} className="text-blue-600 hover:underline text-xs">Ver menos</button>
+                                  <Button onClick={() => setExpandedNoteId(null)} variant="secondary" className="text-xs">Ver menos</Button>
                                   <div className="flex gap-2">
-                                    <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600" title="Editar"><Edit className="w-4 h-4" /></button>
-                                    <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600" title="Excluir"><Trash2 className="w-4 h-4" /></button>
+                                    <Button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400" title="Editar"><Edit className="w-4 h-4" /></Button>
+                                    <Button onClick={() => deleteNote(note.id)} variant="danger" className="text-gray-400" title="Excluir"><Trash2 className="w-4 h-4" /></Button>
                                   </div>
                                 </div>
                               </>
@@ -728,10 +727,10 @@ export default function PatientProfile() {
                             <>
                               <div className="text-gray-700 text-sm mb-2 truncate" style={{ maxHeight: '3.6em', overflow: 'hidden' }}>{preview}</div>
                               <div className="flex items-center justify-between mt-2">
-                                <button onClick={() => setExpandedNoteId(note.id)} className="text-blue-600 hover:underline text-xs">Ver mais</button>
+                                <Button onClick={() => setExpandedNoteId(note.id)} variant="secondary" className="text-xs">Ver mais</Button>
                                 <div className="flex gap-2">
-                                  <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600" title="Editar"><Edit className="w-4 h-4" /></button>
-                                  <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600" title="Excluir"><Trash2 className="w-4 h-4" /></button>
+                                  <Button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400" title="Editar"><Edit className="w-4 h-4" /></Button>
+                                  <Button onClick={() => deleteNote(note.id)} variant="danger" className="text-gray-400" title="Excluir"><Trash2 className="w-4 h-4" /></Button>
                                 </div>
                               </div>
                             </>
@@ -749,15 +748,15 @@ export default function PatientProfile() {
         return (
           <div className="space-y-6">
             {/* Add Treatment Plan Button */}
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">Treatment Plans</h3>
-              <button 
+            <div className="flex justify-end items-center">
+              <Button 
                 onClick={() => setShowAddTreatmentPlan(!showAddTreatmentPlan)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                className="flex items-center space-x-2"
+                variant={showAddTreatmentPlan ? 'secondary' : 'primary'}
               >
                 <Plus className="w-4 h-4" />
-                <span>{showAddTreatmentPlan ? 'Cancel' : 'Add Treatment Plan'}</span>
-              </button>
+                <span>{showAddTreatmentPlan ? 'Cancelar' : 'Adicionar Plano Terapêutico'}</span>
+              </Button>
             </div>
 
             {/* Add Treatment Plan Form */}
@@ -786,18 +785,19 @@ export default function PatientProfile() {
                   />
                 </div>
                 <div className="flex justify-end gap-2">
-                  <button
+                  <Button
                     onClick={() => setShowAddTreatmentPlan(false)}
-                    className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm font-medium"
+                    variant="secondary"
+                    className="px-3 py-1 text-sm font-medium"
                   >
-                    Cancel
-                  </button>
-                  <button
+                    Cancelar
+                  </Button>
+                  <Button
                     onClick={saveTreatmentPlan}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                    className="px-3 py-1 text-sm font-medium"
                   >
-                    Save Treatment Plan
-                  </button>
+                    Guardar Plano Terapêutico
+                  </Button>
                 </div>
               </div>
             )}
@@ -830,121 +830,92 @@ export default function PatientProfile() {
                   
                   return (
                     <div key={plan.id}>
-                      {/* Date Header - só mostra se for uma data diferente da anterior */}
-                      {showDateHeader && (
-                        <div className="flex items-center mb-4 mt-6 first:mt-0">
-                          <div className="flex-shrink-0 w-24 text-right pr-4">
-                            <div className="text-sm font-semibold text-blue-600">
-                              {formatDateMonthShort(planDate.toISOString())}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {planDate.getFullYear()}
-                            </div>
-                          </div>
-                          <div className="flex-grow h-px bg-gray-200"></div>
-                        </div>
-                      )}
-                      
                       {/* Treatment Plan Card */}
-                      <div className="flex">
-                        <div className="flex-shrink-0 w-24 flex justify-center">
-                          <div className="w-px bg-gray-200 h-full relative">
-                            <div className="absolute top-4 -left-1.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow"></div>
-                          </div>
-                        </div>
-                        <div className="flex-1 ml-4 mb-6">
-                          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow group relative">
-                            <div className="space-y-4">
+                      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow group relative flex flex-col min-h-[180px]">
+                        <div className="absolute top-4 right-4 text-sm text-gray-500">{formatDate(plan.plan_date)}</div>
+                        
                         {isEditing ? (
-                          <div className="space-y-4">
-                            <div className="flex flex-col md:flex-row gap-4 mb-4">
-                              <input
-                                type="text"
-                                value={editTreatmentPlanData.title}
-                                onChange={(e) => setEditTreatmentPlanData({...editTreatmentPlanData, title: e.target.value})}
-                                placeholder="Plan Title *"
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                              />
-                              <input
-                                type="date"
-                                value={editTreatmentPlanData.plan_date}
-                                onChange={(e) => setEditTreatmentPlanData({...editTreatmentPlanData, plan_date: e.target.value})}
-                                className="w-40 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                              />
-                            </div>
-                            <div className="mb-4">
-                              <RichTextEditor
-                                value={editTreatmentPlanData.content}
-                                onChange={(content) => setEditTreatmentPlanData({...editTreatmentPlanData, content})}
-                                placeholder="Describe the treatment plan, goals, methods, timeline..."
-                              />
-                            </div>
-                            <div className="flex justify-end gap-2">
-                              <button
+                          // Formulário de edição inline
+                          <div className="space-y-3">
+                            <input
+                              type="text"
+                              value={editTreatmentPlanData.title}
+                              onChange={e => setEditTreatmentPlanData({ ...editTreatmentPlanData, title: e.target.value })}
+                              placeholder="Título do Plano *"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 font-bold"
+                              required
+                            />
+                            <input
+                              type="date"
+                              value={editTreatmentPlanData.plan_date}
+                              onChange={e => setEditTreatmentPlanData({ ...editTreatmentPlanData, plan_date: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                              required
+                            />
+                            <RichTextEditor
+                              value={editTreatmentPlanData.content}
+                              onChange={(content) => setEditTreatmentPlanData({ ...editTreatmentPlanData, content })}
+                              placeholder="Descreva o plano terapêutico, objetivos, métodos, cronograma..."
+                            />
+                            <div className="flex items-center justify-between mt-2">
+                              <Button
                                 onClick={cancelEditTreatmentPlan}
-                                className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg text-sm font-medium"
+                                variant="secondary"
+                                className="text-xs"
                               >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={() => saveEditTreatmentPlan(plan.id)}
-                                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
-                              >
-                                Save Changes
-                              </button>
+                                Cancelar
+                              </Button>
+                              <div className="flex gap-2">
+                                <Button onClick={() => saveEditTreatmentPlan(plan.id)} className="px-3 py-1 text-sm font-medium">Guardar</Button>
+                              </div>
                             </div>
                           </div>
                         ) : (
                           <>
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h4 className="text-lg font-medium text-gray-900 mb-2">{plan.title}</h4>
-                                <div className="flex items-center text-sm text-gray-500 mb-3">
-                                  <Calendar className="w-4 h-4 mr-1" />
-                                  <span>{formatDate(plan.plan_date)}</span>
-                                  <span className="mx-2">•</span>
-                                  <span>Created {formatDate(plan.created_at)}</span>
+                            <h4 className="text-lg font-medium text-gray-900 mb-2">{plan.title}</h4>
+                            <div className="flex-1">
+                              {plan.content && (
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                  <div className="text-gray-700">
+                                    {isExpanded || !plan.content || plan.content.length <= 150 ? (
+                                      <>
+                                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: plan.content }} />
+                                        {plan.content.length > 150 && (
+                                          <div className="flex items-center justify-between mt-2">
+                                            <button onClick={() => setExpandedNoteId(null)} className="text-blue-600 hover:underline text-xs">Ver menos</button>
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: plan.content.substring(0, 150) + '...' }} />
+                                        <div className="flex items-center justify-between mt-2">
+                                          <button onClick={() => setExpandedNoteId(plan.id)} className="text-blue-600 hover:underline text-xs">Ver mais</button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => startEditTreatmentPlan(plan)}
-                                  className="text-gray-400 hover:text-blue-600 transition-colors"
-                                  title="Edit treatment plan"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => deleteTreatmentPlan(plan.id)}
-                                  className="text-gray-400 hover:text-red-600 transition-colors"
-                                  title="Delete treatment plan"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
+                              )}
                             </div>
-
-                            {plan.content && (
-                              <div className="bg-gray-50 rounded-lg p-4">
-                                <div className="text-gray-700">
-                                  {isExpanded || !plan.content || plan.content.length <= 150 ? (
-                                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: plan.content }} />
-                                  ) : (
-                                    <>
-                                      <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: plan.content.substring(0, 150) + '...' }} />
-                                      <div className="flex items-center justify-between mt-2">
-                                        <button onClick={() => setExpandedNoteId(plan.id)} className="text-blue-600 hover:underline text-xs">Ver mais</button>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            )}
+                            <div className="flex justify-end gap-2 mt-4">
+                              <button
+                                onClick={() => startEditTreatmentPlan(plan)}
+                                className="text-gray-400 hover:text-blue-600 transition-colors"
+                                title="Edit treatment plan"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => deleteTreatmentPlan(plan.id)}
+                                className="text-gray-400 hover:text-red-600 transition-colors"
+                                title="Delete treatment plan"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </>
                         )}
-                            </div>
-                          </div>
-                        </div>
                       </div>
                     </div>
                   )
@@ -957,10 +928,9 @@ export default function PatientProfile() {
         return (
           <div className="space-y-6">
             {/* Header */}
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">Session Payments</h3>
+            <div className="flex justify-end items-center">
               <div className="text-sm text-gray-500">
-                {sessions.length} session{sessions.length !== 1 ? 's' : ''} total
+                {sessions.length} sessão{sessions.length !== 1 ? 's' : ''} no total
               </div>
             </div>
 
@@ -969,14 +939,14 @@ export default function PatientProfile() {
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-gray-500 mt-2">Loading sessions...</p>
+                  <p className="text-gray-500 mt-2">A carregar sessões...</p>
                 </div>
               </div>
             ) : sessions.length === 0 ? (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="text-center py-8">
                   <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No sessions found for this patient.</p>
+                  <p className="text-gray-500">Nenhuma sessão encontrada para este paciente.</p>
                 </div>
               </div>
             ) : (
@@ -986,20 +956,21 @@ export default function PatientProfile() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Session
+                          Sessão
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
+                          Data
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Duration
+                          Duração
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Amount
+                          Valor
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
+                          Estado
                         </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -1007,10 +978,10 @@ export default function PatientProfile() {
                         <tr key={session.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
-                              {session.title || 'Session'}
+                              {session.title || 'Sessão'}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {session.notes ? `${session.notes.substring(0, 50)}...` : 'No notes'}
+                              {session.notes ? `${session.notes.substring(0, 50)}...` : 'Sem notas'}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -1019,15 +990,17 @@ export default function PatientProfile() {
                             </div>
                             {session.session_time && (
                               <div className="text-sm text-gray-500">
-                                {session.session_time}
+                                {session.session_time.slice(0,5)}
                               </div>
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {session.duration_minutes} min
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            €{session.session_fee || '0.00'}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                            <div className="text-right">
+                              €{session.session_fee || '0.00'}
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {editingStatusId === session.id ? (
@@ -1079,6 +1052,18 @@ export default function PatientProfile() {
                                 {getStatusBadge(session.payment_status)}
                               </span>
                             )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <button
+                              onClick={() => {
+                                setSelectedSessionId(session.id);
+                                setShowEditSessionSidebar(true);
+                              }}
+                              className="text-gray-400 hover:text-blue-600 transition-colors"
+                              title="Editar sessão"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1169,7 +1154,10 @@ export default function PatientProfile() {
               <span className={`inline-flex items-center px-3 py-1 ml-2 rounded-full text-sm font-medium ${statusConfig.color}`}>{statusConfig.label}</span>
             </div>
             <div className="text-gray-600 mt-1 text-sm">
-              <span className="font-medium">Próxima Sessão:</span> {nextSession ? `${formatDate(nextSession.session_date)} às ${nextSession.session_time}` : 'Nenhuma sessão agendada'}
+              <span className="font-medium">Próxima Sessão:</span> {nextSession ? `${formatDate(nextSession.session_date)} às ${nextSession.session_time.slice(0,5)}` : 'Nenhuma sessão agendada'}
+            </div>
+            <div className="text-gray-600 text-sm">
+              <span className="font-medium">Sessões Realizadas:</span> {Array.isArray(sessions) ? sessions.filter(s => s.status === 'completed').length : 0}
             </div>
           </div>
           <div className="flex gap-2 mt-4 sm:mt-0">
@@ -1179,12 +1167,12 @@ export default function PatientProfile() {
             >
               Editar
             </button>
-            <button
+            <Button
               onClick={() => setShowScheduleSidebar(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+              className="px-4 py-2 rounded-lg font-medium"
             >
               Agendar Sessão
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -1236,6 +1224,18 @@ export default function PatientProfile() {
           user={user}
           mode="edit"
           existingPatient={editingPatient}
+        />
+        <SessionDetailsSidebar
+          isOpen={showEditSessionSidebar}
+          onClose={() => setShowEditSessionSidebar(false)}
+          onSuccess={() => {
+            setShowEditSessionSidebar(false);
+            fetchSessions(patient.id);
+          }}
+          user={user}
+          patients={[patient]}
+          sessionId={selectedSessionId}
+          mode="edit"
         />
       </div>
     </div>

@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { formatTime12Hour, getWeekdayShort, getMonthLong, isToday, isCurrentMonth } from '../../lib/dateUtils'
 import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
 import SessionDetailsSidebar from '../../components/SessionDetailsSidebar'
+import Button from '../../components/Button'
 
 export default function Calendar() {
   const [user, setUser] = useState(null)
@@ -340,12 +341,11 @@ export default function Calendar() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 md:gap-0 px-4 md:px-0 pt-6 md:pt-0">
         <h1 className="text-2xl font-bold text-gray-900">Calendário</h1>
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={() => setShowScheduleSidebar(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm"
           >
             Agendar Sessão
-          </button>
+          </Button>
         </div>
       </div>
       {/* Navegação mês/semana/dia */}
@@ -358,9 +358,9 @@ export default function Calendar() {
           <button onClick={() => navigateMonth(1)} className="px-3 py-1 rounded-lg bg-white border border-gray-200 hover:bg-gray-100">&gt;</button>
         </div>
         <div className="flex gap-2">
-          <button onClick={goToToday} className={`px-3 py-1 rounded-lg font-medium ${view === 'today' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}>Hoje</button>
-          <button onClick={() => setView('week')} className={`px-3 py-1 rounded-lg font-medium ${view === 'week' ? 'bg-blue-600 text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Semana</button>
-          <button onClick={() => setView('month')} className={`px-3 py-1 rounded-lg font-medium ${view === 'month' ? 'bg-blue-600 text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Mês</button>
+          <button onClick={goToToday} className={`px-3 py-1 rounded-lg font-medium ${view === 'today' ? 'bg-black text-white' : 'bg-gray-200 text-gray-800'}`}>Hoje</button>
+          <button onClick={() => setView('week')} className={`px-3 py-1 rounded-lg font-medium ${view === 'week' ? 'bg-black text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Semana</button>
+          <button onClick={() => setView('month')} className={`px-3 py-1 rounded-lg font-medium ${view === 'month' ? 'bg-black text-white' : 'bg-white text-gray-900 border border-gray-200 hover:bg-gray-100'}`}>Mês</button>
         </div>
       </div>
       {/* Calendário */}

@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
 import { formatDateLong, formatTime12Hour } from '../../../lib/dateUtils'
+import { Button } from '../../../components/Button'
 
 export default function SessionDetails() {
   const [user, setUser] = useState(null)
@@ -365,17 +366,13 @@ export default function SessionDetails() {
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Session Notes</h3>
-                <button
+                <Button
                   onClick={handleSaveNotes}
                   disabled={saving}
-                  className={`px-4 py-2 rounded-lg font-medium ${
-                    saving 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } text-white`}
+                  className="px-4 py-2 rounded-lg font-medium"
                 >
-                  {saving ? 'Saving...' : 'Save Notes'}
-                </button>
+                  {saving ? 'A guardar...' : 'Guardar Notas'}
+                </Button>
               </div>
               
               <textarea

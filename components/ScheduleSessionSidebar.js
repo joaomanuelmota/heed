@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { X, Save, Calendar, Clock, User, FileText, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { generateTimeSlots } from '../lib/dateUtils'
+import Button from './Button'
 
 export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, user, patients, preSelectedPatient = null }) {
   const [loading, setLoading] = useState(false)
@@ -329,24 +330,12 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
           </div>
           {/* Submit Button */}
           <div className="flex justify-end space-x-4 pt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-medium"
-            >
+            <Button type="submit" disabled={loading}>
+              {loading ? 'A agendar...' : 'Agendar'}
+            </Button>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>
               Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`px-6 py-2 rounded-lg font-medium ${
-                loading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-blue-600 hover:bg-blue-700'
-              } text-white`}
-            >
-              {loading ? 'A agendar...' : 'Agendar Sessão'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

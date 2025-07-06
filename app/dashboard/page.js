@@ -9,6 +9,7 @@ import { formatDate } from '../../lib/dateUtils'
 import { CalendarDays, Euro, Users, Clock, Plus, FileText, ChevronDown, ChevronUp } from "lucide-react"
 import AddPatientSidebar from '../../components/AddPatientSidebar'
 import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
+import Button from '../../components/Button'
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
@@ -247,8 +248,12 @@ export default function Dashboard() {
           <div className="text-gray-500 text-sm">Hoje: {dateString}</div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowAddPatient(true)} className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium flex items-center gap-2"><Plus size={18}/> Adicionar Paciente</button>
-          <button onClick={() => setShowScheduleSession(true)} className="px-4 py-2 rounded-lg bg-green-600 text-white font-medium flex items-center gap-2"><CalendarDays size={18}/> Agendar Sessão</button>
+          <Button onClick={() => setShowAddPatient(true)} className="flex items-center gap-2">
+            <Plus size={18}/> Adicionar Paciente
+          </Button>
+          <Button onClick={() => setShowScheduleSession(true)} className="flex items-center gap-2">
+            <CalendarDays size={18}/> Agendar Sessão
+          </Button>
         </div>
       </div>
 

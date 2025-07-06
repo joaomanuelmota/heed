@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "../../lib/supabase"
+import Button from '../../components/Button'
 
 export default function UserProfile() {
   const [user, setUser] = useState(null)
@@ -110,11 +111,17 @@ export default function UserProfile() {
           <div className="flex gap-2 mt-6">
             {editing ? (
               <>
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium" disabled={loading}>Guardar</button>
-                <button type="button" className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium" onClick={() => setEditing(false)} disabled={loading}>Cancelar</button>
+                <Button type="submit" disabled={loading}>
+                  Guardar
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => setEditing(false)} disabled={loading}>
+                  Cancelar
+                </Button>
               </>
             ) : (
-              <button type="button" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium" onClick={() => setEditing(true)}>Editar Perfil</button>
+              <Button type="button" onClick={() => setEditing(true)}>
+                Editar Perfil
+              </Button>
             )}
           </div>
         </form>

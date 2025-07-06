@@ -4,6 +4,7 @@ import { X, Save, Calendar, Clock, User, FileText, ChevronDown, Edit, Eye } from
 import { supabase } from '../lib/supabase'
 import { formatDateLong, formatTime12Hour, generateTimeSlots } from '../lib/dateUtils'
 import Link from 'next/link'
+import Button from './Button'
 
 export default function SessionDetailsSidebar({ 
   isOpen, 
@@ -41,6 +42,12 @@ export default function SessionDetailsSidebar({
   useEffect(() => {
     setCurrentMode(mode)
   }, [mode])
+
+  useEffect(() => {
+    if (isOpen) {
+      setMessage('');
+    }
+  }, [isOpen, sessionId]);
 
   const fetchSession = async () => {
     setLoading(true)
@@ -260,8 +267,8 @@ export default function SessionDetailsSidebar({
 
         {message && (
           <div className={`p-3 mb-6 rounded-lg text-sm text-center ${
-            message.includes('successfully') 
-              ? 'bg-green-100 text-green-700 border border-green-300' 
+            message.toLowerCase().includes('sucesso') || message.toLowerCase().includes('success')
+              ? 'bg-green-100 text-green-700 border border-green-300'
               : 'bg-red-100 text-red-700 border border-red-300'
           }`}>
             {message}
@@ -388,7 +395,7 @@ export default function SessionDetailsSidebar({
                       options={generateTimeSlotsLocal().map(slot => ({ value: slot.value, label: slot.display }))}
                       onChange={val => handleChange({ target: { name: 'session_time', value: val } })}
                       disabled={saving}
-                      placeholder="Selecionar hora"
+                      placeholder="Hora"
                     />
                   </div>
                 </div>
@@ -459,23 +466,12 @@ export default function SessionDetailsSidebar({
                 </div>
 
                 <div className="flex justify-end space-x-4 pt-6">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentMode('view')}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-medium"
-                    disabled={saving}
-                  >
+                  <Button type="submit" disabled={saving}>
+                    {saving ? 'A guardar...' : 'Guardar'}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setCurrentMode('view')} disabled={saving}>
                     Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className={`px-6 py-2 rounded-lg font-medium ${
-                      saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                    } text-white`}
-                  >
-                    {saving ? 'A guardar...' : 'Guardar Alterações'}
-                  </button>
+                  </Button>
                 </div>
               </form>
             )}

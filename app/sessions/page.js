@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
-import { formatDateShort, formatTime12Hour } from '../../lib/dateUtils'
+import { formatDateLong, formatTime12Hour } from '../../lib/dateUtils'
 import { Calendar, Plus } from 'lucide-react'
 import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
 import SessionDetailsSidebar from '../../components/SessionDetailsSidebar'
+import Button from '../../components/Button'
 
 export default function Sessions() {
   const [user, setUser] = useState(null)
@@ -110,7 +111,7 @@ export default function Sessions() {
   }
 
   const formatDate = (dateString) => {
-    return formatDateShort(dateString)
+    return formatDateLong(dateString)
   }
 
   const formatTime = (timeString) => {
@@ -236,13 +237,13 @@ export default function Sessions() {
               </span>
             </div>
           </div>
-          <button 
+          <Button 
             onClick={() => setShowScheduleSidebar(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm"
+            className="inline-flex items-center"
           >
             <Plus className="w-5 h-5 mr-2" />
             Agendar Nova Sessão
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -263,7 +264,7 @@ export default function Sessions() {
               onClick={() => setFilter(filterOption.key)}
               className={`px-4 py-2 rounded-lg font-medium border transition-colors duration-200 ${
                 filter === filterOption.key
-                  ? 'bg-blue-600 text-white border-blue-600'
+                  ? 'bg-black text-white border-black'
                   : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-100'
               }`}
             >
@@ -295,11 +296,10 @@ export default function Sessions() {
                 : `Nenhuma sessão encontrada para o filtro ${filter}`
               }
             </p>
-            <Link 
-              href="/sessions/schedule"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-block"
-            >
-              Agendar a Primeira Sessão
+            <Link href="/sessions/schedule">
+              <Button size="lg">
+                Agendar a Primeira Sessão
+              </Button>
             </Link>
           </div>
         ) : (
@@ -322,11 +322,10 @@ export default function Sessions() {
                 : `Nenhuma sessão encontrada para o filtro ${filter}`
               }
             </p>
-            <Link 
-              href="/sessions/schedule"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-block"
-            >
-              Agendar a Primeira Sessão
+            <Link href="/sessions/schedule">
+              <Button size="lg">
+                Agendar a Primeira Sessão
+              </Button>
             </Link>
           </div>
         )
@@ -336,18 +335,10 @@ export default function Sessions() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Paciente
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Data & Hora
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Duração
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PACIENTE</th>
+                  <th className="px-8 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3 min-w-[220px]">DATA & HORA</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DURAÇÃO</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AÇÕES</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">

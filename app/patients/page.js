@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
 import { UserCheck, Plus } from 'lucide-react'
 import AddPatientSidebar from '../../components/AddPatientSidebar'
+import Button from '../../components/Button'
 
 export default function Patients() {
   const [user, setUser] = useState(null)
@@ -13,7 +14,6 @@ export default function Patients() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
   const [sessionTypeFilter, setSessionTypeFilter] = useState('all')
-  const [specialtyFilter, setSpecialtyFilter] = useState('all')
   const [showAddSidebar, setShowAddSidebar] = useState(false)
   const [editingPatient, setEditingPatient] = useState(null)
   const router = useRouter()
@@ -123,11 +123,9 @@ export default function Patients() {
       const searchLower = searchTerm.toLowerCase();
       const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
       const email = (patient.email || '').toLowerCase();
-      const specialty = formatSpecialty(patient.specialty).toLowerCase();
       
       const matchesSearch = fullName.includes(searchLower) || 
-                           email.includes(searchLower) || 
-                           specialty.includes(searchLower);
+                           email.includes(searchLower);
       
       if (!matchesSearch) return false;
     }
@@ -142,20 +140,10 @@ export default function Patients() {
       return false;
     }
     
-    // Specialty filter
-    if (specialtyFilter !== 'all') {
-      if (specialtyFilter === '' && patient.specialty) {
-        return false; // Looking for "Not Specified" but patient has a specialty
-      }
-      if (specialtyFilter !== '' && patient.specialty !== specialtyFilter) {
-        return false; // Looking for specific specialty but patient has different one
-      }
-    }
-    
     return true;
   });
 
-  const hasActiveFilters = searchTerm || statusFilter !== 'all' || sessionTypeFilter !== 'all' || specialtyFilter !== 'all'
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || sessionTypeFilter !== 'all'
 
   if (!user || loading) {
     return (
@@ -181,13 +169,13 @@ export default function Patients() {
               </span>
             </div>
           </div>
-          <button 
+          <Button 
             onClick={() => setShowAddSidebar(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 shadow-sm"
+            className="inline-flex items-center"
           >
             <Plus className="w-5 h-5 mr-2" />
             Adicionar Novo Paciente
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -264,47 +252,6 @@ export default function Patients() {
               </div>
             </div>
           </div>
-
-          {/* Specialty Filter */}
-          <div className="min-w-[160px]">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-              </div>
-              <select
-                value={specialtyFilter}
-                onChange={(e) => setSpecialtyFilter(e.target.value)}
-                className="block w-full pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none bg-white text-gray-900"
-              >
-                <option value="all">Todas as Especialidades</option>
-                <option value="">Não Especificado</option>
-                <option value="clinical">Psicologia Clínica</option>
-                <option value="counseling">Psicologia de Aconselhamento</option>
-                <option value="cognitive">Psicologia Cognitiva</option>
-                <option value="behavioral">Psicologia Comportamental</option>
-                <option value="developmental">Psicologia do Desenvolvimento</option>
-                <option value="forensic">Psicologia Forense</option>
-                <option value="health">Psicologia da Saúde</option>
-                <option value="neuropsychology">Neuropsicologia</option>
-                <option value="school">Psicologia Escolar</option>
-                <option value="social">Psicologia Social</option>
-                <option value="sport">Psicologia do Desporto</option>
-                <option value="trauma">Psicologia do Trauma</option>
-                <option value="addiction">Psicologia das Adições</option>
-                <option value="family">Terapia Familiar</option>
-                <option value="couples">Terapia de Casal</option>
-                <option value="group">Terapia de Grupo</option>
-                <option value="other">Outro</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Clear Filters Button */}
@@ -315,7 +262,6 @@ export default function Patients() {
                 setSearchTerm('')
                 setStatusFilter('all')
                 setSessionTypeFilter('all')
-                setSpecialtyFilter('all')
               }}
               className="text-sm text-gray-600 hover:text-gray-800 underline"
             >
@@ -387,11 +333,6 @@ export default function Patients() {
                       <div className="text-sm font-medium text-gray-900">
                         {patient.firstName} {patient.lastName}
                       </div>
-                      {patient.email && (
-                        <div className="text-sm text-gray-500">
-                          {patient.email}
-                        </div>
-                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={getStatusBadge(patient.status)}>

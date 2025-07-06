@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, Save, User, Mail, Phone, Calendar, MapPin, Check, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import Button from './Button'
 
 function CustomDropdown({ value, options, onChange, disabled, placeholder }) {
   const [open, setOpen] = useState(false)
@@ -307,28 +308,13 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Cancelar
-            </button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'A guardar...' : 'Guardar'}
+            </Button>
             
-            <button
-              type="submit"
-              disabled={loading}
-              className={`flex-1 inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium text-white transition-all duration-200 ${
-                loading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {loading
-                ? (mode === 'edit' ? 'A guardar alterações...' : 'A adicionar paciente...')
-                : (mode === 'edit' ? 'Guardar Alterações' : 'Adicionar Paciente')}
-            </button>
+            <Button type="button" variant="secondary" onClick={handleClose} disabled={loading}>
+              Cancelar
+            </Button>
           </div>
         </form>
       </div>
