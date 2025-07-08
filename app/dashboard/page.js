@@ -10,6 +10,7 @@ import { CalendarDays, Euro, Users, Clock, Plus, FileText, ChevronDown, ChevronU
 import AddPatientSidebar from '../../components/AddPatientSidebar'
 import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
 import Button from '../../components/Button'
+import CustomDropdown from '../../components/CustomDropdown'
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
@@ -150,39 +151,55 @@ export default function Dashboard() {
     ).length
   }
 
-  const getOutstandingRevenue = () => {
-    const todayStr = today.toISOString().split('T')[0]
-    const pastUnpaidSessions = sessions.filter(session => 
-      session.session_date < todayStr && 
-      session.status !== 'paid'
-    )
-    
-    return pastUnpaidSessions.reduce((total, session) => 
-      total + (session.session_fee || 0), 0
-    )
+  const getMonthRevenue = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    return sessions.filter(session => {
+      const sessionDate = new Date(session.session_date);
+      return (
+        sessionDate.getMonth() === currentMonth &&
+        sessionDate.getFullYear() === currentYear &&
+        (session.payment_status === 'paid' || session.payment_status === 'invoice issued') &&
+        session.status !== 'cancelled'
+      );
+    }).reduce((total, session) => total + (session.session_fee || 0), 0);
   }
 
   const getTodaysSessions = () => {
     const todayStr = today.toISOString().split('T')[0]
-    return sessions.filter(session => 
-      session.session_date === todayStr
-    )
+    return sessions
+      .filter(session => session.session_date === todayStr && session.status === 'scheduled')
+      .sort((a, b) => {
+        if (!a.session_time || !b.session_time) return 0;
+        return a.session_time.localeCompare(b.session_time);
+      });
   }
 
   const getUnpaidSessions = () => {
     const todayStr = today.toISOString().split('T')[0]
-    return sessions.filter(session => 
-      session.session_date < todayStr && 
-      session.status !== 'paid'
-    ).sort((a, b) => new Date(b.session_date) - new Date(a.session_date))
+    return sessions.filter(s => {
+      return (
+        s.session_date < todayStr &&
+        !isPaid(s) &&
+        s.status !== 'cancelled'
+      );
+    }).sort((a, b) => new Date(b.session_date) - new Date(a.session_date))
   }
 
   const isPaid = s => s.payment_status === "paid" || s.payment_status === "invoice issued"
-  const unpaidSessions = sessions.filter(s => !isPaid(s))
+  const unpaidSessions = sessions.filter(s => {
+    const todayStr = today.toISOString().split('T')[0];
+    return (
+      s.session_date < todayStr &&
+      !isPaid(s) &&
+      s.status !== 'cancelled'
+    );
+  });
 
   const statusOptions = [
     { value: "paid", label: "Pago" },
-    { value: "to pay", label: "A Pagar" },
+    { value: "to pay", label: "Não Pago" },
     { value: "invoice issued", label: "Fatura Emitida" },
     { value: "cancelled", label: "Cancelado" },
   ]
@@ -190,11 +207,23 @@ export default function Dashboard() {
   const handleStatusChange = async (sessionId, newStatus) => {
     await supabase
       .from("sessions")
-      .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq("id", sessionId)
     setSessions((prev) =>
       prev.map((s) =>
-        s.id === sessionId ? { ...s, payment_status: newStatus } : s
+        s.id === sessionId ? { ...s, status: newStatus } : s
+      )
+    )
+  }
+
+  const handlePaymentStatusChange = async (sessionId, newPaymentStatus) => {
+    await supabase
+      .from("sessions")
+      .update({ payment_status: newPaymentStatus, updated_at: new Date().toISOString() })
+      .eq("id", sessionId)
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId ? { ...s, payment_status: newPaymentStatus } : s
       )
     )
   }
@@ -215,7 +244,7 @@ export default function Dashboard() {
     }
     return (
       <span className={`${badgeClass} ${colorClass}`} tabIndex={0}>
-        {status === 'invoice issued' ? 'Fatura Emitida' : status === 'to pay' ? 'A Pagar' : status === 'paid' ? 'Pago' : status === 'cancelled' ? 'Cancelado' : 'Não Pago'}
+        {status === 'invoice issued' ? 'Fatura Emitida' : status === 'to pay' ? 'Não Pago' : status === 'paid' ? 'Pago' : status === 'cancelled' ? 'Cancelado' : 'Não Pago'}
         <span className="flex flex-col ml-1">
           <ChevronUp className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mb-1" />
           <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mt-1" />
@@ -223,6 +252,19 @@ export default function Dashboard() {
         <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 whitespace-nowrap z-30">Clicar para editar estado</span>
       </span>
     )
+  }
+
+  const getPendingRevenue = () => {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    return sessions.filter(session => {
+      return (
+        session.session_date < todayStr &&
+        session.payment_status !== 'paid' &&
+        session.payment_status !== 'invoice issued' &&
+        session.status !== 'cancelled'
+      );
+    }).reduce((total, session) => total + (session.session_fee || 0), 0);
   }
 
   // Format date
@@ -277,8 +319,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 px-4 md:px-0">
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
           <Users className="w-7 h-7 text-blue-600 mb-2" />
-          <div className="text-sm text-gray-500 mb-1">Total de Pacientes</div>
-          <div className="text-2xl font-bold text-gray-900">{patients.length}</div>
+          <div className="text-sm text-gray-500 mb-1">Pacientes Ativos</div>
+          <div className="text-2xl font-bold text-gray-900">{patients.filter(p => p.status === 'active').length}</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
           <Clock className="w-7 h-7 text-green-600 mb-2" />
@@ -287,13 +329,13 @@ export default function Dashboard() {
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
           <CalendarDays className="w-7 h-7 text-yellow-600 mb-2" />
-          <div className="text-sm text-gray-500 mb-1">Próximas Sessões</div>
+          <div className="text-sm text-gray-500 mb-1">Sessões Agendadas</div>
           <div className="text-2xl font-bold text-gray-900">{getUpcomingSessions()}</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
           <Euro className="w-7 h-7 text-blue-700 mb-2" />
           <div className="text-sm text-gray-500 mb-1">Receita do Mês</div>
-          <div className="text-2xl font-bold text-gray-900">€{getOutstandingRevenue().toFixed(2)}</div>
+          <div className="text-2xl font-bold text-gray-900">€{getMonthRevenue().toFixed(2)}</div>
         </div>
       </div>
 
@@ -309,19 +351,34 @@ export default function Dashboard() {
                   <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <div className="font-medium text-gray-900">
-                        {patients.find(p => p.id === session.patient_id)?.name || 'Unknown Patient'}
+                        {session.patients?.firstName || '—'} {session.patients?.lastName || ''}
                       </div>
-                      <div className="text-sm text-gray-500">{session.session_time}</div>
+                      <div className="text-sm text-gray-500">
+                        {session.session_time ? `${session.session_time.slice(0,5)} - ${(() => {
+                          if (!session.session_time || !session.duration_minutes) return '';
+                          const [h, m] = session.session_time.split(":").map(Number);
+                          const start = new Date(0,0,0,h,m);
+                          const end = new Date(start.getTime() + session.duration_minutes * 60000);
+                          const hh = String(end.getHours()).padStart(2, '0');
+                          const mm = String(end.getMinutes()).padStart(2, '0');
+                          return `${hh}:${mm}`;
+                        })()}` : ''}
+                      </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium text-gray-900">€{session.session_fee?.toFixed(2) || '0.00'}</div>
-                      <div className={`text-xs px-2 py-1 rounded-full ${
-                        session.status === 'paid' ? 'bg-green-100 text-green-800' :
-                        session.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                        session.status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {session.status}
+                      <div className="w-40">
+                        <CustomDropdown
+                          value={session.status}
+                          options={[
+                            { value: 'scheduled', label: 'Agendada' },
+                            { value: 'completed', label: 'Realizada' },
+                            { value: 'cancelled', label: 'Cancelada' }
+                          ]}
+                          onChange={async (newStatus) => {
+                            await handleStatusChange(session.id, newStatus)
+                          }}
+                          placeholder="Estado"
+                        />
                       </div>
                     </div>
                   </div>
@@ -359,26 +416,15 @@ export default function Dashboard() {
                         <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.session_date ? formatDate(session.session_date) : '—'}</td>
                         <td className="px-4 py-2 whitespace-nowrap text-right font-mono w-1/4 pr-8">{typeof session.session_fee === 'number' ? `€${session.session_fee}` : '—'}</td>
                         <td className="px-4 py-2 whitespace-nowrap w-1/4 pl-8">
-                          {editingStatusIdUnpaidSessions === session.id ? (
-                            <div className="relative">
-                              <div className="absolute left-0 bottom-full mb-2 w-full bg-white border border-gray-200 rounded shadow-lg z-50">
-                                {statusOptions.map(opt => (
-                                  <button
-                                    key={opt.value}
-                                    className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${session.payment_status === opt.value ? 'font-semibold text-blue-600' : 'text-gray-900'}`}
-                                    onClick={async () => {
-                                      await handleStatusChange(session.id, opt.value)
-                                      setEditingStatusIdUnpaidSessions(null)
-                                    }}
-                                  >
-                                    {opt.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          ) : (
-                            <span onClick={() => setEditingStatusIdUnpaidSessions(session.id)}>{getStatusBadge(session.payment_status)}</span>
-                          )}
+                          <CustomDropdown
+                            value={session.payment_status}
+                            options={statusOptions}
+                            onChange={async (newStatus) => {
+                              await handlePaymentStatusChange(session.id, newStatus)
+                            }}
+                            placeholder="Status"
+                            className="min-w-[120px]"
+                          />
                         </td>
                       </tr>
                     ))
@@ -397,7 +443,7 @@ export default function Dashboard() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Este Mês:</span>
-                <span className="text-sm font-medium">€0.00</span>
+                <span className="text-sm font-medium">€{getMonthRevenue().toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Este Ano:</span>
@@ -405,7 +451,7 @@ export default function Dashboard() {
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Pendente:</span>
-                <span className="text-sm font-medium text-red-600">€{getOutstandingRevenue().toFixed(2)}</span>
+                <span className="text-sm font-medium text-red-600">€{getPendingRevenue().toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -413,17 +459,36 @@ export default function Dashboard() {
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Insights dos Pacientes</h2>
             <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Novos Este Mês:</span>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-gray-600">Novos Pacientes Este Mês:</span>
                 <span className="text-sm font-medium">{patients.filter(p => {
                   const created = new Date(p.created_at)
                   const now = new Date()
                   return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear()
                 }).length}</span>
               </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-gray-600">Sessões Realizadas Este Mês:</span>
+                <span className="text-sm font-medium">{
+                  sessions.filter(s => {
+                    const now = new Date();
+                    const sessionDate = new Date(s.session_date);
+                    return (
+                      s.status === 'completed' &&
+                      sessionDate.getMonth() === now.getMonth() &&
+                      sessionDate.getFullYear() === now.getFullYear()
+                    );
+                  }).length
+                }</span>
+              </div>
+              <div className="border-t border-gray-200 my-3"></div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-gray-600">Total Pacientes Ativos</span>
+                <span className="text-sm font-medium">{patients.filter(p => p.status === 'active').length}</span>
+              </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Pacientes Ativos:</span>
-                <span className="text-sm font-medium">{patients.length}</span>
+                <span className="text-sm text-gray-600">Total Pacientes Inativos:</span>
+                <span className="text-sm font-medium">{patients.filter(p => p.status === 'inactive').length}</span>
               </div>
             </div>
           </div>

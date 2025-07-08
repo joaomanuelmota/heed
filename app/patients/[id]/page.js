@@ -76,7 +76,7 @@ export default function PatientProfile() {
   // Adicionar estados para edição do status
   const [editingStatusId, setEditingStatusId] = useState(null);
   const statusOptions = [
-    { value: 'to pay', label: 'A Pagar' },
+    { value: 'to pay', label: 'Não Pago' },
     { value: 'paid', label: 'Pago' },
     { value: 'invoice issued', label: 'Fatura Emitida' },
     { value: 'cancelled', label: 'Cancelado' },
@@ -262,13 +262,13 @@ export default function PatientProfile() {
     } else if (status === 'invoice issued') {
       colorClass = "bg-blue-100 text-blue-800 border-blue-200 group-hover:bg-blue-200 group-hover:shadow";
     } else if (status === 'to pay') {
-      colorClass = "bg-yellow-100 text-yellow-800 border-yellow-200 group-hover:bg-yellow-200 group-hover:shadow";
+      colorClass = "bg-gray-100 text-gray-800 border-gray-200 group-hover:bg-gray-200 group-hover:shadow";
     } else {
       colorClass = "bg-gray-100 text-gray-800 border-gray-200 group-hover:bg-gray-200 group-hover:shadow";
     }
     return (
       <span className={`${badgeClass} ${colorClass}`} tabIndex={0}>
-        {status === 'invoice issued' ? 'Fatura Emitida' : status === 'to pay' ? 'A Pagar' : status === 'paid' ? 'Pago' : status === 'cancelled' ? 'Cancelado' : 'Não Pago'}
+        {status === 'invoice issued' ? 'Fatura Emitida' : status === 'to pay' ? 'Não Pago' : status === 'paid' ? 'Pago' : status === 'cancelled' ? 'Cancelado' : 'Não Pago'}
         <span className="flex flex-col ml-1">
           <ChevronUp className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mb-1" />
           <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors duration-150 -mt-1" />
@@ -561,7 +561,7 @@ export default function PatientProfile() {
   const getStatusDisplay = (status) => {
     const statusConfig = {
       active: { label: 'Ativo', color: 'bg-green-100 text-green-700', dot: 'bg-green-400' },
-      inactive: { label: 'Inativo', color: 'bg-gray-100 text-gray-700', dot: 'bg-gray-400' },
+      inactive: { label: 'Inativo', color: 'bg-red-100 text-red-700', dot: 'bg-red-400' },
       'on-hold': { label: 'Em Espera', color: 'bg-yellow-100 text-yellow-700', dot: 'bg-yellow-400' }
     }
     return statusConfig[status] || statusConfig.active

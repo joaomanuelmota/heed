@@ -17,6 +17,7 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
     session_time: '',
     duration_minutes: 60,
     status: 'scheduled',
+    payment_status: 'to pay',
     notes: '',
     session_fee: ''
   })
@@ -50,7 +51,7 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
         setSessionData(prev => ({
           ...prev,
           [name]: value,
-          title: `Session with ${selectedPatient.firstName} ${selectedPatient.lastName}`
+          title: `Sessão com ${selectedPatient.firstName} ${selectedPatient.lastName}`
         }))
       }
     }
@@ -83,11 +84,12 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
     try {
       const submitData = {
         patient_id: parseInt(sessionData.patient_id),
-        title: sessionData.title || `Session with ${patients.find(p => p.id == sessionData.patient_id)?.firstName} ${patients.find(p => p.id == sessionData.patient_id)?.lastName}`,
+        title: sessionData.title || `Sessão com ${patients.find(p => p.id == sessionData.patient_id)?.firstName} ${patients.find(p => p.id == sessionData.patient_id)?.lastName}`,
         session_date: sessionData.session_date,
         session_time: sessionData.session_time,
         duration_minutes: parseInt(sessionData.duration_minutes),
         status: sessionData.status,
+        payment_status: sessionData.payment_status || 'to pay',
         notes: sessionData.notes || null,
         session_fee: Number(sessionData.session_fee),
         psychologist_id: user.id,
@@ -112,6 +114,7 @@ export default function ScheduleSessionSidebar({ isOpen, onClose, onSuccess, use
           session_time: '',
           duration_minutes: 60,
           status: 'scheduled',
+          payment_status: 'to pay',
           notes: '',
           session_fee: ''
         })

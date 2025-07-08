@@ -11,6 +11,7 @@
   "dependencies": {
     "@next-auth/supabase-adapter": "^0.2.1",
     "@supabase/supabase-js": "^2.50.0",
+    "@tailwindcss/line-clamp": "^0.4.4",
     "@tiptap/extension-underline": "^2.24.1",
     "@tiptap/react": "^2.24.1",
     "@tiptap/starter-kit": "^2.24.1",
