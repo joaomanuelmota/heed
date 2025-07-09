@@ -21,7 +21,9 @@ const pagesWithoutSidebar = [
   '/login',
   '/signup',
   '/forgot-password',
-  '/reset-password'
+  '/reset-password',
+  '/privacy',
+  '/terms'
 ];
 
 function LayoutContent({ children }) {

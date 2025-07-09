@@ -295,19 +295,19 @@ export default function SignUp() {
         <div className="text-center">
           <p className="text-xs text-gray-500">
             Ao clicar em "Registar", concorda com os nossos{' '}
-            <button
-              onClick={() => alert('Termos de Serviço')}
-              className="text-blue-600 hover:text-blue-800 bg-transparent border-none cursor-pointer"
+            <Link
+              href="/terms"
+              className="text-blue-600 hover:text-blue-800"
             >
               Termos de Serviço
-            </button>
+            </Link>
             {' '}e{' '}
-            <button
-              onClick={() => alert('Política de Privacidade')}
-              className="text-blue-600 hover:text-blue-800 bg-transparent border-none cursor-pointer"
+            <Link
+              href="/privacy"
+              className="text-blue-600 hover:text-blue-800"
             >
               Política de Privacidade
-            </button>
+            </Link>
             .
           </p>
         </div>
