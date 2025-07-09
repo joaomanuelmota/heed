@@ -5,9 +5,11 @@ import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
 import { formatDateLong, formatTime12Hour } from '../../lib/dateUtils'
 import { Calendar, Plus } from 'lucide-react'
-import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
-import SessionDetailsSidebar from '../../components/SessionDetailsSidebar'
+import dynamic from 'next/dynamic'
 import Button from '../../components/Button'
+
+const ScheduleSessionSidebarLazy = dynamic(() => import('../../components/ScheduleSessionSidebar'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando agendamento...</div> })
+const SessionDetailsSidebarLazy = dynamic(() => import('../../components/SessionDetailsSidebar'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando detalhes da sessão...</div> })
 
 export default function Sessions() {
   const [user, setUser] = useState(null)
@@ -194,7 +196,7 @@ export default function Sessions() {
     
     switch(status) {
       case 'scheduled':
-        return <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">Agendada</span>
+        return <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-700 rounded-full">Agendada</span>
       case 'completed':
         return <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Concluída</span>
       case 'cancelled':
@@ -237,7 +239,6 @@ export default function Sessions() {
   }
 
   const filteredSessions = getFilteredSessions()
-  console.log('Current filter:', filter, 'Filtered sessions:', filteredSessions)
 
   return (
     <main key={filter} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -342,7 +343,6 @@ export default function Sessions() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PACIENTE</th>
                   <th className="px-8 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3 min-w-[220px]">DATA & HORA</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DURAÇÃO</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ESTADO</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AÇÕES</th>
                 </tr>
@@ -358,16 +358,22 @@ export default function Sessions() {
                         {session.title || 'Sem título'}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-8 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {formatDate(session.session_date)}
+                        {formatDateLong(session.session_date)}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {formatTime(session.session_time)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {session.duration_minutes} minutos
+                      {session.session_time && (
+                        <div className="text-sm text-gray-500">
+                          {(() => {
+                            const start = session.session_time.slice(0,5)
+                            let [h, m] = start.split(":").map(Number)
+                            const endDate = new Date(0,0,0,h,m)
+                            endDate.setMinutes(endDate.getMinutes() + (session.duration_minutes || 60))
+                            const end = endDate.toTimeString().slice(0,5)
+                            return `${start} - ${end} (${session.duration_minutes || 60} min)`
+                          })()}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {getSessionStateBadge(session)}
@@ -403,7 +409,7 @@ export default function Sessions() {
       )}
 
       {/* Schedule Session Sidebar */}
-      <ScheduleSessionSidebar 
+      <ScheduleSessionSidebarLazy 
         isOpen={showScheduleSidebar}
         onClose={() => setShowScheduleSidebar(false)}
         onSuccess={() => {
@@ -415,7 +421,7 @@ export default function Sessions() {
       />
 
       {/* Session Details Sidebar */}
-      <SessionDetailsSidebar 
+      <SessionDetailsSidebarLazy 
         isOpen={showSessionSidebar}
         onClose={() => {
           setShowSessionSidebar(false)

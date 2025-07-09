@@ -4,20 +4,29 @@ import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
 import Button from '../../components/Button'
 
+function validarEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
 
   const handleResetPassword = async () => {
     setLoading(true)
     setMessage('')
-
+    setError('')
+    if (!validarEmail(email)) {
+      setError('Por favor, insira um email válido.')
+      setLoading(false)
+      return
+    }
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })
-
       if (error) {
         setMessage(`Erro: ${error.message}`)
       } else {
@@ -27,7 +36,6 @@ export default function ForgotPassword() {
     } catch (error) {
       setMessage(`Erro inesperado: ${error.message}`)
     }
-
     setLoading(false)
   }
 
@@ -61,18 +69,21 @@ export default function ForgotPassword() {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setError('') }}
               placeholder="Email"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 ${error ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
               required
               disabled={loading}
             />
+            {error && (
+              <p className="text-red-500 text-xs mt-1">{error}</p>
+            )}
           </div>
 
           {/* Reset Password Button */}
           <Button
             onClick={handleResetPassword}
-            disabled={loading}
+            disabled={loading || !validarEmail(email)}
             className="w-full"
             size="lg"
           >

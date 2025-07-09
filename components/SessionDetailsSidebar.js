@@ -2,26 +2,20 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Save, Calendar, Clock, User, FileText, ChevronDown, Edit, Eye, AlertTriangle, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { formatDateLong, formatTime12Hour, generateTimeSlots } from '../lib/dateUtils'
+import { formatDateLong, formatTime12Hour, generateTimeSlots, validarNumero } from '../lib/dateUtils'
 import Link from 'next/link'
 import Button from './Button'
+import CustomDropdown from './CustomDropdown'
 
-export default function SessionDetailsSidebar({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  user, 
-  patients, 
-  sessionId, 
-  mode = 'view' // 'view' or 'edit'
-}) {
+export default function SessionDetailsSidebar(props) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
-  const [currentMode, setCurrentMode] = useState(mode)
+  const [currentMode, setCurrentMode] = useState(props.mode)
   const [session, setSession] = useState(null)
   const [patient, setPatient] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [errors, setErrors] = useState({})
 
   const [sessionData, setSessionData] = useState({
     patient_id: '',
@@ -30,25 +24,37 @@ export default function SessionDetailsSidebar({
     session_time: '',
     duration_minutes: 60,
     status: 'scheduled',
+    payment_status: 'to pay',
     notes: '',
     session_fee: ''
   })
 
   useEffect(() => {
-    if (isOpen && sessionId) {
+    if (props.isOpen && props.sessionId) {
       fetchSession()
     }
-  }, [isOpen, sessionId])
+  }, [props.isOpen, props.sessionId])
 
   useEffect(() => {
-    setCurrentMode(mode)
-  }, [mode])
+    setCurrentMode(props.mode)
+  }, [props.mode])
 
   useEffect(() => {
-    if (isOpen) {
+    if (props.isOpen) {
       setMessage('');
+      setErrors({})
     }
-  }, [isOpen, sessionId]);
+  }, [props.isOpen, props.sessionId]);
+
+  const validate = () => {
+    const newErrors = {}
+    if (!sessionData.patient_id) newErrors.patient_id = 'Por favor, selecione um paciente.'
+    if (!sessionData.session_date) newErrors.session_date = 'Por favor, selecione a data.'
+    if (!sessionData.session_time) newErrors.session_time = 'Por favor, selecione a hora.'
+    if (!sessionData.session_fee || !validarNumero(sessionData.session_fee)) newErrors.session_fee = 'Por favor, insira um valor válido para a sessão.'
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const fetchSession = async () => {
     setLoading(true)
@@ -56,8 +62,8 @@ export default function SessionDetailsSidebar({
       const { data, error } = await supabase
         .from('sessions')
         .select('*')
-        .eq('id', sessionId)
-        .eq('psychologist_id', user.id)
+        .eq('id', props.sessionId)
+        .eq('psychologist_id', props.user.id)
         .single()
 
       if (error) {
@@ -68,15 +74,16 @@ export default function SessionDetailsSidebar({
           patient_id: data.patient_id,
           title: data.title || '',
           session_date: data.session_date || '',
-          session_time: data.session_time || '',
+          session_time: data.session_time ? data.session_time.slice(0,5) : '', // Normaliza para HH:MM
           duration_minutes: data.duration_minutes || 60,
           status: data.status || 'scheduled',
+          payment_status: data.payment_status || 'to pay',
           notes: data.notes || '',
           session_fee: data.session_fee !== undefined && data.session_fee !== null ? data.session_fee : ''
         })
 
         // Find the patient
-        const patientData = patients.find(p => p.id === data.patient_id)
+        const patientData = props.patients.find(p => p.id === data.patient_id)
         setPatient(patientData)
       }
     } catch (error) {
@@ -91,18 +98,15 @@ export default function SessionDetailsSidebar({
       ...sessionData,
       [name]: value
     })
+    setErrors({ ...errors, [name]: '' })
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setMessage('')
+    if (!validate()) return
     setSaving(true)
     setMessage('')
-
-    if (!sessionData.session_fee || isNaN(Number(sessionData.session_fee))) {
-      setMessage('Por favor, insira o valor da sessão')
-      setSaving(false)
-      return
-    }
 
     try {
       const updateData = {
@@ -112,6 +116,7 @@ export default function SessionDetailsSidebar({
         session_time: sessionData.session_time,
         duration_minutes: parseInt(sessionData.duration_minutes),
         status: sessionData.status,
+        payment_status: sessionData.payment_status || 'to pay',
         notes: sessionData.notes || null,
         session_fee: Number(sessionData.session_fee),
         updated_at: new Date().toISOString()
@@ -120,19 +125,19 @@ export default function SessionDetailsSidebar({
       const { data, error } = await supabase
         .from('sessions')
         .update(updateData)
-        .eq('id', sessionId)
-        .eq('psychologist_id', user.id)
+        .eq('id', props.sessionId)
+        .eq('psychologist_id', props.user.id)
 
       if (error) {
-        setMessage(`Error: ${error.message}`)
+        setMessage(`Erro: ${error.message}`)
       } else {
         setMessage('Sessão atualizada com sucesso!')
         setTimeout(() => {
-          onSuccess()
+          props.onSuccess()
         }, 1000)
       }
     } catch (error) {
-      setMessage(`Unexpected error: ${error.message}`)
+      setMessage(`Erro inesperado: ${error.message}`)
     }
 
     setSaving(false)
@@ -147,8 +152,8 @@ export default function SessionDetailsSidebar({
           status: newStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('id', sessionId)
-        .eq('psychologist_id', user.id)
+        .eq('id', props.sessionId)
+        .eq('psychologist_id', props.user.id)
 
       if (error) {
         setMessage(`Error: ${error.message}`)
@@ -156,7 +161,7 @@ export default function SessionDetailsSidebar({
         setMessage('Status updated successfully!')
         setSessionData(prev => ({ ...prev, status: newStatus }))
         setTimeout(() => {
-          onSuccess()
+          props.onSuccess()
         }, 1000)
       }
     } catch (error) {
@@ -174,15 +179,15 @@ export default function SessionDetailsSidebar({
         .from('sessions')
         .delete()
         .eq('id', session.id)
-        .eq('psychologist_id', user.id)
+        .eq('psychologist_id', props.user.id)
       if (error) {
         setMessage(`Erro ao apagar sessão: ${error.message}`)
       } else {
         setMessage('Sessão apagada com sucesso!')
         setTimeout(() => {
           setShowDeleteConfirm(false)
-          onSuccess()
-          onClose()
+          props.onSuccess()
+          props.onClose()
         }, 1000)
       }
     } catch (error) {
@@ -220,61 +225,9 @@ export default function SessionDetailsSidebar({
     return generateTimeSlots()
   }
 
-  function CustomDropdown({ value, options, onChange, disabled, placeholder }) {
-    const [open, setOpen] = useState(false)
-    const ref = useRef(null)
-
-    useEffect(() => {
-      function handleClickOutside(event) {
-        if (ref.current && !ref.current.contains(event.target)) {
-          setOpen(false)
-        }
-      }
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
-
-    const selected = options.find(opt => opt.value === value)
-
-    return (
-      <div className="relative" ref={ref}>
-        <button
-          type="button"
-          className={`w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none ${
-            disabled ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-gray-50'
-          }`}
-          onClick={() => !disabled && setOpen(!open)}
-          disabled={disabled}
-        >
-          <span>{selected ? selected.label : placeholder}</span>
-          <ChevronDown className="w-5 h-5 text-gray-400" />
-        </button>
-        {open && (
-          <div className="absolute left-0 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-            {options.map(opt => (
-              <button
-                key={opt.value}
-                type="button"
-                className={`w-full px-4 py-2 text-left hover:bg-gray-100 ${
-                  value === opt.value ? 'font-semibold text-blue-600' : 'text-gray-900'
-                }`}
-                onClick={() => {
-                  onChange(opt.value)
-                  setOpen(false)
-                }}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  }
-
   if (loading) {
     return (
-      <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl z-[60] overflow-y-auto" style={{ transform: isOpen ? 'translateX(0)' : 'translateX(100%)', transition: 'transform 300ms ease-in-out' }}>
+      <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl z-[60] overflow-y-auto" style={{ transform: props.isOpen ? 'translateX(0)' : 'translateX(100%)', transition: 'transform 300ms ease-in-out' }}>
         <div className="p-6 flex items-center justify-center h-full">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -283,7 +236,7 @@ export default function SessionDetailsSidebar({
   }
 
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl z-[60] overflow-y-auto" style={{ transform: isOpen ? 'translateX(0)' : 'translateX(100%)', transition: 'transform 300ms ease-in-out' }}>
+    <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl z-[60] overflow-y-auto" style={{ transform: props.isOpen ? 'translateX(0)' : 'translateX(100%)', transition: 'transform 300ms ease-in-out' }}>
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
@@ -291,7 +244,7 @@ export default function SessionDetailsSidebar({
               {currentMode === 'view' ? 'Detalhes da Sessão' : 'Editar Sessão'}
             </h2>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600">
+          <button onClick={props.onClose} className="p-2 text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -309,89 +262,135 @@ export default function SessionDetailsSidebar({
         {session && patient && (
           <>
             {currentMode === 'view' ? (
-              <form className="space-y-6">
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Paciente</label>
-                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                    {patient ? `${patient.firstName} ${patient.lastName}` : ''}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Título da Sessão</label>
-                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                    {session.title || 'Sem título'}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+              <>
+                <form className="space-y-6">
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Data</label>
-                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                      {formatDate(session.session_date)}
-                                      {isSessionToday() && (
-                  <span className="inline-block ml-2 px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">Hoje</span>
-                )}
+                    <label htmlFor="details-patient" className="block text-gray-700 text-sm font-medium mb-2">Paciente</label>
+                    <input
+                      type="text"
+                      value={patient ? `${patient.firstName} ${patient.lastName}` : ''}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed"
+                      disabled
+                      id="details-patient"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="details-title" className="block text-gray-700 text-sm font-medium mb-2">Título da Sessão</label>
+                    <input
+                      id="details-title"
+                      type="text"
+                      value={session.title || 'Sem título'}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed"
+                      disabled
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="details-date" className="block text-gray-700 text-sm font-medium mb-2">Data</label>
+                      <input
+                        id="details-date"
+                        type="text"
+                        value={formatDate(session.session_date)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed"
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Hora</label>
+                      <input
+                        type="text"
+                        value={formatTime(session.session_time)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed"
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Valor da Sessão (€)</label>
+                      <input
+                        type="text"
+                        value={typeof session.session_fee === 'number' ? `€${session.session_fee.toFixed(2)}` : '—'}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed"
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Duração (minutos)</label>
+                      <input
+                        type="text"
+                        value={`${session.duration_minutes} minutos`}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed"
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Estado</label>
+                      <input
+                        type="text"
+                        value={session.status === 'scheduled' ? 'Agendada' : session.status === 'completed' ? 'Realizada' : session.status === 'cancelled' ? 'Cancelada' : ''}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed"
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Estado de Pagamento</label>
+                      <input
+                        type="text"
+                        value={session.payment_status === 'paid' ? 'Pago' : session.payment_status === 'to pay' ? 'Não Pago' : session.payment_status === 'invoice issued' ? 'Fatura Emitida' : ''}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed"
+                        disabled
+                      />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Hora</label>
-                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                      {formatTime(session.session_time)}
-                    </div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Notas da Sessão</label>
+                    <textarea
+                      value={session.notes || '—'}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 whitespace-pre-wrap min-h-[60px] cursor-not-allowed"
+                      disabled
+                    />
                   </div>
+                </form>
+                <div className="flex justify-end mt-6">
+                   <Button
+                     type="button"
+                     onClick={() => setCurrentMode('edit')}
+                     className="bg-black text-white hover:bg-gray-900"
+                   >
+                     Editar
+                   </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Valor da Sessão (€)</label>
-                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                      {typeof session.session_fee === 'number' ? `€${session.session_fee.toFixed(2)}` : '—'}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Duração (minutos)</label>
-                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                      {session.duration_minutes} minutos
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Estado</label>
-                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900">
-                      {session.status === 'scheduled' && 'Agendada'}
-                      {session.status === 'completed' && 'Realizada'}
-                      {session.status === 'cancelled' && 'Cancelada'}
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Notas da Sessão</label>
-                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 whitespace-pre-wrap min-h-[60px]">
-                    {session.notes || '—'}
-                  </div>
-                </div>
-              </form>
+              </>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Paciente</label>
+                  <label htmlFor="details-patient" className="block text-gray-700 text-sm font-medium mb-2">Paciente</label>
                   {patient ? (
-                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed">
+                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 cursor-not-allowed" id="details-patient">
                       {patient.firstName} {patient.lastName}
                     </div>
                   ) : (
                     <CustomDropdown
                       value={sessionData.patient_id}
-                      options={patients.map(p => ({ value: p.id, label: `${p.firstName} ${p.lastName}` }))}
+                      options={props.patients.map(p => ({ value: p.id, label: `${p.firstName} ${p.lastName}` }))}
                       onChange={val => handleChange({ target: { name: 'patient_id', value: val } })}
                       disabled={saving}
                       placeholder="Selecionar um paciente"
+                      id="details-patient"
                     />
+                  )}
+                  {errors.patient_id && (
+                    <p className="text-red-500 text-xs mt-1">{errors.patient_id}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Título da Sessão</label>
+                  <label htmlFor="details-title" className="block text-gray-700 text-sm font-medium mb-2">Título da Sessão</label>
                   <input
+                    id="details-title"
                     type="text"
                     name="title"
                     value={sessionData.title}
@@ -400,12 +399,16 @@ export default function SessionDetailsSidebar({
                     placeholder="ex: Sessão de Terapia, Acompanhamento"
                     disabled={saving}
                   />
+                  {errors.title && (
+                    <p className="text-red-500 text-xs mt-1">{errors.title}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-2">Data</label>
+                    <label htmlFor="details-date" className="block text-gray-700 text-sm font-medium mb-2">Data</label>
                     <input
+                      id="details-date"
                       type="date"
                       name="session_date"
                       value={sessionData.session_date}
@@ -414,6 +417,9 @@ export default function SessionDetailsSidebar({
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                       disabled={saving}
                     />
+                    {errors.session_date && (
+                      <p className="text-red-500 text-xs mt-1">{errors.session_date}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-2">Hora</label>
@@ -424,6 +430,9 @@ export default function SessionDetailsSidebar({
                       disabled={saving}
                       placeholder="Hora"
                     />
+                    {errors.session_time && (
+                      <p className="text-red-500 text-xs mt-1">{errors.session_time}</p>
+                    )}
                   </div>
                 </div>
 
@@ -442,6 +451,9 @@ export default function SessionDetailsSidebar({
                       required
                       disabled={saving}
                     />
+                    {errors.session_fee && (
+                      <p className="text-red-500 text-xs mt-1">{errors.session_fee}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-2">Duração (minutos)</label>
@@ -474,6 +486,20 @@ export default function SessionDetailsSidebar({
                       onChange={val => handleChange({ target: { name: 'status', value: val } })}
                       disabled={saving}
                       placeholder="Selecionar estado"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Estado de Pagamento</label>
+                    <CustomDropdown
+                      value={sessionData.payment_status}
+                      options={[
+                        { value: 'paid', label: 'Pago' },
+                        { value: 'to pay', label: 'Não Pago' },
+                        { value: 'invoice issued', label: 'Fatura Emitida' }
+                      ]}
+                      onChange={val => handleChange({ target: { name: 'payment_status', value: val } })}
+                      disabled={saving}
+                      placeholder="Selecionar pagamento"
                     />
                   </div>
                 </div>

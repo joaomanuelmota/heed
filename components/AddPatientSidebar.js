@@ -3,97 +3,42 @@ import { useState, useRef, useEffect } from 'react'
 import { X, Save, User, Mail, Phone, Calendar, MapPin, Check, ChevronDown, Trash2, AlertTriangle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import Button from './Button'
+import CustomDropdown from './CustomDropdown'
+import { validarEmail, validarTelefone, validarData } from '../lib/dateUtils'
 
-function CustomDropdown({ value, options, onChange, disabled, placeholder }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (ref.current && !ref.current.contains(event.target)) {
-        setOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const selected = options.find(opt => opt.value === value)
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none"
-        onClick={() => setOpen(!open)}
-        disabled={disabled}
-      >
-        <span className="flex items-center">
-          {/* <Check className="w-5 h-5 mr-2 text-gray-400" /> */}
-          {selected ? selected.label : placeholder}
-        </span>
-        <ChevronDown className="w-5 h-5 text-gray-400" />
-      </button>
-      {open && (
-        <div className="absolute left-0 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-          {options.map(opt => (
-            <button
-              key={opt.value}
-              type="button"
-              className={`w-full flex items-center px-4 py-2 text-left hover:bg-gray-100 ${
-                value === opt.value ? 'font-semibold text-blue-600' : 'text-gray-900'
-              }`}
-              onClick={() => {
-                onChange(opt.value)
-                setOpen(false)
-              }}
-            >
-              {/* {value === opt.value ? (
-                <Check className="w-4 h-4 mr-2 text-blue-600" />
-              ) : (
-                <span className="w-6 mr-2" />
-              )} */}
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mode = 'add', existingPatient = null }) {
+export default function AddPatientSidebar(props) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [dateInputType, setDateInputType] = useState('text')
+  const [errors, setErrors] = useState({})
 
   const [patientData, setPatientData] = useState({
-    firstName: existingPatient?.firstName || '',
-    lastName: existingPatient?.lastName || '',
-    dateOfBirth: existingPatient?.dateOfBirth || '',
-    vatNumber: existingPatient?.vatNumber || '',
-    address: existingPatient?.address || '',
-    email: existingPatient?.email || '',
-    phone: existingPatient?.phone || '',
-    status: existingPatient?.status || 'active',
-    sessionType: existingPatient?.session_type || 'on-site'
+    firstName: props.existingPatient?.firstName || '',
+    lastName: props.existingPatient?.lastName || '',
+    dateOfBirth: props.existingPatient?.dateOfBirth || '',
+    vatNumber: props.existingPatient?.vatNumber || '',
+    address: props.existingPatient?.address || '',
+    email: props.existingPatient?.email || '',
+    phone: props.existingPatient?.phone || '',
+    status: props.existingPatient?.status || 'active',
+    sessionType: props.existingPatient?.session_type || 'on-site'
   })
 
   useEffect(() => {
-    if (mode === 'edit' && existingPatient) {
+    if (props.mode === 'edit' && props.existingPatient) {
       setPatientData({
-        firstName: existingPatient.firstName || '',
-        lastName: existingPatient.lastName || '',
-        dateOfBirth: existingPatient.dateOfBirth || '',
-        vatNumber: existingPatient.vatNumber || '',
-        address: existingPatient.address || '',
-        email: existingPatient.email || '',
-        phone: existingPatient.phone || '',
-        status: existingPatient.status || 'active',
-        sessionType: existingPatient.session_type || 'on-site'
+        firstName: props.existingPatient.firstName || '',
+        lastName: props.existingPatient.lastName || '',
+        dateOfBirth: props.existingPatient.dateOfBirth || '',
+        vatNumber: props.existingPatient.vatNumber || '',
+        address: props.existingPatient.address || '',
+        email: props.existingPatient.email || '',
+        phone: props.existingPatient.phone || '',
+        status: props.existingPatient.status || 'active',
+        sessionType: props.existingPatient.session_type || 'on-site'
       })
-    } else if (mode === 'add') {
+    } else if (props.mode === 'add') {
       setPatientData({
         firstName: '',
         lastName: '',
@@ -107,17 +52,32 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
       })
     }
     setMessage('')
-  }, [mode, existingPatient])
+    setErrors({})
+  }, [props.mode, props.existingPatient])
+
+  const validate = () => {
+    const newErrors = {}
+    if (!patientData.firstName.trim()) newErrors.firstName = 'Por favor, insira o nome.'
+    if (!patientData.lastName.trim()) newErrors.lastName = 'Por favor, insira o apelido.'
+    if (!validarEmail(patientData.email)) newErrors.email = 'Por favor, insira um email válido.'
+    if (!validarTelefone(patientData.phone)) newErrors.phone = 'Por favor, insira um telefone válido.'
+    if (!validarData(patientData.dateOfBirth)) newErrors.dateOfBirth = 'Por favor, insira uma data válida.'
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleChange = (e) => {
     setPatientData({
       ...patientData,
       [e.target.name]: e.target.value
     })
+    setErrors({ ...errors, [e.target.name]: '' })
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setMessage('')
+    if (!validate()) return
     setLoading(true)
     setMessage('')
 
@@ -136,16 +96,16 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
       }
 
       let result;
-      if (mode === 'edit') {
+      if (props.mode === 'edit') {
         // Update existing patient
         result = await supabase
           .from('patients')
           .update(submitData)
-          .eq('id', existingPatient.id)
-          .eq('psychologist_id', user.id)
+          .eq('id', props.existingPatient.id)
+          .eq('psychologist_id', props.user.id)
       } else {
         // Create new patient
-        submitData.psychologist_id = user.id
+        submitData.psychologist_id = props.user.id
         submitData.created_at = new Date().toISOString()
         result = await supabase
           .from('patients')
@@ -153,15 +113,15 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
       }
 
       if (result.error) {
-        setMessage(`Error: ${result.error.message}`)
+        setMessage(`Erro: ${result.error.message}`)
       } else {
-        setMessage(mode === 'edit' ? 'Paciente atualizado com sucesso!' : 'Paciente adicionado com sucesso!')
+        setMessage(props.mode === 'edit' ? 'Paciente atualizado com sucesso!' : 'Paciente adicionado com sucesso!')
         setTimeout(() => {
-          onSuccess()
+          props.onSuccess()
         }, 1000)
       }
     } catch (error) {
-      setMessage(`Unexpected error: ${error.message}`)
+      setMessage(`Erro inesperado: ${error.message}`)
     }
 
     setLoading(false)
@@ -181,11 +141,11 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
       status: 'active',
       sessionType: 'on-site'
     })
-    onClose()
+    props.onClose()
   }
 
   const handleDeletePatient = async () => {
-    if (!existingPatient) return
+    if (!props.existingPatient) return
     
     setLoading(true)
     setMessage('')
@@ -195,8 +155,8 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
       const { error: notesError } = await supabase
         .from('notes')
         .delete()
-        .eq('patient_id', existingPatient.id)
-        .eq('psychologist_id', user.id)
+        .eq('patient_id', props.existingPatient.id)
+        .eq('psychologist_id', props.user.id)
 
       if (notesError) {
         console.error('Error deleting notes:', notesError)
@@ -206,8 +166,8 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
       const { error: sessionsError } = await supabase
         .from('sessions')
         .delete()
-        .eq('patient_id', existingPatient.id)
-        .eq('psychologist_id', user.id)
+        .eq('patient_id', props.existingPatient.id)
+        .eq('psychologist_id', props.user.id)
 
       if (sessionsError) {
         console.error('Error deleting sessions:', sessionsError)
@@ -217,8 +177,8 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
       const { error: treatmentPlansError } = await supabase
         .from('treatment_plans')
         .delete()
-        .eq('patient_id', existingPatient.id)
-        .eq('psychologist_id', user.id)
+        .eq('patient_id', props.existingPatient.id)
+        .eq('psychologist_id', props.user.id)
 
       if (treatmentPlansError) {
         console.error('Error deleting treatment plans:', treatmentPlansError)
@@ -228,15 +188,15 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
       const { error: patientError } = await supabase
         .from('patients')
         .delete()
-        .eq('id', existingPatient.id)
-        .eq('psychologist_id', user.id)
+        .eq('id', props.existingPatient.id)
+        .eq('psychologist_id', props.user.id)
 
       if (patientError) {
         setMessage(`Erro ao apagar paciente: ${patientError.message}`)
       } else {
         setMessage('Paciente apagado com sucesso!')
         setTimeout(() => {
-          onSuccess(true) // Passar true para indicar que foi apagado
+          props.onSuccess(true) // Passar true para indicar que foi apagado
         }, 1000)
       }
     } catch (error) {
@@ -251,7 +211,7 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
     <div 
       className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl z-50 overflow-y-auto"
       style={{ 
-        transform: isOpen ? 'translateX(0)' : 'translateX(100%)', 
+        transform: props.isOpen ? 'translateX(0)' : 'translateX(100%)', 
         transition: 'transform 300ms ease-in-out' 
       }}
     >
@@ -260,7 +220,7 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              {mode === 'edit' ? 'Editar Paciente' : 'Adicionar Novo Paciente'}
+              {props.mode === 'edit' ? 'Editar Paciente' : 'Adicionar Novo Paciente'}
             </h2>
           </div>
           <button
@@ -291,27 +251,25 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
             
             <div className="space-y-4">
               <div>
-                <input type="text" name="firstName" value={patientData.firstName} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" required disabled={loading} placeholder="Nome *" />
+                <label htmlFor="patient-firstName" className="block text-sm font-medium text-gray-700">Nome</label>
+                <input type="text" id="patient-firstName" name="firstName" value={patientData.firstName} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" required disabled={loading} placeholder="Nome *" />
+                {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
               </div>
               <div>
-                <input type="text" name="lastName" value={patientData.lastName} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" required disabled={loading} placeholder="Apelido *" />
+                <label htmlFor="patient-lastName" className="block text-sm font-medium text-gray-700">Apelido</label>
+                <input type="text" id="patient-lastName" name="lastName" value={patientData.lastName} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" required disabled={loading} placeholder="Apelido *" />
+                {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
               </div>
               <div>
-                <input
-                  type={dateInputType}
-                  name="dateOfBirth"
-                  value={patientData.dateOfBirth}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-400"
-                  disabled={loading}
-                  placeholder="Data de Nascimento"
-                  onFocus={() => setDateInputType('date')}
-                  onBlur={e => { if (!e.target.value) setDateInputType('text') }}
-                />
+                <label htmlFor="patient-dateOfBirth" className="block text-sm font-medium text-gray-700">Data de Nascimento</label>
+                <input type={dateInputType} id="patient-dateOfBirth" name="dateOfBirth" value={patientData.dateOfBirth} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 placeholder-gray-400" disabled={loading} placeholder="Data de Nascimento" onFocus={() => setDateInputType('date')} onBlur={e => { if (!e.target.value) setDateInputType('text') }} />
+                {errors.dateOfBirth && <p className="text-red-500 text-xs mt-1">{errors.dateOfBirth}</p>}
               </div>
               <div>
+                <label htmlFor="patient-vatNumber" className="block text-sm font-medium text-gray-700">Número de Contribuinte</label>
                 <input 
                   type="text" 
+                  id="patient-vatNumber"
                   name="vatNumber" 
                   value={patientData.vatNumber} 
                   onChange={handleChange} 
@@ -321,7 +279,17 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
                 />
               </div>
               <div>
-                <input type="text" name="address" value={patientData.address} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Morada" />
+                <label htmlFor="patient-address" className="block text-sm font-medium text-gray-700">Morada</label>
+                <input 
+                  type="text" 
+                  id="patient-address"
+                  name="address" 
+                  value={patientData.address} 
+                  onChange={handleChange} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" 
+                  disabled={loading} 
+                  placeholder="Morada" 
+                />
               </div>
             </div>
           </div>
@@ -333,10 +301,14 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
             </h3>
             <div className="space-y-4">
               <div>
-                <input type="email" name="email" value={patientData.email} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Endereço de Email" />
+                <label htmlFor="patient-email" className="block text-sm font-medium text-gray-700">Endereço de Email</label>
+                <input type="email" id="patient-email" name="email" value={patientData.email} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Endereço de Email" />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
               <div>
-                <input type="tel" name="phone" value={patientData.phone} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Número de Telefone" />
+                <label htmlFor="patient-phone" className="block text-sm font-medium text-gray-700">Número de Telefone</label>
+                <input type="tel" id="patient-phone" name="phone" value={patientData.phone} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900" disabled={loading} placeholder="Número de Telefone" />
+                {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
               </div>
             </div>
           </div>
@@ -347,7 +319,7 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
               Preferências de Sessão
             </h3>
             <div className="space-y-4">
-              {mode === 'edit' && (
+              {props.mode === 'edit' && (
                 <div>
                   <CustomDropdown
                     value={patientData.status}
@@ -379,7 +351,7 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-6 justify-between items-center">
-            {mode === 'edit' && (
+            {props.mode === 'edit' && (
               <Button 
                 type="button" 
                 variant="danger" 
@@ -411,7 +383,7 @@ export default function AddPatientSidebar({ isOpen, onClose, onSuccess, user, mo
                 </div>
                 
                 <p className="text-gray-600 mb-6">
-                  Tem a certeza que pretende apagar o paciente <strong>{existingPatient?.firstName} {existingPatient?.lastName}</strong>?
+                  Tem a certeza que pretende apagar o paciente <strong>{props.existingPatient?.firstName} {props.existingPatient?.lastName}</strong>?
                   <br /><br />
                   Esta ação irá apagar permanentemente:
                   <br />• Todas as notas clínicas

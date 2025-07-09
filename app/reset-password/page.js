@@ -5,6 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import Button from '../../components/Button'
 
+function validarPassword(p, c) {
+  if (!p || !c) return 'A palavra-passe é obrigatória.'
+  if (p.length < 6) return 'A palavra-passe deve ter pelo menos 6 caracteres.'
+  if (p !== c) return 'As palavras-passe não coincidem.'
+  return ''
+}
+
 export default function ResetPassword() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -13,6 +20,7 @@ export default function ResetPassword() {
   const [isValidSession, setIsValidSession] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [error, setError] = useState('')
 
   useEffect(() => {
     // Verificar se há uma sessão válida de recuperação
@@ -31,16 +39,10 @@ export default function ResetPassword() {
   const handleResetPassword = async () => {
     setLoading(true)
     setMessage('')
-
-    // Validação básica
-    if (password !== confirmPassword) {
-      setMessage('As palavras-passe não coincidem!')
-      setLoading(false)
-      return
-    }
-
-    if (password.length < 6) {
-      setMessage('A palavra-passe deve ter pelo menos 6 caracteres!')
+    setError('')
+    const validation = validarPassword(password, confirmPassword)
+    if (validation) {
+      setError(validation)
       setLoading(false)
       return
     }
@@ -120,9 +122,9 @@ export default function ResetPassword() {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); setError('') }}
               placeholder="Nova palavra-passe"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 ${error && error.includes('palavra-passe') ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
               required
               disabled={loading}
             />
@@ -133,19 +135,22 @@ export default function ResetPassword() {
             <input
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => { setConfirmPassword(e.target.value); setError('') }}
               placeholder="Confirmar nova palavra-passe"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 ${error && error.includes('coincidem') ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
               required
               disabled={loading}
             />
             <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
+            {error && (
+              <p className="text-red-500 text-xs mt-1">{error}</p>
+            )}
           </div>
 
           {/* Reset Password Button */}
           <Button
             onClick={handleResetPassword}
-            disabled={loading}
+            disabled={loading || !!validarPassword(password, confirmPassword)}
             className="w-full"
             size="lg"
           >

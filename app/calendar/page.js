@@ -4,9 +4,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
 import { formatTime12Hour, getWeekdayShort, getMonthLong, isToday, isCurrentMonth } from '../../lib/dateUtils'
-import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
-import SessionDetailsSidebar from '../../components/SessionDetailsSidebar'
+import dynamic from 'next/dynamic'
 import Button from '../../components/Button'
+
+const ScheduleSessionSidebarLazy = dynamic(() => import('../../components/ScheduleSessionSidebar'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando agendamento...</div> })
+const SessionDetailsSidebarLazy = dynamic(() => import('../../components/SessionDetailsSidebar'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando detalhes da sessão...</div> })
 
 export default function Calendar() {
   const [user, setUser] = useState(null)
@@ -386,14 +388,14 @@ export default function Calendar() {
           </>
         )}
       </div>
-      <ScheduleSessionSidebar
+      <ScheduleSessionSidebarLazy
         isOpen={showScheduleSidebar}
         onClose={() => setShowScheduleSidebar(false)}
         onSuccess={() => { setShowScheduleSidebar(false); fetchSessions(user.id); }}
         user={user}
         patients={patients}
       />
-      <SessionDetailsSidebar
+      <SessionDetailsSidebarLazy
         isOpen={showSessionSidebar}
         onClose={() => setShowSessionSidebar(false)}
         onSuccess={() => { setShowSessionSidebar(false); fetchSessions(user.id); }}

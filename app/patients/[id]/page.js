@@ -15,10 +15,13 @@ import {
 } from 'lucide-react'
 import ScheduleSessionSidebar from '../../../components/ScheduleSessionSidebar'
 import AddPatientSidebar from '../../../components/AddPatientSidebar'
-import RichTextEditor from '../../../components/RichTextEditor'
+import dynamic from 'next/dynamic'
 import ReactDOM from 'react-dom'
 import Button from '../../../components/Button'
 import SessionDetailsSidebar from '../../../components/SessionDetailsSidebar'
+import CustomDropdown from '../../../components/CustomDropdown'
+
+const RichTextEditorLazy = dynamic(() => import('../../../components/RichTextEditor'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando editor...</div> })
 
 export default function PatientProfile() {
   const [user, setUser] = useState(null)
@@ -93,6 +96,15 @@ export default function PatientProfile() {
   const router = useRouter()
   const params = useParams()
 
+  const paymentStatusOptions = [
+    { value: 'paid', label: 'Pago' },
+    { value: 'to pay', label: 'Não Pago' },
+    { value: 'invoice issued', label: 'Fatura Emitida' }
+  ];
+
+  const [triedSaveNote, setTriedSaveNote] = useState(false);
+  const [triedSaveTreatmentPlan, setTriedSaveTreatmentPlan] = useState(false);
+
   useEffect(() => {
     checkUser()
   }, [])
@@ -164,17 +176,12 @@ export default function PatientProfile() {
   }
 
   const fetchNotes = async (patientId) => {
-    console.log('fetchNotes called with:', { patientId, user: !!user })
-    
     if (!user) {
-      console.log('No user, skipping fetchNotes')
       return
     }
     
     setNotesLoading(true)
     try {
-      console.log('Fetching notes for patient:', patientId, 'psychologist:', user.id)
-      
       const { data, error } = await supabase
         .from('notes')
         .select('*')
@@ -182,13 +189,10 @@ export default function PatientProfile() {
         .eq('psychologist_id', user.id)
         .order('note_date', { ascending: false })
 
-      console.log('Notes fetch result:', { data, error })
-
       if (error) {
         console.error('Error fetching notes:', error)
       } else {
         setNotes(data || [])
-        console.log('Notes set to:', data?.length || 0, 'notes')
       }
     } catch (error) {
       console.error('Unexpected error fetching notes:', error)
@@ -197,17 +201,12 @@ export default function PatientProfile() {
   }
 
   const fetchTreatmentPlans = async (patientId) => {
-    console.log('fetchTreatmentPlans called with:', { patientId, user: !!user })
-    
     if (!user) {
-      console.log('No user, skipping fetchTreatmentPlans')
       return
     }
     
     setTreatmentPlansLoading(true)
     try {
-      console.log('Fetching treatment plans for patient:', patientId, 'psychologist:', user.id)
-      
       const { data, error } = await supabase
         .from('treatment_plans')
         .select('*')
@@ -215,13 +214,10 @@ export default function PatientProfile() {
         .eq('psychologist_id', user.id)
         .order('plan_date', { ascending: false })
 
-      console.log('Treatment plans fetch result:', { data, error })
-
       if (error) {
         console.error('Error fetching treatment plans:', error)
       } else {
         setTreatmentPlans(data || [])
-        console.log('Treatment plans set to:', data?.length || 0, 'plans')
       }
     } catch (error) {
       console.error('Unexpected error fetching treatment plans:', error)
@@ -290,14 +286,45 @@ export default function PatientProfile() {
     );
   };
 
+  const handlePaymentStatusChange = async (sessionId, newPaymentStatus) => {
+    await supabase
+      .from('sessions')
+      .update({ payment_status: newPaymentStatus, updated_at: new Date().toISOString() })
+      .eq('id', sessionId)
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId ? { ...s, payment_status: newPaymentStatus } : s
+      )
+    )
+  }
+
+  // Adicionar função para atualizar o status da sessão
+  const handleSessionStatusChange = async (sessionId, newStatus) => {
+    let paymentStatusUpdate = {}
+    if (newStatus === 'cancelled') {
+      paymentStatusUpdate = { payment_status: 'to pay' }
+    }
+    await supabase
+      .from('sessions')
+      .update({ status: newStatus, updated_at: new Date().toISOString(), ...paymentStatusUpdate })
+      .eq('id', sessionId)
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId
+          ? { ...s, status: newStatus, ...(newStatus === 'cancelled' ? { payment_status: 'to pay' } : {}) }
+          : s
+      )
+    )
+  }
+
   const saveNote = async () => {
     if (!noteData.title.trim()) {
-      alert('Please enter a note title')
+      alert('Por favor, insira um título para a nota.')
       return
     }
     
     if (!patient) {
-      alert('Patient information not available')
+      alert('Informações do paciente não disponíveis')
       return
     }
 
@@ -318,7 +345,7 @@ export default function PatientProfile() {
         .select()
 
       if (error) {
-        console.error('Error saving note:', error)
+        console.error('Erro ao salvar nota:', error)
       } else {
         // Adicionar a nova nota à lista
         setNotes([data[0], ...notes])
@@ -332,15 +359,16 @@ export default function PatientProfile() {
         
         // Fechar formulário
         setShowAddNote(false)
+        setTriedSaveNote(false);
       }
     } catch (error) {
-      console.error('Unexpected error:', error)
-      alert('Unexpected error saving note')
+      console.error('Erro inesperado:', error)
+      alert('Erro inesperado ao salvar nota')
     }
   }
 
   const deleteNote = async (noteId) => {
-    if (!confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
+    if (!confirm('Tem certeza de que deseja excluir esta nota? Esta ação não pode ser desfeita.')) {
       return
     }
 
@@ -352,16 +380,16 @@ export default function PatientProfile() {
         .eq('psychologist_id', user.id)
 
       if (error) {
-        console.error('Error deleting note:', error)
-        alert('Error deleting note: ' + error.message)
+        console.error('Erro ao excluir nota:', error)
+        alert('Erro ao excluir nota: ' + error.message)
       } else {
         // Remove a nota da lista local
         setNotes(notes.filter(note => note.id !== noteId))
-        alert('Note deleted successfully!')
+        alert('Nota excluída com sucesso!')
       }
     } catch (error) {
-      console.error('Unexpected error:', error)
-      alert('Unexpected error deleting note')
+      console.error('Erro inesperado:', error)
+      alert('Erro inesperado ao excluir nota')
     }
   }
 
@@ -385,7 +413,7 @@ export default function PatientProfile() {
 
   const saveEditNote = async (noteId) => {
     if (!editNoteData.title.trim()) {
-      alert('Please enter a note title')
+      alert('Por favor, insira um título para a nota.')
       return
     }
 
@@ -405,8 +433,8 @@ export default function PatientProfile() {
         .select()
 
       if (error) {
-        console.error('Error updating note:', error)
-        alert('Error updating note: ' + error.message)
+        console.error('Erro ao atualizar nota:', error)
+        alert('Erro ao atualizar nota: ' + error.message)
       } else {
         // Atualizar a nota na lista local
         setNotes(notes.map(note => 
@@ -418,8 +446,8 @@ export default function PatientProfile() {
         setEditNoteData({ title: '', content: '', note_date: '' })
       }
     } catch (error) {
-      console.error('Unexpected error:', error)
-      alert('Unexpected error updating note')
+      console.error('Erro inesperado:', error)
+      alert('Erro inesperado ao atualizar nota')
     }
 
     fetchSessions(patient.id)
@@ -427,12 +455,12 @@ export default function PatientProfile() {
 
   const saveTreatmentPlan = async () => {
     if (!treatmentPlanData.title.trim()) {
-      alert('Please enter a treatment plan title')
+      alert('Por favor, insira um título para o plano terapêutico.')
       return
     }
     
     if (!patient) {
-      alert('Patient information not available')
+      alert('Informações do paciente não disponíveis')
       return
     }
 
@@ -453,7 +481,7 @@ export default function PatientProfile() {
         .select()
 
       if (error) {
-        console.error('Error saving treatment plan:', error)
+        console.error('Erro ao salvar plano terapêutico:', error)
       } else {
         // Adicionar o novo treatment plan à lista
         setTreatmentPlans([data[0], ...treatmentPlans])
@@ -467,15 +495,16 @@ export default function PatientProfile() {
         
         // Fechar formulário
         setShowAddTreatmentPlan(false)
+        setTriedSaveTreatmentPlan(false);
       }
     } catch (error) {
-      console.error('Unexpected error:', error)
-      alert('Unexpected error saving treatment plan')
+      console.error('Erro inesperado:', error)
+      alert('Erro inesperado ao salvar plano terapêutico')
     }
   }
 
   const deleteTreatmentPlan = async (treatmentPlanId) => {
-    if (!confirm('Are you sure you want to delete this treatment plan? This action cannot be undone.')) {
+    if (!confirm('Tem certeza de que deseja excluir este plano terapêutico? Esta ação não pode ser desfeita.')) {
       return
     }
 
@@ -487,16 +516,16 @@ export default function PatientProfile() {
         .eq('psychologist_id', user.id)
 
       if (error) {
-        console.error('Error deleting treatment plan:', error)
-        alert('Error deleting treatment plan: ' + error.message)
+        console.error('Erro ao excluir plano terapêutico:', error)
+        alert('Erro ao excluir plano terapêutico: ' + error.message)
       } else {
         // Remove o treatment plan da lista local
         setTreatmentPlans(treatmentPlans.filter(plan => plan.id !== treatmentPlanId))
-        alert('Treatment plan deleted successfully!')
+        alert('Plano terapêutico excluído com sucesso!')
       }
     } catch (error) {
-      console.error('Unexpected error:', error)
-      alert('Unexpected error deleting treatment plan')
+      console.error('Erro inesperado:', error)
+      alert('Erro inesperado ao excluir plano terapêutico')
     }
   }
 
@@ -520,7 +549,7 @@ export default function PatientProfile() {
 
   const saveEditTreatmentPlan = async (treatmentPlanId) => {
     if (!editTreatmentPlanData.title.trim()) {
-      alert('Please enter a treatment plan title')
+      alert('Por favor, insira um título para o plano terapêutico.')
       return
     }
 
@@ -540,8 +569,8 @@ export default function PatientProfile() {
         .select()
 
       if (error) {
-        console.error('Error updating treatment plan:', error)
-        alert('Error updating treatment plan: ' + error.message)
+        console.error('Erro ao atualizar plano terapêutico:', error)
+        alert('Erro ao atualizar plano terapêutico: ' + error.message)
       } else {
         // Atualizar o treatment plan na lista local
         setTreatmentPlans(treatmentPlans.map(plan => 
@@ -553,8 +582,8 @@ export default function PatientProfile() {
         setEditTreatmentPlanData({ title: '', content: '', plan_date: '' })
       }
     } catch (error) {
-      console.error('Unexpected error:', error)
-      alert('Unexpected error updating treatment plan')
+      console.error('Erro inesperado:', error)
+      alert('Erro inesperado ao atualizar plano terapêutico')
     }
   }
 
@@ -569,9 +598,9 @@ export default function PatientProfile() {
 
   const getSessionTypeDisplay = (type) => {
     const typeConfig = {
-      remote: { label: 'Remote', color: 'bg-blue-100 text-blue-700', icon: Video },
-      'on-site': { label: 'On-site', color: 'bg-purple-100 text-purple-700', icon: Users },
-      hybrid: { label: 'Hybrid', color: 'bg-orange-100 text-orange-700', icon: Share }
+      remote: { label: 'Remoto', color: 'bg-blue-100 text-blue-700', icon: Video },
+      'on-site': { label: 'Presencial', color: 'bg-purple-100 text-purple-700', icon: Users },
+      hybrid: { label: 'Híbrido', color: 'bg-orange-100 text-orange-700', icon: Share }
     }
     return typeConfig[type] || typeConfig.remote
   }
@@ -604,23 +633,34 @@ export default function PatientProfile() {
             {showAddNote && (
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <div className="flex flex-col md:flex-row gap-4 mb-4">
-                  <input
-                    type="text"
-                    value={noteData.title}
-                    onChange={(e) => setNoteData({...noteData, title: e.target.value})}
-                    placeholder="Título da Nota *"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  />
-                  <input
-                    type="date"
-                    value={noteData.note_date}
-                    onChange={(e) => setNoteData({...noteData, note_date: e.target.value})}
-                    placeholder="Data da Nota *"
-                    className="w-40 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  />
+                  <div className="flex-1">
+                    <label htmlFor="note-title" className="block text-sm font-medium text-gray-700">Título da Nota</label>
+                    <input
+                      id="note-title"
+                      type="text"
+                      value={noteData.title}
+                      onChange={(e) => setNoteData({...noteData, title: e.target.value})}
+                      placeholder="Título da Nota *"
+                      className={`px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 w-full ${!validarTitulo(noteData.title) ? (triedSaveNote ? 'border-red-200 bg-red-50' : 'border-gray-300') : 'border-gray-300'}`}
+                    />
+                    {!validarTitulo(noteData.title) && triedSaveNote && (
+                      <p className="text-red-500 text-xs mt-1">O título é obrigatório.</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <label htmlFor="note-date" className="block text-sm font-medium text-gray-700">Data da Nota</label>
+                    <input
+                      id="note-date"
+                      type="date"
+                      value={noteData.note_date}
+                      onChange={(e) => setNoteData({...noteData, note_date: e.target.value})}
+                      placeholder="Data da Nota *"
+                      className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
                 </div>
                 <div className="mb-4">
-                  <RichTextEditor
+                  <RichTextEditorLazy
                     value={noteData.content}
                     onChange={(content) => setNoteData({...noteData, content})}
                     placeholder="Escreva aqui as suas notas clínicas..."
@@ -628,15 +668,16 @@ export default function PatientProfile() {
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button
-                    onClick={() => setShowAddNote(false)}
+                    onClick={() => { setShowAddNote(false); setTriedSaveNote(false); }}
                     variant="secondary"
                     className="text-xs"
                   >
                     Cancelar
                   </Button>
                   <Button
-                    onClick={saveNote}
+                    onClick={() => { setTriedSaveNote(true); saveNote(); }}
                     className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                    disabled={!validarTitulo(noteData.title)}
                   >
                     Guardar Nota
                   </Button>
@@ -680,22 +721,29 @@ export default function PatientProfile() {
                             editingNoteId === note.id ? (
                               // Formulário de edição inline
                               <form onSubmit={e => { e.preventDefault(); saveEditNote(note.id); }} className="space-y-3">
+                                <label htmlFor="edit-note-title" className="block text-sm font-medium text-gray-700">Título da Nota</label>
                                 <input
+                                  id="edit-note-title"
                                   type="text"
                                   value={editNoteData.title}
                                   onChange={e => setEditNoteData({ ...editNoteData, title: e.target.value })}
-                                  placeholder="Note Title *"
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 font-bold"
+                                  placeholder="Título da Nota *"
+                                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 font-bold ${!validarTitulo(editNoteData.title) ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
                                   required
                                 />
+                                {(!validarTitulo(editNoteData.title) && editNoteData.title.trim() !== '') && (
+                                  <p className="text-red-500 text-xs mt-1">O título é obrigatório.</p>
+                                )}
+                                <label htmlFor="edit-note-date" className="block text-sm font-medium text-gray-700 mt-2">Data da Nota</label>
                                 <input
+                                  id="edit-note-date"
                                   type="date"
                                   value={editNoteData.note_date}
                                   onChange={e => setEditNoteData({ ...editNoteData, note_date: e.target.value })}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                                   required
                                 />
-                                <RichTextEditor
+                                <RichTextEditorLazy
                                   value={editNoteData.content}
                                   onChange={(content) => setEditNoteData({ ...editNoteData, content })}
                                   placeholder="Write your clinical notes here..."
@@ -767,38 +815,50 @@ export default function PatientProfile() {
             {showAddTreatmentPlan && (
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <div className="flex flex-col md:flex-row gap-4 mb-4">
-                  <input
-                    type="text"
-                    value={treatmentPlanData.title}
-                    onChange={(e) => setTreatmentPlanData({...treatmentPlanData, title: e.target.value})}
-                    placeholder="Plan Title *"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  />
-                  <input
-                    type="date"
-                    value={treatmentPlanData.plan_date}
-                    onChange={(e) => setTreatmentPlanData({...treatmentPlanData, plan_date: e.target.value})}
-                    className="w-40 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  />
+                  <div className="flex-1">
+                    <label htmlFor="plan-title" className="block text-sm font-medium text-gray-700">Título do Plano</label>
+                    <input
+                      id="plan-title"
+                      type="text"
+                      value={treatmentPlanData.title}
+                      onChange={(e) => setTreatmentPlanData({...treatmentPlanData, title: e.target.value})}
+                      placeholder="Título do Plano *"
+                      className={`px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 w-full ${!validarTitulo(treatmentPlanData.title) ? (triedSaveTreatmentPlan ? 'border-red-200 bg-red-50' : 'border-gray-300') : 'border-gray-300'}`}
+                    />
+                    {!validarTitulo(treatmentPlanData.title) && triedSaveTreatmentPlan && (
+                      <p className="text-red-500 text-xs mt-1">O título é obrigatório.</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <label htmlFor="plan-date" className="block text-sm font-medium text-gray-700">Data do Plano</label>
+                    <input
+                      id="plan-date"
+                      type="date"
+                      value={treatmentPlanData.plan_date}
+                      onChange={(e) => setTreatmentPlanData({...treatmentPlanData, plan_date: e.target.value})}
+                      className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
                 </div>
                 <div className="mb-4">
-                  <RichTextEditor
+                  <RichTextEditorLazy
                     value={treatmentPlanData.content}
                     onChange={(content) => setTreatmentPlanData({...treatmentPlanData, content})}
-                    placeholder="Describe the treatment plan, goals, methods, timeline..."
+                    placeholder="Descreva o plano terapêutico, objetivos, métodos, cronograma..."
                   />
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button
-                    onClick={() => setShowAddTreatmentPlan(false)}
+                    onClick={() => { setShowAddTreatmentPlan(false); setTriedSaveTreatmentPlan(false); }}
                     variant="secondary"
                     className="px-3 py-1 text-sm font-medium"
                   >
                     Cancelar
                   </Button>
                   <Button
-                    onClick={saveTreatmentPlan}
+                    onClick={() => { setTriedSaveTreatmentPlan(true); saveTreatmentPlan(); }}
                     className="px-3 py-1 text-sm font-medium"
+                    disabled={!validarTitulo(treatmentPlanData.title)}
                   >
                     Guardar Plano Terapêutico
                   </Button>
@@ -841,27 +901,38 @@ export default function PatientProfile() {
                     <div key={plan.id}>
                       {/* Treatment Plan Card */}
                       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow group relative flex flex-col min-h-[180px]">
-                        <div className="absolute top-4 right-4 text-sm text-gray-500">{formatDate(plan.plan_date)}</div>
+                        {/* Data do Plano compacta */}
+                        <div className="mb-2">
+                          <span className="block text-sm font-medium text-gray-700">Data do Plano</span>
+                          <span className="block text-base text-gray-900 font-semibold">{formatDate(plan.plan_date)}</span>
+                        </div>
                         
                         {isEditing ? (
                           // Formulário de edição inline
                           <div className="space-y-3">
+                            <label htmlFor="edit-plan-title" className="block text-sm font-medium text-gray-700">Título do Plano</label>
                             <input
+                              id="edit-plan-title"
                               type="text"
                               value={editTreatmentPlanData.title}
                               onChange={e => setEditTreatmentPlanData({ ...editTreatmentPlanData, title: e.target.value })}
                               placeholder="Título do Plano *"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 font-bold"
+                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 font-bold ${!validarTitulo(editTreatmentPlanData.title) ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
                               required
                             />
+                            {(!validarTitulo(editTreatmentPlanData.title) && editTreatmentPlanData.title.trim() !== '') && (
+                              <p className="text-red-500 text-xs mt-1">O título é obrigatório.</p>
+                            )}
+                            <label htmlFor="edit-plan-date" className="block text-sm font-medium text-gray-700 mt-2">Data do Plano</label>
                             <input
+                              id="edit-plan-date"
                               type="date"
                               value={editTreatmentPlanData.plan_date}
                               onChange={e => setEditTreatmentPlanData({ ...editTreatmentPlanData, plan_date: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                               required
                             />
-                            <RichTextEditor
+                            <RichTextEditorLazy
                               value={editTreatmentPlanData.content}
                               onChange={(content) => setEditTreatmentPlanData({ ...editTreatmentPlanData, content })}
                               placeholder="Descreva o plano terapêutico, objetivos, métodos, cronograma..."
@@ -939,7 +1010,7 @@ export default function PatientProfile() {
             {/* Header */}
             <div className="flex justify-end items-center">
               <div className="text-sm text-gray-500">
-                {sessions.length} sessão{sessions.length !== 1 ? 's' : ''} no total
+                {sessions.length} sessões no total
               </div>
             </div>
 
@@ -959,25 +1030,25 @@ export default function PatientProfile() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div className="overflow-x-auto">
+              <div className="bg-white rounded-lg border border-gray-200">
+                <div>
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Sessão
+                          Sessões
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Data
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Duração
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Valor
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Estado
+                          Estado da Sessão
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Estado de Pagamento
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                       </tr>
@@ -996,12 +1067,16 @@ export default function PatientProfile() {
                             </div>
                             {session.session_time && (
                               <div className="text-sm text-gray-500">
-                                {session.session_time.slice(0,5)}
+                                {(() => {
+                                  const start = session.session_time.slice(0,5)
+                                  let [h, m] = start.split(":").map(Number)
+                                  const endDate = new Date(0,0,0,h,m)
+                                  endDate.setMinutes(endDate.getMinutes() + (session.duration_minutes || 60))
+                                  const end = endDate.toTimeString().slice(0,5)
+                                  return `${start} - ${end} (${session.duration_minutes || 60} min)`
+                                })()}
                               </div>
                             )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {session.duration_minutes} min
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                             <div className="text-right">
@@ -1009,55 +1084,27 @@ export default function PatientProfile() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {editingStatusId === session.id ? (
-                              <>
-                                <span
-                                  ref={el => badgeRefs.current[session.id] = el}
-                                  style={{ visibility: 'hidden', position: 'absolute' }}
-                                >
-                                  {getStatusBadge(session.payment_status)}
-                                </span>
-                                {ReactDOM.createPortal(
-                                  <div
-                                    className="fixed min-w-[140px] bg-white border border-gray-200 rounded shadow-lg z-[9999] drop-shadow-lg"
-                                    style={{
-                                      top: dropdownCoords.top,
-                                      left: dropdownCoords.left,
-                                      width: dropdownCoords.width
-                                    }}
-                                  >
-                                    {statusOptions.map(opt => (
-                                      <button
-                                        key={opt.value}
-                                        className={`block w-full px-4 py-2 text-left hover:bg-gray-100 ${session.payment_status === opt.value ? 'font-semibold text-blue-600' : 'text-gray-900'}`}
-                                        onClick={async () => {
-                                          await handleStatusChange(session.id, opt.value);
-                                          setEditingStatusId(null);
-                                        }}
-                                      >
-                                        {opt.label}
-                                      </button>
-                                    ))}
-                                  </div>,
-                                  document.body
-                                )}
-                              </>
-                            ) : (
-                              <span
-                                ref={el => badgeRefs.current[session.id] = el}
-                                onClick={() => {
-                                  const rect = badgeRefs.current[session.id].getBoundingClientRect();
-                                  setDropdownCoords({
-                                    top: rect.bottom + window.scrollY + 4,
-                                    left: rect.left + window.scrollX,
-                                    width: rect.width
-                                  });
-                                  setEditingStatusId(session.id);
-                                }}
-                              >
-                                {getStatusBadge(session.payment_status)}
-                              </span>
-                            )}
+                            <CustomDropdown
+                              value={session.status}
+                              options={[
+                                { value: 'scheduled', label: 'Agendada' },
+                                { value: 'completed', label: 'Realizada' },
+                                { value: 'cancelled', label: 'Cancelada' }
+                              ]}
+                              onChange={async (newStatus) => {
+                                await handleSessionStatusChange(session.id, newStatus)
+                              }}
+                              placeholder="Estado da Sessão"
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <CustomDropdown
+                              value={session.payment_status}
+                              options={paymentStatusOptions}
+                              onChange={async (newStatus) => { await handlePaymentStatusChange(session.id, newStatus) }}
+                              placeholder="Estado"
+                              disabled={session.status === 'cancelled'}
+                            />
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <button
@@ -1167,6 +1214,11 @@ export default function PatientProfile() {
         .sort((a, b) => new Date(`${a.session_date}T${a.session_time}`) - new Date(`${b.session_date}T${b.session_time}`))[0]
     : null;
 
+  // Funções de validação
+  function validarTitulo(titulo) {
+    return titulo && titulo.trim().length > 0
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -1201,7 +1253,7 @@ export default function PatientProfile() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100" style={{ overflow: 'visible' }}>
           <div className="border-b border-gray-100 flex gap-0">
             {tabs.map((tab) => {
               const Icon = tab.icon
@@ -1221,7 +1273,7 @@ export default function PatientProfile() {
               )
             })}
           </div>
-          <div className="p-6">
+          <div className="p-6" style={{ overflow: 'visible' }}>
             {renderTabContent()}
           </div>
         </div>

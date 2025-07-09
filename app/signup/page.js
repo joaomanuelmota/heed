@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import Button from '../../components/Button'
 
+function validarEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
 export default function SignUp() {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -15,34 +19,36 @@ export default function SignUp() {
   })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [errors, setErrors] = useState({})
   const router = useRouter()
+
+  const validate = () => {
+    const newErrors = {}
+    if (!formData.firstName.trim()) newErrors.firstName = 'Por favor, insira o nome.'
+    if (!formData.lastName.trim()) newErrors.lastName = 'Por favor, insira o apelido.'
+    if (!validarEmail(formData.email)) newErrors.email = 'Por favor, insira um email válido.'
+    if (!formData.password) newErrors.password = 'Por favor, insira a palavra-passe.'
+    else if (formData.password.length < 6) newErrors.password = 'A palavra-passe deve ter pelo menos 6 caracteres.'
+    if (!formData.confirmPassword) newErrors.confirmPassword = 'Por favor, confirme a palavra-passe.'
+    else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'As palavras-passe não coincidem.'
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     })
+    setErrors({ ...errors, [e.target.name]: '' })
   }
 
   const handleSignUp = async () => {
+    setMessage('')
+    if (!validate()) return
     setLoading(true)
     setMessage('')
-    
-    // Basic validation
-    if (formData.password !== formData.confirmPassword) {
-      setMessage('As palavras-passe não coincidem!')
-      setLoading(false)
-      return
-    }
-
-    if (formData.password.length < 6) {
-      setMessage('A palavra-passe deve ter pelo menos 6 caracteres!')
-      setLoading(false)
-      return
-    }
-
     try {
-      // Sign up with Supabase
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -54,12 +60,10 @@ export default function SignUp() {
           }
         }
       })
-
       if (error) {
-        setMessage(`Error: ${error.message}`)
+        setMessage(`Erro: ${error.message}`)
       } else {
         setMessage('Sucesso! Por favor, verifique o seu email para confirmar a conta.')
-        // Clear form
         setFormData({
           firstName: '',
           lastName: '',
@@ -69,9 +73,8 @@ export default function SignUp() {
         })
       }
     } catch (error) {
-      setMessage(`Unexpected error: ${error.message}`)
+      setMessage(`Erro inesperado: ${error.message}`)
     }
-    
     setLoading(false)
   }
 
@@ -83,14 +86,21 @@ export default function SignUp() {
           redirectTo: `${window.location.origin}/dashboard`
         }
       })
-
       if (error) {
-        setMessage(`Error: ${error.message}`)
+        setMessage(`Erro: ${error.message}`)
       }
     } catch (error) {
-      setMessage(`Unexpected error: ${error.message}`)
+      setMessage(`Erro inesperado: ${error.message}`)
     }
   }
+
+  const isFormValid =
+    formData.firstName.trim() &&
+    formData.lastName.trim() &&
+    validarEmail(formData.email) &&
+    formData.password.length >= 6 &&
+    formData.password === formData.confirmPassword &&
+    !loading
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -109,8 +119,8 @@ export default function SignUp() {
           {/* Success/Error Message */}
           {message && (
             <div className={`p-3 mb-6 rounded-lg text-sm ${
-              message.includes('Success') 
-                ? 'bg-green-50 text-green-700 border border-green-200' 
+              message.toLowerCase().includes('sucesso')
+                ? 'bg-green-50 text-green-700 border border-green-200'
                 : 'bg-red-50 text-red-700 border border-red-200'
             }`}>
               {message}
@@ -147,82 +157,112 @@ export default function SignUp() {
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <label htmlFor="signup-firstName" className="block text-sm font-medium text-gray-700">Nome</label>
                 <input
+                  id="signup-firstName"
                   type="text"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
                   placeholder="Nome"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
+                  className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 border ${errors.firstName ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
                   required
                   disabled={loading}
+                  onBlur={() => {
+                    if (!formData.firstName.trim()) setErrors(e => ({ ...e, firstName: 'Por favor, insira o nome.' }))
+                    else setErrors(e => ({ ...e, firstName: '' }))
+                  }}
                 />
+                {errors.firstName && <div className="text-red-500 text-xs mt-1">{errors.firstName}</div>}
               </div>
               <div>
+                <label htmlFor="signup-lastName" className="block text-sm font-medium text-gray-700 mt-4">Apelido</label>
                 <input
+                  id="signup-lastName"
                   type="text"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
                   placeholder="Apelido"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
+                  className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 border ${errors.lastName ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
                   required
                   disabled={loading}
+                  onBlur={() => {
+                    if (!formData.lastName.trim()) setErrors(e => ({ ...e, lastName: 'Por favor, insira o apelido.' }))
+                    else setErrors(e => ({ ...e, lastName: '' }))
+                  }}
                 />
+                {errors.lastName && <div className="text-red-500 text-xs mt-1">{errors.lastName}</div>}
               </div>
             </div>
 
             {/* Email */}
             <div>
+              <label htmlFor="signup-email" className="block text-sm font-medium text-gray-700 mt-4">Email</label>
               <input
+                id="signup-email"
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Email"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
+                className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 border ${errors.email ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
                 required
                 disabled={loading}
+                onBlur={() => {
+                  if (!validarEmail(formData.email)) setErrors(e => ({ ...e, email: 'Por favor, insira um email válido.' }))
+                  else setErrors(e => ({ ...e, email: '' }))
+                }}
               />
+              {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
             </div>
-
-
 
             {/* Password Fields */}
             <div>
+              <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 mt-4">Palavra-passe</label>
               <input
+                id="signup-password"
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Palavra-passe"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
+                className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 border ${errors.password ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
                 required
                 disabled={loading}
+                onBlur={() => {
+                  if (!formData.password) setErrors(e => ({ ...e, password: 'Por favor, insira a palavra-passe.' }))
+                  else if (formData.password.length < 6) setErrors(e => ({ ...e, password: 'A palavra-passe deve ter pelo menos 6 caracteres.' }))
+                  else setErrors(e => ({ ...e, password: '' }))
+                }}
               />
+              {errors.password && <div className="text-red-500 text-xs mt-1">{errors.password}</div>}
             </div>
-
             <div>
               <input
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirmar Palavra-passe"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
+                placeholder="Confirmar palavra-passe"
+                className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 border ${errors.confirmPassword ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
                 required
                 disabled={loading}
+                onBlur={() => {
+                  if (!formData.confirmPassword) setErrors(e => ({ ...e, confirmPassword: 'Por favor, confirme a palavra-passe.' }))
+                  else if (formData.password !== formData.confirmPassword) setErrors(e => ({ ...e, confirmPassword: 'As palavras-passe não coincidem.' }))
+                  else setErrors(e => ({ ...e, confirmPassword: '' }))
+                }}
               />
-              <p className="text-xs text-gray-500 mt-1">Mínimo 6 caracteres</p>
+              {errors.confirmPassword && <div className="text-red-500 text-xs mt-1">{errors.confirmPassword}</div>}
             </div>
           </div>
 
-          {/* Create Account Button */}
+          {/* Register Button */}
           <Button
             onClick={handleSignUp}
-            disabled={loading}
-            className="w-full mt-6"
-            size="lg"
+            disabled={!isFormValid}
+            className="w-full py-3 px-4 mt-4"
           >
             {loading ? (
               <div className="flex items-center justify-center">
@@ -230,17 +270,17 @@ export default function SignUp() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                A criar conta...
+                A registar...
               </div>
             ) : (
-              'Criar Conta'
+              'Registar'
             )}
           </Button>
 
           {/* Login Link */}
           <div className="text-center mt-6">
             <p className="text-gray-600">
-              Já tem uma conta Heed?{' '}
+              Já tem uma conta?{' '}
               <Link
                 href="/login"
                 className="text-blue-600 hover:text-blue-800 font-medium"
@@ -254,7 +294,7 @@ export default function SignUp() {
         {/* Footer */}
         <div className="text-center">
           <p className="text-xs text-gray-500">
-            Ao clicar em "Criar Conta", concorda com os nossos{' '}
+            Ao clicar em "Registar", concorda com os nossos{' '}
             <button
               onClick={() => alert('Termos de Serviço')}
               className="text-blue-600 hover:text-blue-800 bg-transparent border-none cursor-pointer"

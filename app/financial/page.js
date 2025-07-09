@@ -6,6 +6,7 @@ import { formatDate, formatDateMonthYear } from "../../lib/dateUtils";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChevronDown, ChevronUp } from "lucide-react";
 import Button from '../../components/Button'
+import CustomDropdown from '../../components/CustomDropdown';
 
 export default function FinancialOverview() {
   const [user, setUser] = useState(null);
@@ -222,65 +223,11 @@ export default function FinancialOverview() {
 
   const monthlyRevenueData = generateMonthlyRevenueData();
 
-  // CustomDropdown para status
-  function CustomDropdown({ value, options, onChange, disabled, placeholder }) {
-    const [open, setOpen] = useState(false);
-    const ref = useRef(null);
-
-    useEffect(() => {
-      function handleClickOutside(event) {
-        if (ref.current && !ref.current.contains(event.target)) {
-          setOpen(false);
-        }
-      }
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const selected = options.find((opt) => opt.value === value);
-
-    return (
-      <div className="relative" ref={ref}>
-        <button
-          type="button"
-          className={`w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none ${
-            disabled ? "bg-gray-100 cursor-not-allowed" : "hover:bg-gray-50"
-          }`}
-          onClick={() => !disabled && setOpen(!open)}
-          disabled={disabled}
-        >
-          <span>{selected ? selected.label : placeholder}</span>
-          <ChevronDown className="w-5 h-5 text-gray-400" />
-        </button>
-        {open && (
-          <div className="absolute left-0 bottom-full mb-2 w-full bg-white border border-gray-200 rounded shadow-lg z-50">
-            {options.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                className={`w-full px-4 py-2 text-left hover:bg-gray-100 ${
-                  value === opt.value ? "font-semibold text-blue-600" : "text-gray-900"
-                }`}
-                onClick={() => {
-                  onChange(opt.value);
-                  setOpen(false);
-                }}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   // Adicionar função handleStatusChange
   const statusOptions = [
     { value: "paid", label: "Pago" },
-    { value: "to pay", label: "A Pagar" },
-    { value: "invoice issued", label: "Fatura Emitida" },
-    { value: "cancelled", label: "Cancelado" },
+    { value: "to pay", label: "Não Pago" },
+    { value: "invoice issued", label: "Fatura Emitida" }
   ];
 
   const handleStatusChange = async (sessionId, newStatus) => {
@@ -492,7 +439,13 @@ export default function FinancialOverview() {
                           </div>
                         </div>
                       ) : (
-                        <span onClick={() => setEditingStatusIdUnpaidSessions(session.id)}>{getStatusBadge(session.payment_status)}</span>
+                        <CustomDropdown
+                          value={session.payment_status}
+                          options={statusOptions}
+                          onChange={(value) => handleStatusChange(session.id, value)}
+                          disabled={false}
+                          placeholder="Estado"
+                        />
                       )}
                     </td>
                   </tr>
@@ -568,7 +521,13 @@ export default function FinancialOverview() {
                           </div>
                         </div>
                       ) : (
-                        <span onClick={() => setEditingStatusIdAllSessions(session.id)}>{getStatusBadge(session.payment_status)}</span>
+                        <CustomDropdown
+                          value={session.payment_status}
+                          options={statusOptions}
+                          onChange={(value) => handleStatusChange(session.id, value)}
+                          disabled={false}
+                          placeholder="Estado"
+                        />
                       )}
                     </td>
                   </tr>

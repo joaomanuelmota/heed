@@ -7,10 +7,12 @@ import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
 import { formatDate } from '../../lib/dateUtils'
 import { CalendarDays, Euro, Users, Clock, Plus, FileText, ChevronDown, ChevronUp } from "lucide-react"
-import AddPatientSidebar from '../../components/AddPatientSidebar'
-import ScheduleSessionSidebar from '../../components/ScheduleSessionSidebar'
+import dynamic from 'next/dynamic'
 import Button from '../../components/Button'
 import CustomDropdown from '../../components/CustomDropdown'
+
+const AddPatientSidebarLazy = dynamic(() => import('../../components/AddPatientSidebar'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando formulário de paciente...</div> })
+const ScheduleSessionSidebarLazy = dynamic(() => import('../../components/ScheduleSessionSidebar'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando agendamento...</div> })
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
@@ -180,7 +182,7 @@ export default function Dashboard() {
     const todayStr = today.toISOString().split('T')[0]
     return sessions.filter(s => {
       return (
-        s.session_date < todayStr &&
+        s.session_date <= todayStr &&
         !isPaid(s) &&
         s.status !== 'cancelled'
       );
@@ -191,7 +193,7 @@ export default function Dashboard() {
   const unpaidSessions = sessions.filter(s => {
     const todayStr = today.toISOString().split('T')[0];
     return (
-      s.session_date < todayStr &&
+      s.session_date <= todayStr &&
       !isPaid(s) &&
       s.status !== 'cancelled'
     );
@@ -203,6 +205,12 @@ export default function Dashboard() {
     { value: "invoice issued", label: "Fatura Emitida" },
     { value: "cancelled", label: "Cancelado" },
   ]
+
+  const paymentStatusOptions = [
+    { value: "paid", label: "Pago" },
+    { value: "to pay", label: "Não Pago" },
+    { value: "invoice issued", label: "Fatura Emitida" }
+  ];
 
   const handleStatusChange = async (sessionId, newStatus) => {
     await supabase
@@ -300,14 +308,14 @@ export default function Dashboard() {
       </div>
 
       {/* Add Patient Sidebar */}
-      <AddPatientSidebar
+      <AddPatientSidebarLazy
         isOpen={showAddPatient}
         onClose={() => setShowAddPatient(false)}
         onSuccess={() => { setShowAddPatient(false); fetchSessions(user.id); }}
         user={user}
       />
       {/* Schedule Session Sidebar */}
-      <ScheduleSessionSidebar
+      <ScheduleSessionSidebarLazy
         isOpen={showScheduleSession}
         onClose={() => setShowScheduleSession(false)}
         onSuccess={() => setShowScheduleSession(false)}
@@ -391,7 +399,7 @@ export default function Dashboard() {
 
           {/* Outstanding Payments */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-md p-6 mb-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Sessões Não Pagas
             </h2>
             <div className="overflow-visible">
@@ -418,7 +426,7 @@ export default function Dashboard() {
                         <td className="px-4 py-2 whitespace-nowrap w-1/4 pl-8">
                           <CustomDropdown
                             value={session.payment_status}
-                            options={statusOptions}
+                            options={paymentStatusOptions}
                             onChange={async (newStatus) => {
                               await handlePaymentStatusChange(session.id, newStatus)
                             }}

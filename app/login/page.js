@@ -5,12 +5,19 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import Button from '../../components/Button'
 
+function validarEmail(email) {
+  // Regex simples para email
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [userName, setUserName] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -24,44 +31,48 @@ export default function LoginPage() {
   }, [])
 
   const handleLogin = async () => {
-    console.log('Login button clicked!') // Debug
-    console.log('Email:', email, 'Password:', password) // Debug
-    
+    setMessage('')
+    let valid = true
+    // Validação frontend
+    if (!validarEmail(email)) {
+      setEmailError('Por favor, insira um email válido.')
+      valid = false
+    } else {
+      setEmailError('')
+    }
+    if (!password) {
+      setPasswordError('Por favor, insira a palavra-passe.')
+      valid = false
+    } else {
+      setPasswordError('')
+    }
+    if (!valid) return
+
     setLoading(true)
     setMessage('')
 
     try {
-      console.log('Attempting Supabase login...') // Debug
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
       })
-
-      console.log('Supabase response:', { data, error }) // Debug
-
       if (error) {
-        console.error('Login error:', error) // Debug
-        setMessage(`Error: ${error.message}`)
+        setMessage(`Erro: ${error.message}`)
       } else {
-        console.log('Login successful!') // Debug
-        setMessage('Login successful!')
+        setMessage('Login efetuado com sucesso!')
         setTimeout(() => {
           router.push('/dashboard')
         }, 1000)
       }
     } catch (error) {
-      console.error('Unexpected error:', error) // Debug
-      setMessage(`Unexpected error: ${error.message}`)
+      setMessage(`Erro inesperado: ${error.message}`)
     }
-
     setLoading(false)
   }
 
   const handleGoogleLogin = async () => {
     setLoading(true)
     setMessage('')
-    
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -73,21 +84,16 @@ export default function LoginPage() {
           }
         }
       })
-
       if (error) {
-        console.error('Google login error:', error)
         setMessage(`Erro no login com Google: ${error.message}`)
-      } else {
-        console.log('Google login initiated successfully')
-        // O redirecionamento acontece automaticamente
       }
     } catch (error) {
-      console.error('Unexpected Google login error:', error)
       setMessage(`Erro inesperado: ${error.message}`)
     }
-    
     setLoading(false)
   }
+
+  const isFormValid = validarEmail(email) && password && !loading
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -106,7 +112,7 @@ export default function LoginPage() {
           {/* Success/Error Message */}
           {message && (
             <div className={`p-3 mb-6 rounded-lg text-sm ${
-              message.includes('successful') 
+              message.toLowerCase().includes('sucesso') || message.toLowerCase().includes('success')
                 ? 'bg-green-50 text-green-700 border border-green-200' 
                 : 'bg-red-50 text-red-700 border border-red-200'
             }`}>
@@ -141,28 +147,42 @@ export default function LoginPage() {
 
           {/* Email Input */}
           <div className="mb-4">
+            <label htmlFor="login-email" className="block text-sm font-medium text-gray-700">Email</label>
             <input
+              id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
+              className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 border ${emailError ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
               required
               disabled={loading}
+              onBlur={() => {
+                if (!validarEmail(email)) setEmailError('Por favor, insira um email válido.')
+                else setEmailError('')
+              }}
             />
+            {emailError && <div className="text-red-500 text-xs mt-1">{emailError}</div>}
           </div>
 
           {/* Password Input */}
           <div className="mb-6">
+            <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mt-4">Palavra-passe</label>
             <input
+              id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Palavra-passe"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900"
+              className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 text-gray-900 border ${passwordError ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
               required
               disabled={loading}
+              onBlur={() => {
+                if (!password) setPasswordError('Por favor, insira a palavra-passe.')
+                else setPasswordError('')
+              }}
             />
+            {passwordError && <div className="text-red-500 text-xs mt-1">{passwordError}</div>}
             <div className="flex justify-end mt-2">
               <Link
                 href="/forgot-password"
@@ -176,7 +196,7 @@ export default function LoginPage() {
           {/* Login Button */}
           <Button
             onClick={handleLogin}
-            disabled={loading}
+            disabled={!isFormValid}
             className="w-full py-3 px-4"
           >
             {loading ? (

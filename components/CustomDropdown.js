@@ -1,9 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
+import ReactDOM from 'react-dom';
 
 export default function CustomDropdown({ value, options, onChange, disabled, placeholder, className }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+  const selected = options.find(opt => opt.value === value);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -15,7 +18,16 @@ export default function CustomDropdown({ value, options, onChange, disabled, pla
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selected = options.find(opt => opt.value === value);
+  useEffect(() => {
+    if (open && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  }, [open]);
 
   return (
     <div className={`relative ${className || ''}`} ref={ref}>
