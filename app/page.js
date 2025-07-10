@@ -1,29 +1,37 @@
+'use client'
+import { useEffect, useState } from "react";
+import Link from "next/link";
+
 export default function Home() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 px-6 py-4">
+      <header className={`sticky top-0 z-50 border-b border-gray-200 px-6 py-4 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur shadow-sm' : 'bg-white'}`}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-md bg-black flex items-center justify-center">
               <div className="h-4 w-4 rounded-sm bg-white"></div>
             </div>
-            <span className="text-xl font-bold">Your Logo</span>
+            <span className="text-xl font-bold text-black">Heed</span>
           </div>
           
-          <nav className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-gray-600 hover:text-gray-900">Features</a>
-            <a href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</a>
-            <a href="#about" className="text-gray-600 hover:text-gray-900">About</a>
-          </nav>
-          
           <div className="flex items-center space-x-4">
-            <button className="text-gray-600 hover:text-gray-900 px-4 py-2">
+            <Link href="/login" className="text-gray-600 hover:text-gray-900 px-4 py-2">
               Log in
-            </button>
-            <button className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800">
-              Get Started
-            </button>
+            </Link>
+            <Link href="/signup" className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800">
+              Experimente Grátis
+            </Link>
           </div>
         </div>
       </header>
@@ -38,23 +46,19 @@ export default function Home() {
             </span>
           </div>
           
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            Financial operations for 
-            <span className="text-blue-600"> growth</span> businesses
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-normal text-gray-900 mb-6 leading-tight text-center">
+            Prática clínica simplificada<br/>
+            <span className="">para psicólogos</span>
           </h1>
           
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Streamline your financial workflows with our comprehensive fintech platform. 
-            Built for modern businesses who value efficiency, compliance, and scalable growth.
+            Simplifique a sua rotina com agendamento, prontuários, finanças e progresso clínico — tudo num só lugar.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            <button className="bg-black text-white px-8 py-4 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
-              Start for free
-            </button>
-            <button className="border border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
-              Book a demo
-            </button>
+            <Link href="/signup" className="bg-black text-white px-8 py-4 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
+              Experimente Grátis
+            </Link>
           </div>
           
           <p className="text-sm text-gray-500">
@@ -350,76 +354,68 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white px-6 py-16">
+      <footer className="bg-gray-50 text-gray-700 px-6 pt-16 pb-8 border-t">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             {/* Company Info */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
-                <div className="h-8 w-8 rounded-md bg-white flex items-center justify-center">
-                  <div className="h-4 w-4 rounded-sm bg-gray-900"></div>
+                <div className="h-8 w-8 rounded-md bg-black flex items-center justify-center">
+                  <div className="h-4 w-4 rounded-sm bg-white"></div>
                 </div>
-                <span className="text-xl font-bold">Your Logo</span>
+                <span className="text-xl font-bold text-black">Heed</span>
               </div>
-              <p className="text-gray-400 mb-6">
-                Modern financial operations platform for growth businesses who value efficiency and scalability.
+              <p className="text-gray-500 mb-6">
+                Gestão moderna de tarefas e pacientes para equipas que valorizam clareza, foco e resultados.
               </p>
-              <div className="flex space-x-4">
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <div className="w-6 h-6 bg-gray-400 rounded"></div>
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <div className="w-6 h-6 bg-gray-400 rounded"></div>
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <div className="w-6 h-6 bg-gray-400 rounded"></div>
-                </a>
+              <div className="flex space-x-3">
+                <a href="#" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"><span className="sr-only">Twitter</span><svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M22.46 6c-.77.35-1.6.58-2.47.69a4.3 4.3 0 0 0 1.88-2.37 8.59 8.59 0 0 1-2.72 1.04A4.28 4.28 0 0 0 16.11 4c-2.37 0-4.29 1.92-4.29 4.29 0 .34.04.67.11.99C7.69 9.13 4.07 7.38 1.64 4.7c-.37.64-.58 1.38-.58 2.17 0 1.5.76 2.82 1.92 3.6-.7-.02-1.36-.21-1.94-.53v.05c0 2.1 1.5 3.85 3.5 4.25-.36.1-.74.16-1.13.16-.28 0-.54-.03-.8-.08.54 1.7 2.1 2.94 3.95 2.97A8.6 8.6 0 0 1 2 19.54c-.32 0-.63-.02-.94-.06A12.13 12.13 0 0 0 8.29 21.5c7.55 0 11.68-6.26 11.68-11.68 0-.18-.01-.36-.02-.54A8.18 8.18 0 0 0 22.46 6z"/></svg></a>
+                <a href="#" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"><span className="sr-only">LinkedIn</span><svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11 19h-3v-9h3v9zm-1.5-10.28c-.97 0-1.75-.79-1.75-1.75s.78-1.75 1.75-1.75 1.75.79 1.75 1.75-.78 1.75-1.75 1.75zm13.5 10.28h-3v-4.5c0-1.08-.02-2.47-1.5-2.47-1.5 0-1.73 1.17-1.73 2.39v4.58h-3v-9h2.89v1.23h.04c.4-.75 1.37-1.54 2.82-1.54 3.01 0 3.57 1.98 3.57 4.56v4.75z"/></svg></a>
+                <a href="#" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"><span className="sr-only">Facebook</span><svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M22.675 0h-21.35c-.733 0-1.325.592-1.325 1.325v21.351c0 .732.592 1.324 1.325 1.324h11.495v-9.294h-3.124v-3.622h3.124v-2.672c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.797.143v3.24l-1.918.001c-1.504 0-1.797.715-1.797 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.592 1.323-1.324v-21.35c0-.733-.593-1.325-1.326-1.325z"/></svg></a>
+                <a href="#" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"><span className="sr-only">YouTube</span><svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a2.994 2.994 0 0 0-2.112-2.112c-1.863-.504-9.386-.504-9.386-.504s-7.523 0-9.386.504a2.994 2.994 0 0 0-2.112 2.112c-.504 1.863-.504 5.754-.504 5.754s0 3.891.504 5.754a2.994 2.994 0 0 0 2.112 2.112c1.863.504 9.386.504 9.386.504s7.523 0 9.386-.504a2.994 2.994 0 0 0 2.112-2.112c.504-1.863.504-5.754.504-5.754s0-3.891-.504-5.754zm-13.498 9.568v-7.508l6.545 3.754-6.545 3.754z"/></svg></a>
               </div>
             </div>
-            
             {/* Product Links */}
             <div>
-              <h4 className="font-semibold text-lg mb-4">Product</h4>
+              <h4 className="font-semibold text-lg mb-4">Produto</h4>
               <ul className="space-y-3">
-                <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Integrations</a></li>
-                <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">API</a></li>
+                <li><a href="#features" className="text-gray-500 hover:text-black transition-colors">Funcionalidades</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Integrações</a></li>
+                <li><a href="#pricing" className="text-gray-500 hover:text-black transition-colors">Preços</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Atualizações</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Roadmap</a></li>
               </ul>
             </div>
-            
             {/* Company Links */}
             <div>
-              <h4 className="font-semibold text-lg mb-4">Company</h4>
+              <h4 className="font-semibold text-lg mb-4">Empresa</h4>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Sobre</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Blog</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Carreiras</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Imprensa</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Contacto</a></li>
               </ul>
             </div>
-            
-            {/* Support Links */}
+            {/* Resources Links */}
             <div>
-              <h4 className="font-semibold text-lg mb-4">Support</h4>
+              <h4 className="font-semibold text-lg mb-4">Recursos</h4>
               <ul className="space-y-3">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Community</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Status</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Documentação</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Ajuda</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Guias & Tutoriais</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">API</a></li>
+                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Comunidade</a></li>
               </ul>
             </div>
           </div>
-          
           {/* Bottom Bar */}
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm">
-              © 2024 Your Company. All rights reserved.
-            </p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a>
-              <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Cookie Policy</a>
+          <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400 text-sm mb-4 md:mb-0">© 2025 Heed. Todos os direitos reservados.</p>
+            <div className="flex space-x-6">
+              <Link href="/privacy" className="text-gray-500 hover:text-black text-sm transition-colors">Política de Privacidade</Link>
+              <Link href="/terms" className="text-gray-500 hover:text-black text-sm transition-colors">Termos e Condições</Link>
+              <a href="#" className="text-gray-500 hover:text-black text-sm transition-colors">Cookies</a>
             </div>
           </div>
         </div>

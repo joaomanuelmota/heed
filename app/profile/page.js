@@ -3,6 +3,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "../../lib/supabase"
 import Button from '../../components/Button'
+import ConsentManager from '../../components/ConsentManager'
+import { FaDownload, FaTrashAlt, FaEnvelope } from 'react-icons/fa';
 
 function validarEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -20,6 +22,12 @@ export default function UserProfile() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [errors, setErrors] = useState({})
+  const [exporting, setExporting] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteInput, setDeleteInput] = useState("")
+  const [deleteChecked, setDeleteChecked] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState("")
   const router = useRouter()
 
   useEffect(() => {
@@ -96,6 +104,120 @@ export default function UserProfile() {
     setLoading(false)
   }
 
+  // Exporta todos os dados RGPD do utilizador
+  const exportUserData = async () => {
+    if (!user) return;
+    setExporting(true);
+    setMessage('');
+    setError('');
+    try {
+      // 1. Dados de conta (auth.users)
+      const account_data = {
+        id: user.id,
+        email: user.email,
+        first_name: user.user_metadata?.first_name || '',
+        last_name: user.user_metadata?.last_name || '',
+        full_name: user.user_metadata?.full_name || '',
+        created_at: user.created_at,
+        last_sign_in_at: user.last_sign_in_at || null
+      };
+
+      // 2. Pacientes
+      const { data: patients, error: patientsError } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('psychologist_id', user.id);
+      if (patientsError) throw new Error('Erro ao exportar pacientes');
+
+      // 3. Sessões
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('psychologist_id', user.id);
+      if (sessionsError) throw new Error('Erro ao exportar sessões');
+
+      // 4. Notas
+      const { data: notes, error: notesError } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('psychologist_id', user.id);
+      if (notesError) throw new Error('Erro ao exportar notas');
+
+      // 5. Planos de tratamento
+      const { data: treatment_plans, error: plansError } = await supabase
+        .from('treatment_plans')
+        .select('*')
+        .eq('psychologist_id', user.id);
+      if (plansError) throw new Error('Erro ao exportar planos de tratamento');
+
+      // 6. Consentimentos
+      const { data: consents, error: consentsError } = await supabase
+        .from('user_consents')
+        .select('*')
+        .eq('user_id', user.id);
+      if (consentsError) throw new Error('Erro ao exportar consentimentos');
+
+      // Estrutura do ficheiro
+      const exportData = {
+        export_info: {
+          exported_at: new Date().toISOString(),
+          user_id: user.id,
+          export_version: '1.0'
+        },
+        account_data,
+        patients: patients || [],
+        sessions: sessions || [],
+        notes: notes || [],
+        treatment_plans: treatment_plans || [],
+        consents: consents || []
+      };
+
+      // Gerar ficheiro JSON
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `heed-data-export-${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setMessage('Exportação concluída com sucesso!');
+    } catch (err) {
+      setError('Erro ao exportar dados: ' + (err.message || err));
+    }
+    setExporting(false);
+  }
+
+  // Eliminação RGPD
+  const deleteUserAccount = async () => {
+    if (!user) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      // 1. Eliminar treatment_plans
+      await supabase.from('treatment_plans').delete().eq('psychologist_id', user.id)
+      // 2. Eliminar notes
+      await supabase.from('notes').delete().eq('psychologist_id', user.id)
+      // 3. Eliminar sessions
+      await supabase.from('sessions').delete().eq('psychologist_id', user.id)
+      // 4. Eliminar patients
+      await supabase.from('patients').delete().eq('psychologist_id', user.id)
+      // 5. Eliminar user_consents
+      await supabase.from('user_consents').delete().eq('user_id', user.id)
+      // 6. Eliminar conta de autenticação
+      const { error: authError } = await supabase.auth.admin.deleteUser(user.id)
+      if (authError) throw new Error(authError.message)
+      // Logout e redirect
+      await supabase.auth.signOut()
+      router.push('/')
+    } catch (err) {
+      setDeleteError('Erro ao eliminar conta: ' + (err.message || err))
+    }
+    setDeleting(false)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -169,7 +291,86 @@ export default function UserProfile() {
             )}
           </div>
         </form>
+        {/* Consentimentos RGPD */}
+        {user && <ConsentManager userId={user.id} />}
       </div>
+      {/* Secção de Direitos RGPD */}
+      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-lg border border-gray-200 mt-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Direitos de Proteção de Dados</h2>
+        <div className="flex flex-col gap-4">
+          <button
+            onClick={exportUserData}
+            disabled={exporting}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium border border-blue-200 transition-colors"
+          >
+            <FaDownload className="w-5 h-5" />
+            {exporting ? 'A exportar...' : 'Exportar os Meus Dados'}
+          </button>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-medium border border-red-200 transition-colors"
+          >
+            <FaTrashAlt className="w-5 h-5" />
+            Eliminar a Minha Conta
+          </button>
+          <button
+            onClick={() => window.open('mailto:dpo@myheed.app?subject=Exerc%C3%ADcio%20de%20direitos%20RGPD','_blank')}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium border border-gray-200 transition-colors"
+          >
+            <FaEnvelope className="w-5 h-5" />
+            Contactar DPO
+          </button>
+        </div>
+      </div>
+      {/* Modal de confirmação de eliminação de conta */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md border border-gray-200 relative">
+            <h2 className="text-xl font-bold text-red-700 mb-4 flex items-center gap-2">⚠️ Eliminar Conta Permanentemente</h2>
+            <p className="text-gray-700 mb-4">
+              <b>ATENÇÃO: Esta ação é irreversível!</b><br/><br/>
+              Ao eliminar a sua conta:<br/>
+              <span className="text-red-600">✗ Todos os dados de pacientes serão perdidos<br/>
+              ✗ Todas as notas e sessões serão eliminadas<br/>
+              ✗ Todos os planos de tratamento serão perdidos<br/>
+              ✗ Não poderá recuperar estes dados</span><br/><br/>
+              <b>Recomendamos que exporte os seus dados antes de continuar.</b>
+            </p>
+            <label className="block mb-2 font-medium">Para confirmar, escreva <span className="font-mono bg-gray-100 px-2 py-1 rounded">ELIMINAR</span> na caixa abaixo:</label>
+            <input
+              type="text"
+              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              value={deleteInput}
+              onChange={e => setDeleteInput(e.target.value)}
+              disabled={deleting}
+              autoFocus
+            />
+            <label className="flex items-center mb-4">
+              <input
+                type="checkbox"
+                className="mr-2"
+                checked={deleteChecked}
+                onChange={e => setDeleteChecked(e.target.checked)}
+                disabled={deleting}
+              />
+              Confirmo que fiz backup dos dados importantes
+            </label>
+            {deleteError && <div className="mb-3 text-red-600">{deleteError}</div>}
+            <div className="flex gap-2 justify-end">
+              <button
+                className="px-4 py-2 rounded bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200"
+                onClick={() => { setShowDeleteModal(false); setDeleteInput(""); setDeleteChecked(false); setDeleteError(""); }}
+                disabled={deleting}
+              >Cancelar</button>
+              <button
+                className="px-4 py-2 rounded bg-red-600 text-white font-semibold hover:bg-red-700 disabled:opacity-60"
+                onClick={async () => { await deleteUserAccount(); }}
+                disabled={deleting || deleteInput !== 'ELIMINAR' || !deleteChecked}
+              >{deleting ? 'A eliminar...' : 'Eliminar Conta Permanentemente'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

@@ -269,6 +269,29 @@ export default function PrivacyPage() {
               </ul>
             </section>
 
+            {/* 8A. Gestão de Consentimentos */}
+            <section id="8A" className="mb-10 scroll-mt-24">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">8A. GESTÃO DE CONSENTIMENTOS</h2>
+              <h3 className="text-lg font-semibold mt-6">8A.1 Tipos de Consentimento</h3>
+              <p>O nosso sistema utiliza consentimentos granulares:</p>
+              <ul className="list-disc pl-6">
+                <li><b>Dados essenciais</b>: Obrigatório para funcionamento básico da aplicação</li>
+                <li><b>Dados de saúde</b>: Para tratamento de informações clínicas dos pacientes</li>
+                <li><b>Melhorias do serviço</b>: Opcional - análise de utilização para otimizações</li>
+                <li><b>Comunicações</b>: Opcional - receber atualizações sobre o serviço</li>
+              </ul>
+              <h3 className="text-lg font-semibold mt-6">8A.2 Como Gerir os Seus Consentimentos</h3>
+              <p>Pode consultar e alterar os seus consentimentos a qualquer momento em:<br/>
+                <b>Perfil → Proteção de Dados → Gerir Consentimentos</b>
+              </p>
+              <h3 className="text-lg font-semibold mt-6">8A.3 Retirar Consentimentos</h3>
+              <ul className="list-disc pl-6">
+                <li><b>Dados essenciais</b>: Não podem ser retirados (implicaria cancelamento da conta)</li>
+                <li><b>Outros consentimentos</b>: Podem ser retirados a qualquer momento</li>
+                <li><b>Consequências</b>: Explicadas antes de confirmar qualquer retirada</li>
+              </ul>
+            </section>
+
             {/* 9. Cookies e Tecnologias Similares */}
             <section id="9" className="mb-10 scroll-mt-24">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">9. COOKIES E TECNOLOGIAS SIMILARES</h2>

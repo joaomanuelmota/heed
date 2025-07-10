@@ -9,6 +9,42 @@ function validarEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
+// Função para criar consentimentos RGPD default
+async function createDefaultConsents(userId) {
+  const defaultConsents = [
+    {
+      user_id: userId,
+      consent_type: 'essential',
+      granted: true,
+      granted_at: new Date().toISOString(),
+      consent_version: '1.0',
+    },
+    {
+      user_id: userId,
+      consent_type: 'health_data',
+      granted: false,
+      granted_at: new Date().toISOString(),
+      consent_version: '1.0',
+    },
+    {
+      user_id: userId,
+      consent_type: 'service_improvement',
+      granted: false,
+      granted_at: new Date().toISOString(),
+      consent_version: '1.0',
+    },
+    {
+      user_id: userId,
+      consent_type: 'communications',
+      granted: false,
+      granted_at: new Date().toISOString(),
+      consent_version: '1.0',
+    },
+  ];
+  const { error } = await supabase.from('user_consents').insert(defaultConsents);
+  return error;
+}
+
 export default function SignUp() {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -63,7 +99,18 @@ export default function SignUp() {
       if (error) {
         setMessage(`Erro: ${error.message}`)
       } else {
-        setMessage('Sucesso! Por favor, verifique o seu email para confirmar a conta.')
+        // Se o utilizador foi criado, criar consentimentos default
+        const userId = data?.user?.id;
+        if (userId) {
+          const consentError = await createDefaultConsents(userId);
+          if (consentError) {
+            setMessage('Conta criada, mas houve um erro ao registar consentimentos.');
+          } else {
+            setMessage('Sucesso! Por favor, verifique o seu email para confirmar a conta.');
+          }
+        } else {
+          setMessage('Sucesso! Por favor, verifique o seu email para confirmar a conta.');
+        }
         setFormData({
           firstName: '',
           lastName: '',
