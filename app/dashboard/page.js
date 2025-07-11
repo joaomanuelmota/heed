@@ -10,6 +10,7 @@ import { CalendarDays, Euro, Users, Clock, Plus, FileText, ChevronDown, ChevronU
 import dynamic from 'next/dynamic'
 import Button from '../../components/Button'
 import CustomDropdown from '../../components/CustomDropdown'
+import ConsentManager from '../../components/ConsentManager'
 
 const AddPatientSidebarLazy = dynamic(() => import('../../components/AddPatientSidebar'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando formulário de paciente...</div> })
 const ScheduleSessionSidebarLazy = dynamic(() => import('../../components/ScheduleSessionSidebar'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando agendamento...</div> })
@@ -420,9 +421,9 @@ export default function Dashboard() {
                   ) : (
                     unpaidSessions.map(session => (
                       <tr key={session.id}>
-                        <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.patients?.firstName || '—'} {session.patients?.lastName || ''}</td>
-                        <td className="px-4 py-2 whitespace-nowrap w-1/4">{session.session_date ? formatDate(session.session_date) : '—'}</td>
-                        <td className="px-4 py-2 whitespace-nowrap text-right font-mono w-1/4 pr-8">{typeof session.session_fee === 'number' ? `€${session.session_fee}` : '—'}</td>
+                        <td className="px-4 py-2 whitespace-nowrap w-1/4 text-gray-800">{session.patients?.firstName || '—'} {session.patients?.lastName || ''}</td>
+                        <td className="px-4 py-2 whitespace-nowrap w-1/4 text-gray-800">{session.session_date ? formatDate(session.session_date) : '—'}</td>
+                        <td className="px-4 py-2 whitespace-nowrap text-right font-mono w-1/4 pr-8 text-gray-900">{typeof session.session_fee === 'number' ? `€${session.session_fee}` : '—'}</td>
                         <td className="px-4 py-2 whitespace-nowrap w-1/4 pl-8">
                           <CustomDropdown
                             value={session.payment_status}
@@ -451,11 +452,11 @@ export default function Dashboard() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Este Mês:</span>
-                <span className="text-sm font-medium">€{getMonthRevenue().toFixed(2)}</span>
+                <span className="text-sm font-medium text-gray-800">€{getMonthRevenue().toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Este Ano:</span>
-                <span className="text-sm font-medium">€0.00</span>
+                <span className="text-sm font-medium text-gray-800">€0.00</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Pendente:</span>
@@ -469,7 +470,7 @@ export default function Dashboard() {
             <div className="space-y-3">
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-gray-600">Novos Pacientes Este Mês:</span>
-                <span className="text-sm font-medium">{patients.filter(p => {
+                <span className="text-sm font-medium text-gray-800">{patients.filter(p => {
                   const created = new Date(p.created_at)
                   const now = new Date()
                   return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear()
@@ -477,7 +478,7 @@ export default function Dashboard() {
               </div>
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-gray-600">Sessões Realizadas Este Mês:</span>
-                <span className="text-sm font-medium">{
+                <span className="text-sm font-medium text-gray-800">{
                   sessions.filter(s => {
                     const now = new Date();
                     const sessionDate = new Date(s.session_date);
@@ -492,11 +493,11 @@ export default function Dashboard() {
               <div className="border-t border-gray-200 my-3"></div>
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-gray-600">Total Pacientes Ativos</span>
-                <span className="text-sm font-medium">{patients.filter(p => p.status === 'active').length}</span>
+                <span className="text-sm font-medium text-gray-800">{patients.filter(p => p.status === 'active').length}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Total Pacientes Inativos:</span>
-                <span className="text-sm font-medium">{patients.filter(p => p.status === 'inactive').length}</span>
+                <span className="text-sm font-medium text-gray-800">{patients.filter(p => p.status === 'inactive').length}</span>
               </div>
             </div>
           </div>

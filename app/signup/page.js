@@ -223,7 +223,7 @@ export default function SignUp() {
                 {errors.firstName && <div className="text-red-500 text-xs mt-1">{errors.firstName}</div>}
               </div>
               <div>
-                <label htmlFor="signup-lastName" className="block text-sm font-medium text-gray-700 mt-4">Apelido</label>
+                <label htmlFor="signup-lastName" className="block text-sm font-medium text-gray-700">Apelido</label>
                 <input
                   id="signup-lastName"
                   type="text"

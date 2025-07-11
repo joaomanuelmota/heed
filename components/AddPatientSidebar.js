@@ -236,7 +236,7 @@ export default function AddPatientSidebar(props) {
       <div className="p-6 space-y-6">
         {/* Success/Error Message */}
         {message && (
-          <div className={`p-4 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200`}>
+          <div className={`p-4 rounded-lg text-sm border ${message.toLowerCase().includes('sucesso') ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
             {message}
           </div>
         )}

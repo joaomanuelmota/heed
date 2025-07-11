@@ -32,10 +32,8 @@ const CONSENT_TYPES = [
 export default function ConsentManager({ userId }) {
   const [consents, setConsents] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (userId) fetchConsents();
@@ -58,26 +56,38 @@ export default function ConsentManager({ userId }) {
     setLoading(false);
   };
 
-  const handleToggle = (type) => {
-    setConsents((prev) =>
-      prev.map((c) =>
-        c.consent_type === type
-          ? { ...c, granted: !c.granted, granted_at: !c.granted ? new Date().toISOString() : null }
-          : c
-      )
+  const handleToggle = async (type) => {
+    let updated = consents;
+    let consent = consents?.find((c) => c.consent_type === type);
+    if (!consent) {
+      // Se não existir, cria o consentimento
+      consent = {
+        user_id: userId,
+        consent_type: type,
+        granted: true,
+        granted_at: new Date().toISOString(),
+        consent_version: '1.0',
+      };
+      updated = [...(consents || []), consent];
+      setConsents(updated);
+      setMessage('');
+      setError('');
+      const { error } = await supabase.from('user_consents').insert([consent]);
+      if (error) setError('Erro ao criar consentimento.');
+      else setMessage('Consentimento criado!');
+      return;
+    }
+    updated = consents.map((c) =>
+      c.consent_type === type
+        ? { ...c, granted: !c.granted, granted_at: !c.granted ? new Date().toISOString() : null }
+        : c
     );
-    setDirty(true);
+    setConsents(updated);
     setMessage('');
     setError('');
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    setMessage('');
-    setError('');
-    let hasError = false;
-    for (const consent of consents) {
-      if (consent.consent_type === 'essential') continue;
+    // Save instantly
+    consent = updated.find((c) => c.consent_type === type);
+    if (consent && consent.consent_type !== 'essential') {
       const { error } = await supabase
         .from('user_consents')
         .update({
@@ -86,21 +96,14 @@ export default function ConsentManager({ userId }) {
         })
         .eq('user_id', userId)
         .eq('consent_type', consent.consent_type);
-      if (error) hasError = true;
+      if (error) setError('Erro ao guardar alterações.');
+      else setMessage('Consentimento atualizado!');
     }
-    if (hasError) {
-      setError('Erro ao guardar alterações.');
-    } else {
-      setMessage('Consentimentos atualizados com sucesso!');
-      setDirty(false);
-      fetchConsents();
-    }
-    setSaving(false);
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         <span className="ml-3 text-gray-600">A carregar consentimentos...</span>
       </div>
@@ -108,44 +111,34 @@ export default function ConsentManager({ userId }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 mt-8">
-      <h2 className="text-lg font-semibold mb-4 text-gray-900">Gestão de Consentimentos</h2>
-      {error && <div className="mb-3 text-red-600">{error}</div>}
-      {message && <div className="mb-3 text-green-600">{message}</div>}
-      <ul className="space-y-4">
-        {CONSENT_TYPES.map((type) => {
+    <div className="">
+      {error && <div className="mb-3 text-red-600 text-sm">{error}</div>}
+      {message && <div className="mb-3 text-green-600 text-sm">{message}</div>}
+      <ul className="divide-y divide-gray-200">
+        {(() => {
+          const type = CONSENT_TYPES.find(t => t.key === 'communications');
           const consent = consents?.find((c) => c.consent_type === type.key) || {};
           return (
-            <li key={type.key} className="flex items-center justify-between py-2 border-b last:border-b-0">
+            <li key={type.key} className="flex items-center justify-between py-4">
               <div>
-                <div className="font-medium text-gray-800">{type.label}</div>
+                <div className="font-medium text-gray-900 text-sm">{type.label}</div>
                 <div className="text-gray-500 text-sm">{type.description}</div>
                 {consent.granted && consent.granted_at && (
-                  <div className="text-xs text-gray-400 mt-1">Dado em: {new Date(consent.granted_at).toLocaleString('pt-PT')}</div>
+                  <div className="text-gray-400 text-sm mt-1">Dado em: {new Date(consent.granted_at).toLocaleString('pt-PT')}</div>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!consent.granted}
-                  disabled={!type.editable || saving}
-                  onChange={() => type.editable && handleToggle(type.key)}
-                  className="w-5 h-5 accent-blue-600 cursor-pointer disabled:opacity-60"
-                />
-              </div>
+              <input
+                type="checkbox"
+                checked={!!consent.granted}
+                disabled={!type.editable || loading}
+                onChange={() => type.editable && handleToggle(type.key)}
+                className="w-6 h-6 accent-blue-600 rounded cursor-pointer disabled:opacity-60 focus:ring-2 focus:ring-blue-400 transition-colors"
+                aria-label={`Consentimento para ${type.label}`}
+              />
             </li>
           );
-        })}
+        })()}
       </ul>
-      <div className="flex justify-end mt-6">
-        <Button
-          onClick={handleSave}
-          disabled={!dirty || saving}
-          className="min-w-[120px]"
-        >
-          {saving ? 'A guardar...' : 'Guardar Alterações'}
-        </Button>
-      </div>
     </div>
   );
 } 
