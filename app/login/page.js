@@ -229,7 +229,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="text-center">
           <p className="text-xs text-gray-500">
-            Ao clicar em "Entrar", concorda com os nossos{' '}
+            Ao clicar em &quot;Entrar&quot;, concorda com os nossos{' '}
             <Link
               href="/terms"
               className="text-blue-600 hover:text-blue-800"

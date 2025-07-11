@@ -341,7 +341,7 @@ export default function SignUp() {
         {/* Footer */}
         <div className="text-center">
           <p className="text-xs text-gray-500">
-            Ao clicar em "Registar", concorda com os nossos{' '}
+            Ao clicar em &quot;Registar&quot;, concorda com os nossos{' '}
             <Link
               href="/terms"
               className="text-blue-600 hover:text-blue-800"

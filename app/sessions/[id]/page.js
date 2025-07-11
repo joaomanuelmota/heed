@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
 import { formatDateLong, formatTime12Hour } from '../../../lib/dateUtils'
-import { Button } from '../../../components/Button'
+import Button from '../../../components/Button'
 
 export default function SessionDetails() {
   const [user, setUser] = useState(null)

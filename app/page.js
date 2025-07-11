@@ -150,7 +150,7 @@ export default function Home() {
                   <span>★★★★★</span>
                 </div>
                 <p className="text-lg text-gray-700 italic mb-6">
-                  "Our payment processing efficiency increased by 40% and transaction failures dropped to near zero. The automation features are game-changing."
+                  &quot;Our payment processing efficiency increased by 40% and transaction failures dropped to near zero. The automation features are game-changing.&quot;
                 </p>
               </div>
               <div className="flex items-center gap-4">
@@ -168,7 +168,7 @@ export default function Home() {
                   <span>★★★★★</span>
                 </div>
                 <p className="text-lg text-gray-700 italic mb-6">
-                  "The real-time analytics and fraud detection capabilities have saved us millions. We can spot issues before they become problems."
+                  &quot;The real-time analytics and fraud detection capabilities have saved us millions. We can spot issues before they become problems.&quot;
                 </p>
               </div>
               <div className="flex items-center gap-4">
@@ -186,7 +186,7 @@ export default function Home() {
                   <span>★★★★★</span>
                 </div>
                 <p className="text-lg text-gray-700 italic mb-6">
-                  "Compliance used to be a nightmare. Now our regulatory reporting is automated and we're always audit-ready."
+                  &quot;Compliance used to be a nightmare. Now our regulatory reporting is automated and we&apos;re always audit-ready.&quot;
                 </p>
               </div>
               <div className="flex items-center gap-4">

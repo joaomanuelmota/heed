@@ -63,12 +63,12 @@ export default function TermsPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-2">1. DEFINIÇÕES E INTERPRETAÇÃO</h2>
               <h3 className="text-lg font-semibold mt-6">1.1 Definições</h3>
               <ul className="list-disc pl-6">
-                <li><b>"Heed"</b> ou <b>"Serviço"</b>: A aplicação web disponível em <a href="https://myheed.app" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">https://myheed.app</a></li>
-                <li><b>"Prestador"</b>: João Mota, responsável pela disponibilização do Serviço</li>
-                <li><b>"Utilizador"</b>: Psicólogo ou profissional de saúde mental que utiliza o Serviço</li>
-                <li><b>"Paciente"</b>: Pessoa cujos dados são tratados pelo Utilizador através do Serviço</li>
-                <li><b>"Conta"</b>: Registo pessoal do Utilizador no Serviço</li>
-                <li><b>"Dados"</b>: Todas as informações inseridas, armazenadas ou processadas através do Serviço</li>
+                <li><b>&quot;Heed&quot;</b> ou <b>&quot;Serviço&quot;</b>: A aplicação web disponível em <a href="https://myheed.app" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">https://myheed.app</a></li>
+                <li><b>&quot;Prestador&quot;</b>: João Mota, responsável pela disponibilização do Serviço</li>
+                <li><b>&quot;Utilizador&quot;</b>: Psicólogo ou profissional de saúde mental que utiliza o Serviço</li>
+                <li><b>&quot;Paciente&quot;</b>: Pessoa cujos dados são tratados pelo Utilizador através do Serviço</li>
+                <li><b>&quot;Conta&quot;</b>: Registo pessoal do Utilizador no Serviço</li>
+                <li><b>&quot;Dados&quot;</b>: Todas as informações inseridas, armazenadas ou processadas através do Serviço</li>
               </ul>
             </section>
 
@@ -183,7 +183,7 @@ export default function TermsPage() {
               <ul className="list-disc pl-6">
                 <li>O Heed, incluindo código, design e funcionalidades, é propriedade do Prestador</li>
                 <li>O Utilizador obtém apenas licença de uso, não propriedade</li>
-                <li>Marca "Heed" e logótipos são propriedade exclusiva do Prestador</li>
+                <li>Marca &quot;Heed&quot; e logótipos são propriedade exclusiva do Prestador</li>
               </ul>
               <h3 className="text-lg font-semibold mt-6">7.2 Dados do Utilizador</h3>
               <ul className="list-disc pl-6">

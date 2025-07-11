@@ -297,7 +297,7 @@ export default function Patients() {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum paciente encontrado</h3>
-            <p className="text-gray-600 mb-6">Nenhum paciente corresponde à sua pesquisa por "{searchTerm}"</p>
+            <p className="text-gray-600 mb-6">Nenhum paciente corresponde à sua pesquisa por &quot;{searchTerm}&quot;</p>
             <button 
               onClick={() => setSearchTerm('')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"

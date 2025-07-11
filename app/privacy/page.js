@@ -256,7 +256,7 @@ export default function PrivacyPage() {
               <ul className="list-disc pl-6">
                 <li><b>8.1 Direito de Acesso (Art. 15.º RGPD):</b> Pode solicitar uma cópia de todos os seus dados pessoais que processamos.</li>
                 <li><b>8.2 Direito de Retificação (Art. 16.º RGPD):</b> Pode corrigir dados incorretos ou incompletos.</li>
-                <li><b>8.3 Direito ao Apagamento/"Direito ao Esquecimento" (Art. 17.º RGPD):</b> Pode solicitar a eliminação dos seus dados, sujeito a exceções legais.</li>
+                <li><b>8.3 Direito ao Apagamento/&quot;Direito ao Esquecimento&quot; (Art. 17.º RGPD):</b> Pode solicitar a eliminação dos seus dados, sujeito a exceções legais.</li>
                 <li><b>8.4 Direito à Limitação do Tratamento (Art. 18.º RGPD):</b> Pode solicitar a suspensão temporária do tratamento.</li>
                 <li><b>8.5 Direito à Portabilidade (Art. 20.º RGPD):</b> Pode receber os seus dados em formato estruturado e portável.</li>
                 <li><b>8.6 Direito de Oposição (Art. 21.º RGPD):</b> Pode opor-se ao tratamento baseado em interesse legítimo.</li>
