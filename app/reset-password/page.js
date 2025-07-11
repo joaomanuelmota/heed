@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import Button from '../../components/Button'
+import { Suspense } from 'react'
 
 function validarPassword(p, c) {
   if (!p || !c) return 'A palavra-passe é obrigatória.'
@@ -12,7 +13,7 @@ function validarPassword(p, c) {
   return ''
 }
 
-export default function ResetPassword() {
+function ResetPasswordContent() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,7 +33,6 @@ export default function ResetPassword() {
         setMessage('Link inválido ou expirado. Por favor, solicite um novo link de recuperação.')
       }
     }
-    
     checkSession()
   }, [])
 
@@ -46,12 +46,10 @@ export default function ResetPassword() {
       setLoading(false)
       return
     }
-
     try {
       const { data, error } = await supabase.auth.updateUser({
         password: password
       })
-
       if (error) {
         setMessage(`Erro: ${error.message}`)
       } else {
@@ -63,7 +61,6 @@ export default function ResetPassword() {
     } catch (error) {
       setMessage(`Erro inesperado: ${error.message}`)
     }
-
     setLoading(false)
   }
 
@@ -182,5 +179,13 @@ export default function ResetPassword() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ResetPassword() {
+  return (
+    <Suspense>
+      <ResetPasswordContent />
+    </Suspense>
   )
 } 
