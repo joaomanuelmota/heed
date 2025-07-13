@@ -39,20 +39,14 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative px-6 py-20 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="flex justify-center mb-6">
-            <span className="inline-flex items-center gap-2 px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-              <span className="flex h-2 w-2 rounded-full bg-green-500"></span>
-              Launching new features
-            </span>
-          </div>
-          
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-normal text-gray-900 mb-6 leading-tight text-center">
             Prática clínica simplificada<br/>
             <span className="">para psicólogos</span>
           </h1>
           
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Simplifique a sua rotina com agendamento, prontuários, finanças e progresso clínico — tudo num só lugar.
+            Descomplica a gestão da tua prática clínica do primeiro paciente à agenda completa.<br/>
+            Pacientes, agendamentos, prontuários, finanças, tudo num só lugar.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
@@ -62,7 +56,7 @@ export default function Home() {
           </div>
           
           <p className="text-sm text-gray-500">
-            No credit card required • Free 14-day trial
+            30 dias gratuitos sem compromisso
           </p>
         </div>
       </section>
@@ -72,60 +66,74 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Everything your business needs
+              Funcionalidades pensadas para psicólogos
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Comprehensive fintech solutions to streamline your financial operations and drive growth
+              Gere pacientes, sessões e finanças de forma simples e eficiente.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <div className="w-6 h-6 bg-blue-600 rounded"></div>
+              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
+                {/* UserGroupIcon */}
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Payment Automation</h3>
-              <p className="text-gray-600">Automate payment processing and reconciliation to reduce manual errors and improve efficiency.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Gestão De Pacientes</h3>
+              <p className="text-gray-600">Centraliza e organiza todas as informações dos teus pacientes num só lugar.</p>
             </div>
 
             <div className="p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-                <div className="w-6 h-6 bg-green-600 rounded"></div>
+              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Real-time Analytics</h3>
-              <p className="text-gray-600">Monitor financial performance with real-time dashboards and comprehensive reporting.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Preparação De Sessões</h3>
+              <p className="text-gray-600">Cria planos tratamento personalizados e mantém um registo completo na área de cada paciente.</p>
             </div>
 
             <div className="p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                <div className="w-6 h-6 bg-purple-600 rounded"></div>
+              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Risk Management</h3>
-              <p className="text-gray-600">Advanced fraud detection and risk assessment tools to protect your business.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Registo De Sessões</h3>
+              <p className="text-gray-600">Cria registos completos durante ou após a sessão e consulta o histórico de cada paciente sem esforço.</p>
             </div>
 
             <div className="p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
-                <div className="w-6 h-6 bg-red-600 rounded"></div>
+              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
+                {/* CalendarDaysIcon */}
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8.5V7a2 2 0 012-2h14a2 2 0 012 2v1.5M3 8.5V17a2 2 0 002 2h14a2 2 0 002-2V8.5M3 8.5h18M7 11h.01M7 15h.01M12 11h.01M12 15h.01M17 11h.01M17 15h.01" />
+                </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Compliance Tools</h3>
-              <p className="text-gray-600">Built-in compliance features to meet regulatory requirements effortlessly.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Agenda E Calendário</h3>
+              <p className="text-gray-600">Consulta a tua agenda por dia, semana ou mês e vê exactamente as consultas que tens marcadas.</p>
             </div>
 
             <div className="p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
-                <div className="w-6 h-6 bg-yellow-600 rounded"></div>
+              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Multi-currency Support</h3>
-              <p className="text-gray-600">Process payments in multiple currencies with real-time exchange rates.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Controlo De Pagamentos</h3>
+              <p className="text-gray-600">Vê rapidamente os pagamentos em atraso e as faturas por emitir para manter as tuas finanças sempre organizadas.</p>
             </div>
 
             <div className="p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow">
-              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
-                <div className="w-6 h-6 bg-indigo-600 rounded"></div>
+              <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">API Integration</h3>
-              <p className="text-gray-600">Powerful APIs for seamless integration with your existing financial systems.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Dashboard Financeiro</h3>
+              <p className="text-gray-600">Visualiza a tua faturação mensal e anual, compara o crescimento mês a mês e controla a saúde financeira do teu negócio.</p>
             </div>
           </div>
         </div>
@@ -136,64 +144,52 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Trusted by finance teams worldwide
+              O que dizem os psicólogos que usam
             </h2>
             <p className="text-xl text-gray-600">
-              See how our platform transforms financial operations for businesses
+              Descubra como psicólogos estão a usar a Heed para simplificar e organizar a sua prática clínica.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl bg-white border border-gray-100 shadow-sm">
               <div className="mb-4">
-                <div className="flex text-yellow-400 mb-4">
-                  <span>★★★★★</span>
-                </div>
                 <p className="text-lg text-gray-700 italic mb-6">
-                  &quot;Our payment processing efficiency increased by 40% and transaction failures dropped to near zero. The automation features are game-changing.&quot;
+                  &quot;Com a Heed, tenho todos os dados do paciente, notas e preparação de sessões num só lugar. É incrível ter essa visão completa e organizada.&quot;
                 </p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-blue-100"></div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Sarah Johnson</h4>
-                  <p className="text-sm text-gray-600">CFO at TechCorp</p>
+                  <h4 className="font-semibold text-gray-900">Inês Rocha</h4>
+                  <p className="text-sm text-gray-600">Psicóloga Clínica, Braga</p>
                 </div>
               </div>
             </div>
 
             <div className="p-6 rounded-xl bg-white border border-gray-100 shadow-sm">
               <div className="mb-4">
-                <div className="flex text-yellow-400 mb-4">
-                  <span>★★★★★</span>
-                </div>
                 <p className="text-lg text-gray-700 italic mb-6">
-                  &quot;The real-time analytics and fraud detection capabilities have saved us millions. We can spot issues before they become problems.&quot;
+                  &quot;Agora tenho todas as sessões organizadas por dia, semana e mês, o que tornou a gestão da minha agenda muito mais fácil.&quot;
                 </p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-green-100"></div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Michael Chen</h4>
-                  <p className="text-sm text-gray-600">Head of Risk at FinanceFlow</p>
+                  <h4 className="font-semibold text-gray-900">Carla Mendes</h4>
+                  <p className="text-sm text-gray-600">Psicóloga Cognitivo-comportamental, Porto</p>
                 </div>
               </div>
             </div>
 
             <div className="p-6 rounded-xl bg-white border border-gray-100 shadow-sm">
               <div className="mb-4">
-                <div className="flex text-yellow-400 mb-4">
-                  <span>★★★★★</span>
-                </div>
                 <p className="text-lg text-gray-700 italic mb-6">
-                  &quot;Compliance used to be a nightmare. Now our regulatory reporting is automated and we&apos;re always audit-ready.&quot;
+                  &quot;Fazer o tracking dos pagamentos e faturas é super simples na Heed. Saber quanto já faturei, o que está em atraso e o que posso faturar com sessões agendadas dá-me muita tranquilidade e controlo no meu negócio.&quot;
                 </p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-purple-100"></div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">Leila Rodriguez</h4>
-                  <p className="text-sm text-gray-600">Operations Director at GlobalPay</p>
+                  <h4 className="font-semibold text-gray-900">Tiago Moreira</h4>
+                  <p className="text-sm text-gray-600">Psicólogo Clínico, Coimbra</p>
                 </div>
               </div>
             </div>
@@ -206,218 +202,100 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Transparent pricing for every stage
+              Começa Grátis
             </h2>
             <p className="text-xl text-gray-600">
-              Scale your financial operations with plans that grow with your business
+              Experimenta um software pensado para psicólogos independentes.<br/>
+              Sem necessidade de cartão de crédito. Cancela quando quiseres.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-xl border border-gray-200 bg-white">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
-              <div className="mb-4">
-                <span className="text-4xl font-bold text-gray-900">Free</span>
+          <div className="flex justify-center">
+            <div className="w-full max-w-md">
+              <div className="p-6 rounded-xl border-2 border-blue-500 bg-white relative">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                    Tudo Incluído
+                  </span>
+                </div>
+                
+                <div className="mb-1">
+                  <span className="text-4xl font-bold text-gray-900">€5,81</span>
+                  <span className="text-gray-600">/mês</span>
+                </div>
+                <p className="text-gray-600 mb-6">Pensado para acompanhar-te desde o primeiro paciente até à agenda cheia.</p>
+                
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-green-600 text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-700">Gestão de pacientes</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-green-600 text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-700">Preparação de sessões</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-green-600 text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-700">Registo de sessões</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-green-600 text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-700">Controlo de pagamentos</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-green-600 text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-700">Dashboard de faturação</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-green-600 text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-700">Agenda semanal/mensal</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-green-600 text-xs">✓</span>
+                    </div>
+                    <span className="text-gray-700">Calendário terapêutico</span>
+                  </li>
+                </ul>
+                
+                <Link href="/signup" className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors text-center block">
+                  Experimenta Grátis
+                </Link>
               </div>
-              <p className="text-gray-600 mb-6">Perfect for small businesses starting their fintech journey</p>
-              
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Up to 100 transactions/month</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Basic payment processing</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Standard reporting</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Email support</span>
-                </li>
-              </ul>
-              
-              <button className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
-                Get Started
-              </button>
-            </div>
-
-            <div className="p-6 rounded-xl border-2 border-blue-500 bg-white relative">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
-                  Most Popular
-                </span>
-              </div>
-              
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Professional</h3>
-              <div className="mb-1">
-                <span className="text-4xl font-bold text-gray-900">$99</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-              <p className="text-gray-600 mb-6">Ideal for growing businesses with higher transaction volumes</p>
-              
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Up to 10,000 transactions/month</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Advanced payment processing</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Real-time analytics</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Multi-currency support</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Priority support</span>
-                </li>
-              </ul>
-              
-              <button className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
-                Start 14-day trial
-              </button>
-            </div>
-
-            <div className="p-6 rounded-xl border border-gray-200 bg-white">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
-              <div className="mb-4">
-                <span className="text-4xl font-bold text-gray-900">Custom</span>
-              </div>
-              <p className="text-gray-600 mb-6">For large organizations with complex financial operations</p>
-              
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Unlimited transactions</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Custom payment workflows</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">Advanced compliance tools</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span className="text-gray-700">24/7 premium support</span>
-                </li>
-              </ul>
-              
-              <button className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
-                Contact Sales
-              </button>
             </div>
           </div>
           
-          <div className="text-center mt-12">
-            <p className="text-gray-600">
-              Have questions? <a href="#" className="text-blue-600 hover:underline">Contact our sales team</a>
-            </p>
-          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-50 text-gray-700 px-6 pt-16 pb-8 border-t">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
-            {/* Company Info */}
-            <div className="md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="h-8 w-8 rounded-md bg-black flex items-center justify-center">
-                  <div className="h-4 w-4 rounded-sm bg-white"></div>
-                </div>
-                <span className="text-xl font-bold text-black">Heed</span>
-              </div>
-              <p className="text-gray-500 mb-6">
-                Gestão moderna de tarefas e pacientes para equipas que valorizam clareza, foco e resultados.
-              </p>
-              <div className="flex space-x-3">
-                <a href="#" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"><span className="sr-only">Twitter</span><svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M22.46 6c-.77.35-1.6.58-2.47.69a4.3 4.3 0 0 0 1.88-2.37 8.59 8.59 0 0 1-2.72 1.04A4.28 4.28 0 0 0 16.11 4c-2.37 0-4.29 1.92-4.29 4.29 0 .34.04.67.11.99C7.69 9.13 4.07 7.38 1.64 4.7c-.37.64-.58 1.38-.58 2.17 0 1.5.76 2.82 1.92 3.6-.7-.02-1.36-.21-1.94-.53v.05c0 2.1 1.5 3.85 3.5 4.25-.36.1-.74.16-1.13.16-.28 0-.54-.03-.8-.08.54 1.7 2.1 2.94 3.95 2.97A8.6 8.6 0 0 1 2 19.54c-.32 0-.63-.02-.94-.06A12.13 12.13 0 0 0 8.29 21.5c7.55 0 11.68-6.26 11.68-11.68 0-.18-.01-.36-.02-.54A8.18 8.18 0 0 0 22.46 6z"/></svg></a>
-                <a href="#" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"><span className="sr-only">LinkedIn</span><svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11 19h-3v-9h3v9zm-1.5-10.28c-.97 0-1.75-.79-1.75-1.75s.78-1.75 1.75-1.75 1.75.79 1.75 1.75-.78 1.75-1.75 1.75zm13.5 10.28h-3v-4.5c0-1.08-.02-2.47-1.5-2.47-1.5 0-1.73 1.17-1.73 2.39v4.58h-3v-9h2.89v1.23h.04c.4-.75 1.37-1.54 2.82-1.54 3.01 0 3.57 1.98 3.57 4.56v4.75z"/></svg></a>
-                <a href="#" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"><span className="sr-only">Facebook</span><svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M22.675 0h-21.35c-.733 0-1.325.592-1.325 1.325v21.351c0 .732.592 1.324 1.325 1.324h11.495v-9.294h-3.124v-3.622h3.124v-2.672c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.797.143v3.24l-1.918.001c-1.504 0-1.797.715-1.797 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.592 1.323-1.324v-21.35c0-.733-.593-1.325-1.326-1.325z"/></svg></a>
-                <a href="#" className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"><span className="sr-only">YouTube</span><svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a2.994 2.994 0 0 0-2.112-2.112c-1.863-.504-9.386-.504-9.386-.504s-7.523 0-9.386.504a2.994 2.994 0 0 0-2.112 2.112c-.504 1.863-.504 5.754-.504 5.754s0 3.891.504 5.754a2.994 2.994 0 0 0 2.112 2.112c1.863.504 9.386.504 9.386.504s7.523 0 9.386-.504a2.994 2.994 0 0 0 2.112-2.112c.504-1.863.504-5.754.504-5.754s0-3.891-.504-5.754zm-13.498 9.568v-7.508l6.545 3.754-6.545 3.754z"/></svg></a>
-              </div>
+      <footer className="bg-gray-50 text-gray-700 px-6 pt-16 pb-8 border-t border-gray-100">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <div className="h-8 w-8 rounded-md bg-black flex items-center justify-center">
+              <div className="h-4 w-4 rounded-sm bg-white"></div>
             </div>
-            {/* Product Links */}
-            <div>
-              <h4 className="font-semibold text-lg mb-4">Produto</h4>
-              <ul className="space-y-3">
-                <li><a href="#features" className="text-gray-500 hover:text-black transition-colors">Funcionalidades</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Integrações</a></li>
-                <li><a href="#pricing" className="text-gray-500 hover:text-black transition-colors">Preços</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Atualizações</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Roadmap</a></li>
-              </ul>
-            </div>
-            {/* Company Links */}
-            <div>
-              <h4 className="font-semibold text-lg mb-4">Empresa</h4>
-              <ul className="space-y-3">
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Sobre</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Blog</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Carreiras</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Imprensa</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Contacto</a></li>
-              </ul>
-            </div>
-            {/* Resources Links */}
-            <div>
-              <h4 className="font-semibold text-lg mb-4">Recursos</h4>
-              <ul className="space-y-3">
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Documentação</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Ajuda</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Guias & Tutoriais</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">API</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-black transition-colors">Comunidade</a></li>
-              </ul>
-            </div>
+            <span className="text-xl font-bold text-black">Heed</span>
           </div>
-          {/* Bottom Bar */}
-          <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm mb-4 md:mb-0">© 2025 Heed. Todos os direitos reservados.</p>
-            <div className="flex space-x-6">
-              <Link href="/privacy" className="text-gray-500 hover:text-black text-sm transition-colors">Política de Privacidade</Link>
-              <Link href="/terms" className="text-gray-500 hover:text-black text-sm transition-colors">Termos e Condições</Link>
-              <a href="#" className="text-gray-500 hover:text-black text-sm transition-colors">Cookies</a>
-            </div>
+          
+          <div className="flex justify-center space-x-6 mb-4">
+            <Link href="/terms" className="text-gray-500 hover:text-black text-sm transition-colors">Termos e Condições</Link>
+            <Link href="/privacy" className="text-gray-500 hover:text-black text-sm transition-colors">Política de Privacidade</Link>
           </div>
+          
+          <p className="text-gray-400 text-sm">© 2025 Heed. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>

@@ -62,9 +62,31 @@ export default function UserProfile() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
+        
+        // Determinar o nome baseado no provider
+        let firstName = '';
+        let lastName = '';
+        
+        if (user.app_metadata?.provider === 'google') {
+          // Para utilizadores Google, verificar given_name e family_name
+          firstName = user.user_metadata?.given_name || user.user_metadata?.first_name || '';
+          lastName = user.user_metadata?.family_name || user.user_metadata?.last_name || '';
+          
+          // Se ainda não encontrou, tentar extrair do full_name
+          if (!firstName && !lastName && user.user_metadata?.full_name) {
+            const nameParts = user.user_metadata.full_name.split(' ');
+            firstName = nameParts[0] || '';
+            lastName = nameParts.slice(1).join(' ') || '';
+          }
+        } else {
+          // Para outros providers, usar first_name e last_name
+          firstName = user.user_metadata?.first_name || '';
+          lastName = user.user_metadata?.last_name || '';
+        }
+        
         setProfile({
-          firstName: user.user_metadata?.first_name || '',
-          lastName: user.user_metadata?.last_name || '',
+          firstName: firstName,
+          lastName: lastName,
           email: user.email || '',
         })
         // Verificar e criar consentimentos default se não existirem
@@ -359,94 +381,100 @@ export default function UserProfile() {
             </div>
           )}
         </div>
-        <div className="flex items-center justify-between py-2">
-          <div>
-            <div className="text-sm font-medium text-gray-900">Email</div>
-            {!editingEmail ? (
-              <div className="text-gray-600 text-sm">{profile.email}</div>
-            ) : (
-              <input
-                type="email"
-                value={tempEmail}
-                onChange={e => setTempEmail(e.target.value)}
-                className="mt-1 block w-full max-w-xl min-w-[300px] bg-gray-50 border border-gray-300 px-3 py-2 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
-                placeholder="O seu email"
-              />
-            )}
-          </div>
-          {!editingEmail ? (
-            <button className="border px-4 py-2 rounded text-sm font-medium" onClick={() => { setEditingEmail(true); setTempEmail(profile.email); }}>Alterar email</button>
-          ) : (
-            <div className="flex gap-2">
-              <button
-                className="border px-4 py-2 rounded text-sm font-medium bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                onClick={async () => {
-                  setProfile({ ...profile, email: tempEmail });
-                  setEditingEmail(false);
-                  await handleSave();
-                }}
-              >Guardar</button>
-              <button
-                className="border px-4 py-2 rounded text-sm font-medium"
-                onClick={() => { setEditingEmail(false); setTempEmail(profile.email); }}
-              >Cancelar</button>
+        {/* Email - só mostra se não for Google/OAuth */}
+        {user && user.app_metadata?.provider !== 'google' && (
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <div className="text-sm font-medium text-gray-900">Email</div>
+              {!editingEmail ? (
+                <div className="text-gray-600 text-sm">{profile.email}</div>
+              ) : (
+                <input
+                  type="email"
+                  value={tempEmail}
+                  onChange={e => setTempEmail(e.target.value)}
+                  className="mt-1 block w-full max-w-xl min-w-[300px] bg-gray-50 border border-gray-300 px-3 py-2 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
+                  placeholder="O seu email"
+                />
+              )}
             </div>
-          )}
-        </div>
-        <div className="flex items-center justify-between py-2">
-          <div>
-            <div className="text-sm font-medium text-gray-900">Palavra-passe</div>
-            <div className="text-gray-600 text-sm">Altere a sua palavra-passe para aceder à sua conta.</div>
-            {passwordMessage && <div className="text-green-600 text-xs mt-1">{passwordMessage}</div>}
-            {passwordError && <div className="text-red-600 text-xs mt-1">{passwordError}</div>}
-            {editingPassword && tempPassword && !isStrongPassword(tempPassword) && (
-              <div className="text-xs text-red-500 mt-1">
-                A palavra-passe deve ter pelo menos 8 caracteres, uma maiúscula, uma minúscula, um número e um símbolo.
+            {!editingEmail ? (
+              <button className="border px-4 py-2 rounded text-sm font-medium" onClick={() => { setEditingEmail(true); setTempEmail(profile.email); }}>Alterar email</button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  className="border px-4 py-2 rounded text-sm font-medium bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                  onClick={async () => {
+                    setProfile({ ...profile, email: tempEmail });
+                    setEditingEmail(false);
+                    await handleSave();
+                  }}
+                >Guardar</button>
+                <button
+                  className="border px-4 py-2 rounded text-sm font-medium"
+                  onClick={() => { setEditingEmail(false); setTempEmail(profile.email); }}
+                >Cancelar</button>
               </div>
             )}
           </div>
-          {!editingPassword ? (
-            <button className="border px-4 py-2 rounded text-sm font-medium" onClick={() => { setEditingPassword(true); setTempPassword(""); setPasswordMessage(""); setPasswordError(""); }}>Alterar palavra-passe</button>
-          ) : (
-            <div className="flex gap-2 items-center">
-              <input
-                type="password"
-                value={tempPassword}
-                onChange={e => setTempPassword(e.target.value)}
-                className="block w-full max-w-xl min-w-[300px] bg-gray-50 border border-gray-300 px-3 py-2 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
-                placeholder="Nova palavra-passe"
-                disabled={passwordLoading}
-              />
-              <button
-                className="border px-4 py-2 rounded text-sm font-medium bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
-                onClick={async () => {
-                  setPasswordLoading(true);
-                  setPasswordMessage("");
-                  setPasswordError("");
-                  try {
-                    const { error } = await supabase.auth.updateUser({ password: tempPassword });
-                    if (error) {
-                      setPasswordError("Erro ao alterar palavra-passe: " + error.message);
-                    } else {
-                      setPasswordMessage("Palavra-passe alterada com sucesso!");
-                      setEditingPassword(false);
-                      setTempPassword("");
-                    }
-                  } catch (err) {
-                    setPasswordError("Erro inesperado ao alterar palavra-passe.");
-                  }
-                  setPasswordLoading(false);
-                }}
-                disabled={!tempPassword || !isStrongPassword(tempPassword) || passwordLoading}
-              >{passwordLoading ? 'A guardar...' : 'Guardar'}</button>
-              <button
-                className="border px-4 py-2 rounded text-sm font-medium"
-                onClick={() => { setEditingPassword(false); setTempPassword(""); setPasswordMessage(""); setPasswordError(""); }}
-                disabled={passwordLoading}
-              >Cancelar</button>
+        )}
+        {/* Palavra-passe - só mostra se não for Google/OAuth */}
+        {user && user.app_metadata?.provider !== 'google' && (
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <div className="text-sm font-medium text-gray-900">Palavra-passe</div>
+              <div className="text-gray-600 text-sm">Altere a sua palavra-passe para aceder à sua conta.</div>
+              {passwordMessage && <div className="text-green-600 text-xs mt-1">{passwordMessage}</div>}
+              {passwordError && <div className="text-red-600 text-xs mt-1">{passwordError}</div>}
+              {editingPassword && tempPassword && !isStrongPassword(tempPassword) && (
+                <div className="text-xs text-red-500 mt-1">
+                  A palavra-passe deve ter pelo menos 8 caracteres, uma maiúscula, uma minúscula, um número e um símbolo.
+                </div>
+              )}
             </div>
-          )}
-        </div>
+            {!editingPassword ? (
+              <button className="border px-4 py-2 rounded text-sm font-medium" onClick={() => { setEditingPassword(true); setTempPassword(""); setPasswordMessage(""); setPasswordError(""); }}>Alterar palavra-passe</button>
+            ) : (
+              <div className="flex gap-2 items-center">
+                <input
+                  type="password"
+                  value={tempPassword}
+                  onChange={e => setTempPassword(e.target.value)}
+                  className="block w-full max-w-xl min-w-[300px] bg-gray-50 border border-gray-300 px-3 py-2 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
+                  placeholder="Nova palavra-passe"
+                  disabled={passwordLoading}
+                />
+                <button
+                  className="border px-4 py-2 rounded text-sm font-medium bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200"
+                  onClick={async () => {
+                    setPasswordLoading(true);
+                    setPasswordMessage("");
+                    setPasswordError("");
+                    try {
+                      const { error } = await supabase.auth.updateUser({ password: tempPassword });
+                      if (error) {
+                        setPasswordError("Erro ao alterar palavra-passe: " + error.message);
+                      } else {
+                        setPasswordMessage("Palavra-passe alterada com sucesso!");
+                        setEditingPassword(false);
+                        setTempPassword("");
+                      }
+                    } catch (err) {
+                      setPasswordError("Erro inesperado ao alterar palavra-passe.");
+                    }
+                    setPasswordLoading(false);
+                  }}
+                  disabled={!tempPassword || !isStrongPassword(tempPassword) || passwordLoading}
+                >{passwordLoading ? 'A guardar...' : 'Guardar'}</button>
+                <button
+                  className="border px-4 py-2 rounded text-sm font-medium"
+                  onClick={() => { setEditingPassword(false); setTempPassword(""); setPasswordMessage(""); setPasswordError(""); }}
+                  disabled={passwordLoading}
+                >Cancelar</button>
+              </div>
+            )}
+          </div>
+        )}
         <div className="border-t border-gray-200 my-6" />
         {/* Support Section */}
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Suporte</h2>
