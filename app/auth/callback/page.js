@@ -7,20 +7,23 @@ export default function OAuthCallback() {
   const router = useRouter();
 
   useEffect(() => {
-    async function handleOAuthCallback() {
-      const { data, error } = await supabase.auth.getSessionFromUrl();
-
-      if (error) {
-        console.error("Erro no callback OAuth:", error.message);
-        router.replace("/login");
-        return;
+    async function checkUser() {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error || !user) {
+          console.error('Erro na autenticação:', error?.message);
+          router.replace('/login');
+        } else {
+          router.replace('/dashboard');
+        }
+      } catch (error) {
+        console.error('Erro inesperado:', error);
+        router.replace('/login');
       }
-
-      // Sessão armazenada com sucesso
-      router.replace("/dashboard");
     }
 
-    handleOAuthCallback();
+    checkUser();
   }, [router]);
 
   return (

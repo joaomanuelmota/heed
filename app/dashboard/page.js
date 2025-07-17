@@ -2,7 +2,6 @@
 // Dashboard page with sidebar integration
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession, signIn, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { supabase } from '../../lib/supabase'
 import { formatDate } from '../../lib/dateUtils'
@@ -20,7 +19,6 @@ export default function Dashboard() {
   const [patients, setPatients] = useState([])
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
-  const { data: googleSession, status } = useSession()
   const router = useRouter()
   const [today, setToday] = useState(new Date())
   const [showAddPatient, setShowAddPatient] = useState(false)
@@ -116,23 +114,11 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     try {
-      // Sign out from both Supabase and Google
       await supabase.auth.signOut()
-      if (googleSession) {
-        await signOut({ redirect: false })
-      }
       router.push('/')
     } catch (error) {
       console.error('Error logging out:', error)
     }
-  }
-
-  const handleGoogleConnect = () => {
-    signIn('google')
-  }
-
-  const handleGoogleDisconnect = () => {
-    signOut({ redirect: false })
   }
 
   const getRecentPatients = () => {
