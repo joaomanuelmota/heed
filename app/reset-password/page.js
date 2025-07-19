@@ -22,18 +22,31 @@ function ResetPasswordContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState('')
+  const [recoveryReady, setRecoveryReady] = useState(false)
 
   useEffect(() => {
+    // Listener para PASSWORD_RECOVERY
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setRecoveryReady(true)
+        }
+      }
+    )
     // Verificar se há uma sessão válida de recuperação
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         setIsValidSession(true)
+        setRecoveryReady(true) // já está pronto se sessão existe
       } else {
         setMessage('Link inválido ou expirado. Por favor, solicite um novo link de recuperação.')
       }
     }
     checkSession()
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
   }, [])
 
   const handleResetPassword = async () => {
@@ -82,6 +95,25 @@ function ResetPasswordContent() {
               >
                 Solicitar novo link
               </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!recoveryReady) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 px-8 py-10">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                A preparar recuperação...
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Aguarde um momento enquanto preparamos o formulário de recuperação de password.
+              </p>
             </div>
           </div>
         </div>
