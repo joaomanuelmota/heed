@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import Button from '../../components/Button'
+import { analytics } from '../../lib/analytics';
+import { useEffect } from 'react';
 
 function validarEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -34,6 +36,10 @@ export default function SignUp() {
   const [message, setMessage] = useState('')
   const [errors, setErrors] = useState({})
   const router = useRouter()
+
+  useEffect(() => {
+    analytics.signupStarted();
+  }, []);
 
   const validate = () => {
     const newErrors = {}
@@ -76,6 +82,7 @@ export default function SignUp() {
       if (error) {
         setMessage(`Erro: ${error.message}`)
       } else {
+        analytics.signupCompleted('email');
         const userId = data?.user?.id;
         if (userId) {
           const consentError = await createDefaultConsents(userId);
@@ -111,6 +118,8 @@ export default function SignUp() {
       })
       if (error) {
         setMessage(`Erro: ${error.message}`)
+      } else {
+        analytics.signupCompleted('google');
       }
     } catch (error) {
       setMessage(`Erro inesperado: ${error.message}`)

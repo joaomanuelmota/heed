@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 import Button from '../../components/Button'
+import { analytics } from '../../lib/analytics';
 
 function validarEmail(email) {
   // Regex simples para email
@@ -59,6 +60,7 @@ export default function LoginPage() {
       if (error) {
         setMessage(`Erro: ${error.message}`)
       } else {
+        analytics.loginSuccess('email');
         setMessage('Login efetuado com sucesso!')
         setTimeout(() => {
           router.push('/dashboard')
