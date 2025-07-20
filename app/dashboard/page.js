@@ -10,107 +10,100 @@ import dynamic from 'next/dynamic'
 import Button from '../../components/Button'
 import CustomDropdown from '../../components/CustomDropdown'
 import ConsentManager from '../../components/ConsentManager'
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const AddPatientSidebarLazy = dynamic(() => import('../../components/AddPatientSidebar'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando formulário de paciente...</div> })
 const ScheduleSessionSidebarLazy = dynamic(() => import('../../components/ScheduleSessionSidebar'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando agendamento...</div> })
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
-  const [patients, setPatients] = useState([])
-  const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const [today, setToday] = useState(new Date())
   const [showAddPatient, setShowAddPatient] = useState(false)
   const [showScheduleSession, setShowScheduleSession] = useState(false)
   const [editingStatusIdUnpaidSessions, setEditingStatusIdUnpaidSessions] = useState(null)
+  const queryClient = useQueryClient();
 
+  // Novo: obter user e só buscar dados depois
   useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          setUser(user)
+        } else {
+          router.push('/login')
+        }
+      } catch (error) {
+        router.push('/login')
+      }
+      setLoading(false)
+    }
     checkUser()
     setToday(new Date())
   }, [])
 
-  const checkUser = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        setUser(user)
-        fetchPatients(user.id)
-        fetchSessions(user.id)
-      } else {
-        router.push('/login')
-      }
-    } catch (error) {
-      console.error('Error:', error)
-      router.push('/login')
-    }
-    setLoading(false)
-  }
-
-  const fetchPatients = async (psychologistId) => {
-    try {
-      const { data: patientsData, error: patientsError } = await supabase
+  // Queries React Query
+  const {
+    data: patients = [],
+    isLoading: loadingPatients,
+    refetch: refetchPatients
+  } = useQuery({
+    queryKey: ['patients', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
         .from('patients')
         .select('*')
-        .eq('psychologist_id', psychologistId)
+        .eq('psychologist_id', user.id)
         .order('created_at', { ascending: false })
-      if (!patientsError && patientsData) {
-        setPatients(patientsData)
-      } else {
-        setPatients([])
-      }
-    } catch (error) {
-      setPatients([])
-    }
-  }
+      if (error) throw new Error(error.message)
+      return data || []
+    },
+    enabled: !!user?.id
+  })
 
-  const fetchSessions = async (psychologistId) => {
-    setLoading(true)
-    try {
+  const {
+    data: sessions = [],
+    isLoading: loadingSessions,
+    refetch: refetchSessions
+  } = useQuery({
+    queryKey: ['sessions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
       // Buscar todas as sessões do psicólogo
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
         .select('*')
-        .eq('psychologist_id', psychologistId)
+        .eq('psychologist_id', user.id)
         .order('session_date', { ascending: false })
-
-      if (sessionsError) {
-        setSessions([])
-        setLoading(false)
-        return
-      }
-
-      if (sessionsData && sessionsData.length > 0) {
-        // Buscar os pacientes associados
-        const patientIds = [...new Set(sessionsData.map(session => session.patient_id))]
-        let patientsData = []
-        if (patientIds.length > 0) {
-          const { data: patients, error: patientsError } = await supabase
-            .from('patients')
-            .select('id, firstName, lastName')
-            .in('id', patientIds)
-          if (!patientsError) {
-            patientsData = patients
-          }
+      if (sessionsError) throw new Error(sessionsError.message)
+      if (!sessionsData || sessionsData.length === 0) return [];
+      // Buscar os pacientes associados
+      const patientIds = [...new Set(sessionsData.map(session => session.patient_id))]
+      let patientsData = []
+      if (patientIds.length > 0) {
+        const { data: patients, error: patientsError } = await supabase
+          .from('patients')
+          .select('id, firstName, lastName')
+          .in('id', patientIds)
+        if (!patientsError) {
+          patientsData = patients
         }
-        // Merge manual dos dados do paciente
-        const sessionsWithPatients = sessionsData.map(session => {
-          const patient = patientsData.find(p => p.id === session.patient_id)
-          return {
-            ...session,
-            patients: patient || { firstName: 'Unknown', lastName: 'Patient' }
-          }
-        })
-        setSessions(sessionsWithPatients)
-      } else {
-        setSessions([])
       }
-    } catch (error) {
-      setSessions([])
-    }
-    setLoading(false)
-  }
+      // Merge manual dos dados do paciente
+      const sessionsWithPatients = sessionsData.map(session => {
+        const patient = patientsData.find(p => p.id === session.patient_id)
+        return {
+          ...session,
+          patients: patient || { firstName: 'Unknown', lastName: 'Patient' }
+        }
+      })
+      return sessionsWithPatients
+    },
+    enabled: !!user?.id
+  })
 
   const handleLogout = async () => {
     try {
@@ -199,16 +192,13 @@ export default function Dashboard() {
     { value: "invoice issued", label: "Fatura Emitida" }
   ];
 
+  // Atualizar handleStatusChange e handlePaymentStatusChange para invalidar queries
   const handleStatusChange = async (sessionId, newStatus) => {
     await supabase
       .from("sessions")
       .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq("id", sessionId)
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === sessionId ? { ...s, status: newStatus } : s
-      )
-    )
+    await queryClient.invalidateQueries({ queryKey: ['sessions', user?.id] })
   }
 
   const handlePaymentStatusChange = async (sessionId, newPaymentStatus) => {
@@ -216,11 +206,7 @@ export default function Dashboard() {
       .from("sessions")
       .update({ payment_status: newPaymentStatus, updated_at: new Date().toISOString() })
       .eq("id", sessionId)
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === sessionId ? { ...s, payment_status: newPaymentStatus } : s
-      )
-    )
+    await queryClient.invalidateQueries({ queryKey: ['sessions', user?.id] })
   }
 
   function getStatusBadge(status) {
@@ -265,7 +251,7 @@ export default function Dashboard() {
   // Format date
   const dateString = formatDate(today.toISOString(), { weekday: "long", year: "numeric", month: "long", day: "numeric" })
 
-  if (loading) {
+  if (loading || loadingPatients || loadingSessions) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -298,14 +284,21 @@ export default function Dashboard() {
       <AddPatientSidebarLazy
         isOpen={showAddPatient}
         onClose={() => setShowAddPatient(false)}
-        onSuccess={() => { setShowAddPatient(false); fetchSessions(user.id); }}
+        onSuccess={() => {
+          setShowAddPatient(false);
+          queryClient.invalidateQueries({ queryKey: ['patients', user?.id] });
+          queryClient.invalidateQueries({ queryKey: ['sessions', user?.id] });
+        }}
         user={user}
       />
       {/* Schedule Session Sidebar */}
       <ScheduleSessionSidebarLazy
         isOpen={showScheduleSession}
         onClose={() => setShowScheduleSession(false)}
-        onSuccess={() => setShowScheduleSession(false)}
+        onSuccess={() => {
+          setShowScheduleSession(false);
+          queryClient.invalidateQueries({ queryKey: ['sessions', user?.id] });
+        }}
         user={user}
         patients={patients}
       />

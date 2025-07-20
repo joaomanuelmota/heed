@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import Button from './Button'
 import CustomDropdown from './CustomDropdown'
 import { validarEmail, validarTelefone, validarData } from '../lib/dateUtils'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function AddPatientSidebar(props) {
   const [loading, setLoading] = useState(false)
@@ -24,6 +25,88 @@ export default function AddPatientSidebar(props) {
     status: props.existingPatient?.status || 'active',
     sessionType: props.existingPatient?.session_type || 'on-site'
   })
+
+  const queryClient = useQueryClient();
+
+  // Mutations React Query
+  const addOrEditPatientMutation = useMutation({
+    mutationFn: async (submitData) => {
+      if (props.mode === 'edit') {
+        return await supabase
+          .from('patients')
+          .update(submitData)
+          .eq('id', props.existingPatient.id)
+          .eq('psychologist_id', props.user.id)
+      } else {
+        submitData.psychologist_id = props.user.id
+        submitData.created_at = new Date().toISOString()
+        return await supabase
+          .from('patients')
+          .insert([submitData])
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients', props.user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['sessions', props.user?.id] });
+    }
+  });
+
+  const deletePatientMutation = useMutation({
+    mutationFn: async () => {
+      // Primeiro, apagar todas as notas do paciente
+      const { error: notesError } = await supabase
+        .from('notes')
+        .delete()
+        .eq('patient_id', props.existingPatient.id)
+        .eq('psychologist_id', props.user.id)
+
+      if (notesError) {
+        console.error('Error deleting notes:', notesError)
+      }
+
+      // Depois, apagar todas as sessões do paciente
+      const { error: sessionsError } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('patient_id', props.existingPatient.id)
+        .eq('psychologist_id', props.user.id)
+
+      if (sessionsError) {
+        console.error('Error deleting sessions:', sessionsError)
+      }
+
+      // Depois, apagar todos os treatment plans do paciente
+      const { error: treatmentPlansError } = await supabase
+        .from('treatment_plans')
+        .delete()
+        .eq('patient_id', props.existingPatient.id)
+        .eq('psychologist_id', props.user.id)
+
+      if (treatmentPlansError) {
+        console.error('Error deleting treatment plans:', treatmentPlansError)
+      }
+
+      // Finalmente, apagar o paciente
+      const { error: patientError } = await supabase
+        .from('patients')
+        .delete()
+        .eq('id', props.existingPatient.id)
+        .eq('psychologist_id', props.user.id)
+
+      if (patientError) {
+        setMessage(`Erro ao apagar paciente: ${patientError.message}`)
+      } else {
+        setMessage('Paciente apagado com sucesso!')
+        setTimeout(() => {
+          props.onSuccess(true) // Passar true para indicar que foi apagado
+        }, 1000)
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients', props.user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['sessions', props.user?.id] });
+    }
+  });
 
   useEffect(() => {
     if (props.mode === 'edit' && props.existingPatient) {
@@ -95,31 +178,8 @@ export default function AddPatientSidebar(props) {
         updated_at: new Date().toISOString()
       }
 
-      let result;
-      if (props.mode === 'edit') {
-        // Update existing patient
-        result = await supabase
-          .from('patients')
-          .update(submitData)
-          .eq('id', props.existingPatient.id)
-          .eq('psychologist_id', props.user.id)
-      } else {
-        // Create new patient
-        submitData.psychologist_id = props.user.id
-        submitData.created_at = new Date().toISOString()
-        result = await supabase
-          .from('patients')
-          .insert([submitData])
-      }
+      await addOrEditPatientMutation.mutateAsync(submitData)
 
-      if (result.error) {
-        setMessage(`Erro: ${result.error.message}`)
-      } else {
-        setMessage(props.mode === 'edit' ? 'Paciente atualizado com sucesso!' : 'Paciente adicionado com sucesso!')
-        setTimeout(() => {
-          props.onSuccess()
-        }, 1000)
-      }
     } catch (error) {
       setMessage(`Erro inesperado: ${error.message}`)
     }
@@ -151,54 +211,7 @@ export default function AddPatientSidebar(props) {
     setMessage('')
 
     try {
-      // Primeiro, apagar todas as notas do paciente
-      const { error: notesError } = await supabase
-        .from('notes')
-        .delete()
-        .eq('patient_id', props.existingPatient.id)
-        .eq('psychologist_id', props.user.id)
-
-      if (notesError) {
-        console.error('Error deleting notes:', notesError)
-      }
-
-      // Depois, apagar todas as sessões do paciente
-      const { error: sessionsError } = await supabase
-        .from('sessions')
-        .delete()
-        .eq('patient_id', props.existingPatient.id)
-        .eq('psychologist_id', props.user.id)
-
-      if (sessionsError) {
-        console.error('Error deleting sessions:', sessionsError)
-      }
-
-      // Depois, apagar todos os treatment plans do paciente
-      const { error: treatmentPlansError } = await supabase
-        .from('treatment_plans')
-        .delete()
-        .eq('patient_id', props.existingPatient.id)
-        .eq('psychologist_id', props.user.id)
-
-      if (treatmentPlansError) {
-        console.error('Error deleting treatment plans:', treatmentPlansError)
-      }
-
-      // Finalmente, apagar o paciente
-      const { error: patientError } = await supabase
-        .from('patients')
-        .delete()
-        .eq('id', props.existingPatient.id)
-        .eq('psychologist_id', props.user.id)
-
-      if (patientError) {
-        setMessage(`Erro ao apagar paciente: ${patientError.message}`)
-      } else {
-        setMessage('Paciente apagado com sucesso!')
-        setTimeout(() => {
-          props.onSuccess(true) // Passar true para indicar que foi apagado
-        }, 1000)
-      }
+      await deletePatientMutation.mutateAsync()
     } catch (error) {
       setMessage(`Erro inesperado: ${error.message}`)
     }

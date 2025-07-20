@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { generateTimeSlots, validarNumero } from '../lib/dateUtils'
 import Button from './Button'
 import CustomDropdown from './CustomDropdown'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function ScheduleSessionSidebar(props) {
   const [loading, setLoading] = useState(false)
@@ -70,6 +71,20 @@ export default function ScheduleSessionSidebar(props) {
     }
   }
 
+  const queryClient = useQueryClient();
+
+  // Mutation React Query
+  const addSessionMutation = useMutation({
+    mutationFn: async (submitData) => {
+      return await supabase
+        .from('sessions')
+        .insert([submitData])
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions', props.user?.id] });
+    }
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setMessage('')
@@ -91,28 +106,22 @@ export default function ScheduleSessionSidebar(props) {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
-      const { data, error } = await supabase
-        .from('sessions')
-        .insert([submitData])
-      if (error) {
-        setMessage(`Erro: ${error.message}`)
-      } else {
-        setMessage('Sessão agendada com sucesso!')
-        setSessionData({
-          patient_id: '',
-          title: '',
-          session_date: '',
-          session_time: '',
-          duration_minutes: 60,
-          status: 'scheduled',
-          payment_status: 'to pay',
-          notes: '',
-          session_fee: ''
-        })
-        setTimeout(() => {
-          props.onSuccess()
-        }, 1000)
-      }
+      await addSessionMutation.mutateAsync(submitData)
+      setMessage('Sessão agendada com sucesso!')
+      setSessionData({
+        patient_id: '',
+        title: '',
+        session_date: '',
+        session_time: '',
+        duration_minutes: 60,
+        status: 'scheduled',
+        payment_status: 'to pay',
+        notes: '',
+        session_fee: ''
+      })
+      setTimeout(() => {
+        props.onSuccess()
+      }, 1000)
     } catch (error) {
       setMessage(`Erro inesperado: ${error.message}`)
     }
