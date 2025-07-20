@@ -6,6 +6,7 @@ import Button from './Button'
 import CustomDropdown from './CustomDropdown'
 import { validarEmail, validarTelefone, validarData } from '../lib/dateUtils'
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 export default function AddPatientSidebar(props) {
   const [loading, setLoading] = useState(false)
@@ -28,6 +29,7 @@ export default function AddPatientSidebar(props) {
   })
 
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Mutations React Query
   const addOrEditPatientMutation = useMutation({
@@ -44,6 +46,7 @@ export default function AddPatientSidebar(props) {
         return await supabase
           .from('patients')
           .insert([submitData])
+          .select()
       }
     },
     onSuccess: () => {
@@ -180,12 +183,20 @@ export default function AddPatientSidebar(props) {
         updated_at: new Date().toISOString()
       }
 
-      await addOrEditPatientMutation.mutateAsync(submitData)
+      const result = await addOrEditPatientMutation.mutateAsync(submitData);
       if (props.mode === 'edit') {
         setMessage('Paciente editado com sucesso!')
       } else {
         setMessage('Paciente adicionado com sucesso!')
         setIsSaved(true)
+        // Redirecionar para o perfil do paciente criado
+        // O id pode estar em result.data[0].id
+        const newId = result?.data?.[0]?.id;
+        if (newId) {
+          setTimeout(() => {
+            router.push(`/patients/${newId}`);
+          }, 800);
+        }
       }
 
     } catch (error) {
