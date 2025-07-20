@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatDate, formatDateMonthYear } from "../../lib/dateUtils";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { Euro, AlertTriangle, CalendarDays } from "lucide-react";
 import Button from '../../components/Button'
 import CustomDropdown from '../../components/CustomDropdown';
 
@@ -276,20 +277,47 @@ export default function FinancialOverview() {
       </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 px-4 md:px-0">
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center relative">
-          <div className="text-sm text-gray-500 mb-1">Receita deste Mês</div>
-          <div className="text-2xl font-bold text-blue-600">€{faturacaoMesAtual}</div>
-          <div className="absolute bottom-2 right-4 text-xs text-gray-400">Receita deste Ano: €{realizadoAno}</div>
+        {/* Receita deste Mês */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Euro className="w-6 h-6 text-blue-700" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <div className="text-base font-bold text-gray-700 truncate">Receita deste Mês</div>
+              <div className="text-[11px] text-gray-400 truncate whitespace-nowrap">Total faturado no mês atual</div>
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 text-right mt-4 w-full">€{faturacaoMesAtual}</div>
+          <div className="text-[11px] text-gray-400 text-right w-full mt-1">Receita deste Ano: €{realizadoAno}</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center relative">
-          <div className="text-sm text-gray-500 mb-1">Pagamentos em Falta</div>
-          <div className="text-2xl font-bold text-red-600">€{pagamentosEmFalta}</div>
-          <div className="absolute bottom-2 right-4 text-xs text-gray-400">Sessões: {countPagamentosEmFalta}</div>
+        {/* Pagamentos em Falta */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <div className="text-base font-bold text-gray-700 truncate">Pagamentos em Falta</div>
+              <div className="text-[11px] text-gray-400 truncate whitespace-nowrap">Sessões passadas não pagas</div>
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 text-right mt-4 w-full">€{pagamentosEmFalta}</div>
+          <div className="text-[11px] text-gray-400 text-right w-full mt-1">Sessões: {countPagamentosEmFalta}</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center relative">
-          <div className="text-sm text-gray-500 mb-1">Sessões Futuras Não Pagas</div>
-          <div className="text-2xl font-bold text-yellow-600">€{unrealizedProfit}</div>
-          <div className="absolute bottom-2 right-4 text-xs text-gray-400">Sessões: {countUnrealizedProfit}</div>
+        {/* Sessões Futuras Não Pagas */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center">
+              <CalendarDays className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <div className="text-base font-bold text-gray-700 truncate">Sessões Futuras Não Pagas</div>
+              <div className="text-[11px] text-gray-400 truncate whitespace-nowrap">Sessões futuras ainda não pagas</div>
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 text-right mt-4 w-full">€{unrealizedProfit}</div>
+          <div className="text-[11px] text-gray-400 text-right w-full mt-1">Sessões: {countUnrealizedProfit}</div>
         </div>
       </div>
       
