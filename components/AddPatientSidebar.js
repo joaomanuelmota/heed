@@ -13,6 +13,7 @@ export default function AddPatientSidebar(props) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [dateInputType, setDateInputType] = useState('text')
   const [errors, setErrors] = useState({})
+  const [isSaved, setIsSaved] = useState(false)
 
   const [patientData, setPatientData] = useState({
     firstName: props.existingPatient?.firstName || '',
@@ -136,6 +137,7 @@ export default function AddPatientSidebar(props) {
     }
     setMessage('')
     setErrors({})
+    setIsSaved(false)
   }, [props.mode, props.existingPatient])
 
   const validate = () => {
@@ -179,6 +181,12 @@ export default function AddPatientSidebar(props) {
       }
 
       await addOrEditPatientMutation.mutateAsync(submitData)
+      if (props.mode === 'edit') {
+        setMessage('Paciente editado com sucesso!')
+      } else {
+        setMessage('Paciente adicionado com sucesso!')
+        setIsSaved(true)
+      }
 
     } catch (error) {
       setMessage(`Erro inesperado: ${error.message}`)
@@ -201,6 +209,7 @@ export default function AddPatientSidebar(props) {
       status: 'active',
       sessionType: 'on-site'
     })
+    setIsSaved(false)
     props.onClose()
   }
 
@@ -247,13 +256,6 @@ export default function AddPatientSidebar(props) {
 
       {/* Form Content */}
       <div className="p-6 space-y-6">
-        {/* Success/Error Message */}
-        {message && (
-          <div className={`p-4 rounded-lg text-sm border ${message.toLowerCase().includes('sucesso') ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-            {message}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-6">
           
           {/* Basic Information */}
@@ -378,7 +380,7 @@ export default function AddPatientSidebar(props) {
               <Button type="button" variant="secondary" onClick={handleClose} disabled={loading}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || isSaved}>
                 {loading ? 'A guardar...' : 'Guardar'}
               </Button>
             </div>
@@ -429,6 +431,12 @@ export default function AddPatientSidebar(props) {
             </div>
           )}
         </form>
+        {/* Success/Error Message at the bottom */}
+        {message && (
+          <div className={`p-4 rounded-lg text-sm border mt-6 ${message.toLowerCase().includes('sucesso') ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+            {message}
+          </div>
+        )}
       </div>
     </div>
   )
