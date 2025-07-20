@@ -1,0 +1,19 @@
+# app/robots.txt
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /signup
+Allow: /about
+Allow: /privacy
+Allow: /terms
+
+# Bloquear páginas privadas
+Disallow: /dashboard
+Disallow: /patients
+Disallow: /sessions
+Disallow: /calendar
+Disallow: /api/
+Disallow: /auth/
+
+# Sitemap
+Sitemap: https://myheed.app/sitemap.xml

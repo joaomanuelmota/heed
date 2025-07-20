@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { analytics } from '../lib/analytics';
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
@@ -18,18 +19,21 @@ export default function Home() {
       {/* Header */}
       <header className={`sticky top-0 z-50 border-b border-gray-200 px-6 py-4 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur shadow-sm' : 'bg-white'}`}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-md bg-black flex items-center justify-center">
-              <div className="h-4 w-4 rounded-sm bg-white"></div>
-            </div>
-            <span className="text-xl font-bold text-black">Heed</span>
-          </div>
+          <span className="text-xl font-bold text-black">Heed</span>
           
           <div className="flex items-center space-x-4">
-            <Link href="/login" className="text-gray-600 hover:text-gray-900 px-4 py-2">
+            <Link 
+              href="/login" 
+              className="text-gray-600 hover:text-gray-900 px-4 py-2"
+              onClick={() => analytics.ctaClicked('nav_login')}
+            >
               Log in
             </Link>
-            <Link href="/signup" className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800">
+            <Link 
+              href="/signup" 
+              className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800"
+              onClick={() => analytics.ctaClicked('header_signup')}
+            >
               Experimente Grátis
             </Link>
           </div>
@@ -50,7 +54,11 @@ export default function Home() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            <Link href="/signup" className="bg-black text-white px-8 py-4 rounded-lg font-semibold hover:bg-gray-800 transition-colors">
+            <Link 
+              href="/signup" 
+              className="bg-black text-white px-8 py-4 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+              onClick={() => analytics.ctaClicked('hero_signup')}
+            >
               Experimente Grátis
             </Link>
           </div>
@@ -270,7 +278,11 @@ export default function Home() {
                   </li>
                 </ul>
                 
-                <Link href="/signup" className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors text-center block">
+                <Link 
+                  href="/signup" 
+                  className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors text-center block"
+                  onClick={() => analytics.ctaClicked('pricing_signup')}
+                >
                   Experimenta Grátis
                 </Link>
               </div>
@@ -283,10 +295,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-gray-50 text-gray-700 px-6 pt-16 pb-8 border-t border-gray-100">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="h-8 w-8 rounded-md bg-black flex items-center justify-center">
-              <div className="h-4 w-4 rounded-sm bg-white"></div>
-            </div>
+          <div className="flex items-center justify-center mb-8">
             <span className="text-xl font-bold text-black">Heed</span>
           </div>
           

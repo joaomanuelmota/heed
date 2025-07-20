@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Button from "../../components/Button";
 import { useEffect } from "react";
+import { analytics } from '../../lib/analytics';
 
 const sections = [
   { id: "1", title: "1. Informações do Responsável" },
@@ -27,6 +28,7 @@ export default function PrivacyPage() {
       const el = document.getElementById(window.location.hash.replace('#', ''));
       if (el) el.scrollIntoView({ behavior: "smooth" });
     }
+    analytics.privacyViewed();
   }, []);
 
   return (

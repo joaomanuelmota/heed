@@ -305,25 +305,57 @@ export default function Dashboard() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 px-4 md:px-0">
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
-          <Users className="w-7 h-7 text-blue-600 mb-2" />
-          <div className="text-sm text-gray-500 mb-1">Pacientes Ativos</div>
-          <div className="text-2xl font-bold text-gray-900">{patients.filter(p => p.status === 'active').length}</div>
+        {/* Pacientes Ativos */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+              <Users className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <div className="text-base font-bold text-gray-700 truncate">Pacientes Ativos</div>
+              <div className="text-[11px] text-gray-400 truncate whitespace-nowrap">Total de pacientes com status ativo</div>
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 text-right mt-4 w-full">{patients.filter(p => p.status === 'active').length}</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
-          <Clock className="w-7 h-7 text-green-600 mb-2" />
-                      <div className="text-sm text-gray-500 mb-1">Sessões Hoje</div>
-          <div className="text-2xl font-bold text-gray-900">{getSessionsToday()}</div>
+        {/* Sessões Hoje */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+              <Clock className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <div className="text-base font-bold text-gray-700 truncate">Sessões Hoje</div>
+              <div className="text-[11px] text-gray-400 truncate whitespace-nowrap">Sessões agendadas para hoje</div>
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 text-right mt-4 w-full">{getSessionsToday()}</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
-          <CalendarDays className="w-7 h-7 text-yellow-600 mb-2" />
-          <div className="text-sm text-gray-500 mb-1">Sessões Agendadas</div>
-          <div className="text-2xl font-bold text-gray-900">{getUpcomingSessions()}</div>
+        {/* Sessões Agendadas */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center">
+              <CalendarDays className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <div className="text-base font-bold text-gray-700 truncate">Sessões Agendadas</div>
+              <div className="text-[11px] text-gray-400 truncate whitespace-nowrap">Sessões futuras na agenda</div>
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 text-right mt-4 w-full">{getUpcomingSessions()}</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex flex-col items-center">
-          <Euro className="w-7 h-7 text-blue-700 mb-2" />
-          <div className="text-sm text-gray-500 mb-1">Receita do Mês</div>
-          <div className="text-2xl font-bold text-gray-900">€{getMonthRevenue().toFixed(2)}</div>
+        {/* Receita do Mês */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Euro className="w-6 h-6 text-blue-700" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <div className="text-base font-bold text-gray-700 truncate">Receita do Mês</div>
+              <div className="text-[11px] text-gray-400 truncate whitespace-nowrap">Total recebido este mês</div>
+            </div>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 text-right mt-4 w-full">€{getMonthRevenue().toFixed(2)}</div>
         </div>
       </div>
 
