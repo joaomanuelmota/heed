@@ -1,4 +1,4 @@
-// app/sitemap.js
+// app/sitemap.xml/route.js
 
 export async function GET(request) {
   const baseUrl = 'https://myheed.app';
@@ -25,4 +25,4 @@ ${urls
       'Content-Type': 'application/xml',
     },
   });
-}
+} 
