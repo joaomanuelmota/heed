@@ -64,12 +64,12 @@ export default function PrivacyPage() {
               <p><b>Responsável pelo tratamento:</b> João Mota<br/>
                 <b>Morada:</b> Rua Óscar Dias Pereira, 80<br/>
                 <b>NIF:</b> 917730529<br/>
-                <b>Email:</b> <a href="mailto:privacy@myheed.app" className="text-blue-600 hover:underline">privacy@myheed.app</a><br/>
+                <b>Email:</b> <a href="mailto:joao@myheed.app" className="text-blue-600 hover:underline">joao@myheed.app</a><br/>
                 <b>Telefone:</b> 917730529
               </p>
               <p className="mt-4"><b>Encarregado de Proteção de Dados (DPO):</b><br/>
                 <b>Nome:</b> João Mota<br/>
-                <b>Email:</b> <a href="mailto:dpo@myheed.app" className="text-blue-600 hover:underline">dpo@myheed.app</a><br/>
+                <b>Email:</b> <a href="mailto:joao@myheed.app" className="text-blue-600 hover:underline">joao@myheed.app</a><br/>
                 <b>Telefone:</b> 917730529
               </p>
               <div className="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
@@ -262,7 +262,7 @@ export default function PrivacyPage() {
                 <li><b>8.6 Direito de Oposição (Art. 21.º RGPD):</b> Pode opor-se ao tratamento baseado em interesse legítimo.</li>
                 <li><b>8.7 Direito de Retirar Consentimento:</b> Pode retirar consentimentos dados, sem afetar a licitude do tratamento anterior.</li>
                 <li><b>8.8 Como Exercer os Seus Direitos:</b><br/>
-                  - <b>Email:</b> <a href="mailto:dpo@myheed.app" className="text-blue-600 hover:underline">dpo@myheed.app</a><br/>
+                  - <b>Email:</b> <a href="mailto:joao@myheed.app" className="text-blue-600 hover:underline">joao@myheed.app</a><br/>
                   - <b>Dentro da aplicação:</b> [Funcionalidade a implementar]<br/>
                   - <b>Prazo de resposta:</b> 30 dias (prorrogáveis por mais 60 em casos complexos)
                 </li>
@@ -387,7 +387,7 @@ export default function PrivacyPage() {
               <h3 className="text-lg font-semibold mt-6">12.2 Contacto para Incidentes</h3>
               <ul className="list-disc pl-6">
                 <li><b>Email:</b> <a href="mailto:security@myheed.app" className="text-blue-600 hover:underline">security@myheed.app</a></li>
-                <li><b>DPO:</b> <a href="mailto:dpo@myheed.app" className="text-blue-600 hover:underline">dpo@myheed.app</a></li>
+                <li><b>DPO:</b> <a href="mailto:joao@myheed.app" className="text-blue-600 hover:underline">joao@myheed.app</a></li>
               </ul>
             </section>
 
@@ -409,16 +409,14 @@ export default function PrivacyPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-2">14. CONTACTOS E RECLAMAÇÕES</h2>
               <h3 className="text-lg font-semibold mt-6">14.1 Contactos para Exercício de Direitos</h3>
               <ul className="list-disc pl-6">
-                <li><b>Email principal:</b> <a href="mailto:dpo@myheed.app" className="text-blue-600 hover:underline">dpo@myheed.app</a></li>
-                <li><b>Email privacidade:</b> <a href="mailto:privacy@myheed.app" className="text-blue-600 hover:underline">privacy@myheed.app</a></li>
-                <li><b>Telefone:</b> 917730529</li>
-                <li><b>Morada:</b> Rua Óscar Dias Pereira, 80</li>
+                <li><b>Email principal:</b> <a href="mailto:joao@myheed.app" className="text-blue-600 hover:underline">joao@myheed.app</a></li>
+                <li><b>Email privacidade:</b> <a href="mailto:joao@myheed.app" className="text-blue-600 hover:underline">joao@myheed.app</a></li>
               </ul>
               <h3 className="text-lg font-semibold mt-6">14.2 Contactos de Emergência para Questões de Proteção de Dados</h3>
               <ul className="list-disc pl-6">
-                <li><b>Violações de dados:</b> <a href="mailto:security@myheed.app" className="text-blue-600 hover:underline">security@myheed.app</a></li>
-                <li><b>Exercício de direitos:</b> <a href="mailto:dpo@myheed.app" className="text-blue-600 hover:underline">dpo@myheed.app</a></li>
-                <li><b>Questões gerais:</b> <a href="mailto:privacy@myheed.app" className="text-blue-600 hover:underline">privacy@myheed.app</a></li>
+                <li><b>Violações de dados:</b> <a href="mailto:joao@myheed.app" className="text-blue-600 hover:underline">joao@myheed.app</a></li>
+                <li><b>Exercício de direitos:</b> <a href="mailto:joao@myheed.app" className="text-blue-600 hover:underline">joao@myheed.app</a></li>
+                <li><b>Questões gerais:</b> <a href="mailto:joao@myheed.app" className="text-blue-600 hover:underline">joao@myheed.app</a></li>
                 <li><b>Reclamações:</b> Diretamente à CNPD (contactos abaixo)</li>
               </ul>
               <h3 className="text-lg font-semibold mt-6">14.3 Reclamações</h3>

@@ -329,15 +329,10 @@ export default function TermsPage() {
             {/* 15. Contactos */}
             <section id="15" className="mb-10 scroll-mt-24">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">15. CONTACTOS</h2>
-              <p>Para questões relacionadas com estes Termos de Serviço:</p>
+              <p>Para qualquer questão relacionada com estes Termos de Serviço, suporte técnico ou privacidade, contacte:</p>
               <ul className="list-disc pl-6">
-                <li><b>Email:</b> <a href="mailto:legal@myheed.app" className="text-blue-600 hover:underline">legal@myheed.app</a></li>
-                <li><b>Telefone:</b> 917730529</li>
-                <li><b>Morada:</b> Rua Óscar Dias Pereira, 80</li>
+                <li><b>Email:</b> <a href="mailto:joao@myheed.app" className="text-blue-600 hover:underline">joao@myheed.app</a></li>
               </ul>
-              <p>Para questões técnicas: <a href="mailto:support@myheed.app" className="text-blue-600 hover:underline">support@myheed.app</a><br/>
-                Para questões de privacidade: <a href="mailto:privacy@myheed.app" className="text-blue-600 hover:underline">privacy@myheed.app</a>
-              </p>
             </section>
 
             {/* Footer */}
