@@ -68,32 +68,33 @@ export default function SignUp() {
     setLoading(true)
     setMessage('')
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            full_name: `${formData.firstName} ${formData.lastName}`
-          }
-        }
+      // Try the new API route first
+      const response = await fetch('/api/signup-with-consent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+        }),
       })
-      if (error) {
-        setMessage(`Erro: ${error.message}`)
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setMessage(`Erro: ${result.error}`)
       } else {
         analytics.signupCompleted('email');
-        const userId = data?.user?.id;
-        if (userId) {
-          const consentError = await createDefaultConsents(userId);
-          if (consentError) {
-            setMessage('Conta criada, mas houve um erro ao registar consentimentos.');
-          } else {
-            setMessage('Sucesso! Por favor, verifique o seu email para confirmar a conta.');
-          }
+        
+        if (result.warning) {
+          setMessage(result.warning);
         } else {
           setMessage('Sucesso! Por favor, verifique o seu email para confirmar a conta.');
         }
+        
         setFormData({
           firstName: '',
           lastName: '',
@@ -103,7 +104,46 @@ export default function SignUp() {
         })
       }
     } catch (error) {
-      setMessage(`Erro inesperado: ${error.message}`)
+      // Fallback to old method if API route fails
+      console.log('API route failed, trying fallback method:', error);
+      try {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+              full_name: `${formData.firstName} ${formData.lastName}`
+            }
+          }
+        })
+        if (signUpError) {
+          setMessage(`Erro: ${signUpError.message}`)
+        } else {
+          analytics.signupCompleted('email');
+          const userId = data?.user?.id;
+          if (userId) {
+            const consentError = await createDefaultConsents(userId);
+            if (consentError) {
+              setMessage('Conta criada, mas houve um erro ao registar consentimentos.');
+            } else {
+              setMessage('Sucesso! Por favor, verifique o seu email para confirmar a conta.');
+            }
+          } else {
+            setMessage('Sucesso! Por favor, verifique o seu email para confirmar a conta.');
+          }
+          setFormData({
+            firstName: '',
+            lastName: '',
+            email: '',
+            password: '',
+            confirmPassword: ''
+          })
+        }
+      } catch (fallbackError) {
+        setMessage(`Erro inesperado: ${fallbackError.message}`)
+      }
     }
     setLoading(false)
   }
