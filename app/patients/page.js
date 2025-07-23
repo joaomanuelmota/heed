@@ -282,12 +282,11 @@ export default function Patients() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Ainda não há pacientes</h3>
             <p className="text-gray-600 mb-6">Comece por adicionar o seu primeiro paciente</p>
-            <Link 
-              href="/patients/add"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-block"
+            <Button 
+              onClick={() => setShowAddSidebar(true)}
             >
               Adicionar o Primeiro Paciente
-            </Link>
+            </Button>
           </div>
         ) : (
           <div className="bg-white p-12 rounded-lg shadow-sm border text-center">
@@ -298,12 +297,15 @@ export default function Patients() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum paciente encontrado</h3>
             <p className="text-gray-600 mb-6">Nenhum paciente corresponde à sua pesquisa por &quot;{searchTerm}&quot;</p>
-            <button 
-              onClick={() => setSearchTerm('')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+            <Button 
+              onClick={() => {
+                setSearchTerm('')
+                setStatusFilter('all')
+                setSessionTypeFilter('all')
+              }}
             >
               Limpar Pesquisa
-            </button>
+            </Button>
           </div>
         )
       ) : (

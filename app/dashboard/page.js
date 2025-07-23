@@ -9,7 +9,7 @@ import { CalendarDays, Euro, Users, Clock, Plus, FileText, ChevronDown, ChevronU
 import dynamic from 'next/dynamic'
 import Button from '../../components/Button'
 import CustomDropdown from '../../components/CustomDropdown'
-import ConsentManager from '../../components/ConsentManager'
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const AddPatientSidebarLazy = dynamic(() => import('../../components/AddPatientSidebar'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando formulário de paciente...</div> })
@@ -263,7 +263,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-0 md:p-8">
+    <div className="min-h-screen bg-[#F3F3F3] p-0 md:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 md:gap-0 px-4 md:px-0 pt-6 md:pt-0">
         <div>
@@ -306,7 +306,7 @@ export default function Dashboard() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 px-4 md:px-0">
         {/* Pacientes Ativos */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-2 overflow-hidden">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
               <Users className="w-6 h-6 text-blue-600" />
@@ -319,7 +319,7 @@ export default function Dashboard() {
           <div className="text-3xl font-bold text-gray-900 text-right mt-4 w-full">{patients.filter(p => p.status === 'active').length}</div>
         </div>
         {/* Sessões Hoje */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-2 overflow-hidden">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
               <Clock className="w-6 h-6 text-green-600" />
@@ -332,7 +332,7 @@ export default function Dashboard() {
           <div className="text-3xl font-bold text-gray-900 text-right mt-4 w-full">{getSessionsToday()}</div>
         </div>
         {/* Sessões Agendadas */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-2 overflow-hidden">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center">
               <CalendarDays className="w-6 h-6 text-yellow-600" />
@@ -345,7 +345,7 @@ export default function Dashboard() {
           <div className="text-3xl font-bold text-gray-900 text-right mt-4 w-full">{getUpcomingSessions()}</div>
         </div>
         {/* Receita do Mês */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-2 overflow-hidden">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
               <Euro className="w-6 h-6 text-blue-700" />
@@ -363,7 +363,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-4 md:px-0">
         {/* Today's Schedule */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Agenda de Hoje</h2>
             {getTodaysSessions().length > 0 ? (
               <div className="space-y-3">
@@ -409,56 +409,13 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Outstanding Payments */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-md p-6 mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Sessões Não Pagas
-            </h2>
-            <div className="overflow-visible">
-              <table className="w-full min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Paciente</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4">Data</th>
-                    <th className="px-4 py-2 text-right text-sm font-semibold text-gray-600 w-1/4 pr-8">Valor</th>
-                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 w-1/4 pl-8">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {unpaidSessions.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="text-center text-gray-500 py-8">Nenhuma sessão não paga 🎉</td>
-                    </tr>
-                  ) : (
-                    unpaidSessions.map(session => (
-                      <tr key={session.id}>
-                        <td className="px-4 py-2 whitespace-nowrap w-1/4 text-gray-800">{session.patients?.firstName || '—'} {session.patients?.lastName || ''}</td>
-                        <td className="px-4 py-2 whitespace-nowrap w-1/4 text-gray-800">{session.session_date ? formatDate(session.session_date) : '—'}</td>
-                        <td className="px-4 py-2 whitespace-nowrap text-right font-mono w-1/4 pr-8 text-gray-900">{typeof session.session_fee === 'number' ? `€${session.session_fee}` : '—'}</td>
-                        <td className="px-4 py-2 whitespace-nowrap w-1/4 pl-8">
-                          <CustomDropdown
-                            value={session.payment_status}
-                            options={paymentStatusOptions}
-                            onChange={async (newStatus) => {
-                              await handlePaymentStatusChange(session.id, newStatus)
-                            }}
-                            placeholder="Status"
-                            className="min-w-[120px]"
-                          />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+
         </div>
 
         {/* Sidebar Widgets */}
         <div className="flex flex-col gap-8">
           {/* Financial Overview */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Visão Geral Financeira</h2>
             <div className="space-y-3">
               <div className="flex justify-between">
@@ -476,7 +433,7 @@ export default function Dashboard() {
             </div>
           </div>
           {/* Patient Insights */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Insights dos Pacientes</h2>
             <div className="space-y-3">
               <div className="flex justify-between mb-2">

@@ -349,11 +349,7 @@ export default function PrivacyPage() {
                       <td className="px-4 py-2 border-b">1 ano</td>
                       <td className="px-4 py-2 border-b">Segurança e auditoria</td>
                     </tr>
-                    <tr>
-                      <td className="px-4 py-2 border-b">Consentimentos</td>
-                      <td className="px-4 py-2 border-b">Duração da conta + 3 anos</td>
-                      <td className="px-4 py-2 border-b">Prova de licitude</td>
-                    </tr>
+
                   </tbody>
                 </table>
               </div>

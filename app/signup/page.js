@@ -11,18 +11,7 @@ function validarEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
-// Função para criar consentimento RGPD essential
-async function createDefaultConsents(userId) {
-  const essentialConsent = {
-    user_id: userId,
-    consent_type: 'essential',
-    granted: true,
-    granted_at: new Date().toISOString(),
-    consent_version: '1.0',
-  };
-  const { error } = await supabase.from('user_consents').insert([essentialConsent]);
-  return error;
-}
+
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -35,11 +24,14 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [errors, setErrors] = useState({})
+
   const router = useRouter()
 
   useEffect(() => {
     analytics.signupStarted();
   }, []);
+
+
 
   const validate = () => {
     const newErrors = {}
@@ -198,6 +190,8 @@ export default function SignUp() {
               {message}
             </div>
           )}
+
+
 
           {/* Google Sign Up Button */}
           <button

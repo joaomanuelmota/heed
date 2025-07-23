@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "../../lib/supabase"
 import Button from '../../components/Button'
-import ConsentManager from '../../components/ConsentManager'
+
 import { FaDownload, FaTrashAlt, FaEnvelope, FaUserEdit, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
 
 function validarEmail(email) {
@@ -89,44 +89,7 @@ export default function UserProfile() {
           lastName: lastName,
           email: user.email || '',
         })
-        // Verificar e criar consentimentos default se não existirem
-        const { data: consents, error: consentsError } = await supabase
-          .from('user_consents')
-          .select('id')
-          .eq('user_id', user.id);
-        if (!consentsError && (!consents || consents.length === 0)) {
-          const defaultConsents = [
-            {
-              user_id: user.id,
-              consent_type: 'essential',
-              granted: true,
-              granted_at: new Date().toISOString(),
-              consent_version: '1.0',
-            },
-            {
-              user_id: user.id,
-              consent_type: 'health_data',
-              granted: false,
-              granted_at: new Date().toISOString(),
-              consent_version: '1.0',
-            },
-            {
-              user_id: user.id,
-              consent_type: 'service_improvement',
-              granted: false,
-              granted_at: new Date().toISOString(),
-              consent_version: '1.0',
-            },
-            {
-              user_id: user.id,
-              consent_type: 'communications',
-              granted: false,
-              granted_at: new Date().toISOString(),
-              consent_version: '1.0',
-            },
-          ];
-          await supabase.from('user_consents').insert(defaultConsents);
-        }
+
       } else {
         router.push('/login')
       }
@@ -233,12 +196,7 @@ export default function UserProfile() {
         .eq('psychologist_id', user.id);
       if (plansError) throw new Error('Erro ao exportar planos de tratamento');
 
-      // 6. Consentimentos
-      const { data: consents, error: consentsError } = await supabase
-        .from('user_consents')
-        .select('*')
-        .eq('user_id', user.id);
-      if (consentsError) throw new Error('Erro ao exportar consentimentos');
+
 
       // Estrutura do ficheiro
       const exportData = {
@@ -252,7 +210,7 @@ export default function UserProfile() {
         sessions: sessions || [],
         notes: notes || [],
         treatment_plans: treatment_plans || [],
-        consents: consents || []
+
       };
 
       // Gerar ficheiro JSON
@@ -287,8 +245,7 @@ export default function UserProfile() {
       await supabase.from('sessions').delete().eq('psychologist_id', user.id)
       // 4. Eliminar patients
       await supabase.from('patients').delete().eq('psychologist_id', user.id)
-      // 5. Eliminar user_consents
-      await supabase.from('user_consents').delete().eq('user_id', user.id)
+
       // 6. Eliminar conta de autenticação via API route
       const res = await fetch('/api/delete-user', {
         method: 'POST',
@@ -348,21 +305,21 @@ export default function UserProfile() {
                   type="text"
                   value={tempFirstName}
                   onChange={e => setTempFirstName(e.target.value)}
-                  className="block w-full max-w-xs min-w-[120px] bg-gray-50 border border-gray-300 px-3 py-2 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
+                  className="block w-full max-w-xs min-w-[120px] bg-white border border-gray-300 px-3 py-2 rounded-md text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 placeholder-gray-500"
                   placeholder="Primeiro nome"
                 />
                 <input
                   type="text"
                   value={tempLastName}
                   onChange={e => setTempLastName(e.target.value)}
-                  className="block w-full max-w-xs min-w-[120px] bg-gray-50 border border-gray-300 px-3 py-2 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
+                  className="block w-full max-w-xs min-w-[120px] bg-white border border-gray-300 px-3 py-2 rounded-md text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 placeholder-gray-500"
                   placeholder="Apelido"
                 />
               </div>
             )}
           </div>
           {!editingName ? (
-            <button className="border px-4 py-2 rounded text-sm font-medium" onClick={() => { setEditingName(true); setTempFirstName(profile.firstName); setTempLastName(profile.lastName); }}>Alterar nome</button>
+            <button className="border px-4 py-2 rounded text-sm font-medium bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 transition-colors" onClick={() => { setEditingName(true); setTempFirstName(profile.firstName); setTempLastName(profile.lastName); }}>Alterar nome</button>
           ) : (
             <div className="flex gap-2">
               <button
@@ -375,7 +332,7 @@ export default function UserProfile() {
                 disabled={!tempFirstName || !tempLastName}
               >Guardar</button>
               <button
-                className="border px-4 py-2 rounded text-sm font-medium"
+                className="border px-4 py-2 rounded text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300 transition-colors"
                 onClick={() => { setEditingName(false); setTempFirstName(profile.firstName); setTempLastName(profile.lastName); }}
               >Cancelar</button>
             </div>
@@ -393,13 +350,13 @@ export default function UserProfile() {
                   type="email"
                   value={tempEmail}
                   onChange={e => setTempEmail(e.target.value)}
-                  className="mt-1 block w-full max-w-xl min-w-[300px] bg-gray-50 border border-gray-300 px-3 py-2 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
+                  className="mt-1 block w-full max-w-xl min-w-[300px] bg-white border border-gray-300 px-3 py-2 rounded-md text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 placeholder-gray-500"
                   placeholder="O seu email"
                 />
               )}
             </div>
             {!editingEmail ? (
-              <button className="border px-4 py-2 rounded text-sm font-medium" onClick={() => { setEditingEmail(true); setTempEmail(profile.email); }}>Alterar email</button>
+              <button className="border px-4 py-2 rounded text-sm font-medium bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 transition-colors" onClick={() => { setEditingEmail(true); setTempEmail(profile.email); }}>Alterar email</button>
             ) : (
               <div className="flex gap-2">
                 <button
@@ -411,7 +368,7 @@ export default function UserProfile() {
                   }}
                 >Guardar</button>
                 <button
-                  className="border px-4 py-2 rounded text-sm font-medium"
+                  className="border px-4 py-2 rounded text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300 transition-colors"
                   onClick={() => { setEditingEmail(false); setTempEmail(profile.email); }}
                 >Cancelar</button>
               </div>
@@ -433,14 +390,14 @@ export default function UserProfile() {
               )}
             </div>
             {!editingPassword ? (
-              <button className="border px-4 py-2 rounded text-sm font-medium" onClick={() => { setEditingPassword(true); setTempPassword(""); setPasswordMessage(""); setPasswordError(""); }}>Alterar palavra-passe</button>
+              <button className="border px-4 py-2 rounded text-sm font-medium bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 transition-colors" onClick={() => { setEditingPassword(true); setTempPassword(""); setPasswordMessage(""); setPasswordError(""); }}>Alterar palavra-passe</button>
             ) : (
               <div className="flex gap-2 items-center">
                 <input
                   type="password"
                   value={tempPassword}
                   onChange={e => setTempPassword(e.target.value)}
-                  className="block w-full max-w-xl min-w-[300px] bg-gray-50 border border-gray-300 px-3 py-2 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
+                  className="block w-full max-w-xl min-w-[300px] bg-white border border-gray-300 px-3 py-2 rounded-md text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 placeholder-gray-500 disabled:opacity-50"
                   placeholder="Nova palavra-passe"
                   disabled={passwordLoading}
                 />
@@ -467,7 +424,7 @@ export default function UserProfile() {
                   disabled={!tempPassword || !isStrongPassword(tempPassword) || passwordLoading}
                 >{passwordLoading ? 'A guardar...' : 'Guardar'}</button>
                 <button
-                  className="border px-4 py-2 rounded text-sm font-medium"
+                  className="border px-4 py-2 rounded text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300 transition-colors disabled:opacity-50"
                   onClick={() => { setEditingPassword(false); setTempPassword(""); setPasswordMessage(""); setPasswordError(""); }}
                   disabled={passwordLoading}
                 >Cancelar</button>
@@ -509,13 +466,7 @@ export default function UserProfile() {
             </button>
           </div>
         </div>
-        {/* Consentimentos RGPD in Support */}
-        {user && (
-          <div className="mt-10">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Gestão de Consentimentos RGPD</h2>
-            <ConsentManager userId={user.id} />
-          </div>
-        )}
+
         {/* Modal de confirmação de eliminação de conta */}
         {showDeleteModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
