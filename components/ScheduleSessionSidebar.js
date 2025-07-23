@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Save, Calendar, Clock, User, FileText, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { generateTimeSlots, validarNumero } from '../lib/dateUtils'
+import { validarNumero, validarHora } from '../lib/dateUtils'
 import Button from './Button'
 import CustomDropdown from './CustomDropdown'
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,7 +18,7 @@ export default function ScheduleSessionSidebar(props) {
     title: 'Sessão de Psicologia',
     session_date: '',
     session_time: '',
-    duration_minutes: 60,
+    duration_minutes: 50,
     status: 'scheduled',
     payment_status: 'to pay',
     notes: '',
@@ -45,18 +45,40 @@ export default function ScheduleSessionSidebar(props) {
     const newErrors = {}
     if (!sessionData.patient_id) newErrors.patient_id = 'Por favor, selecione um paciente.'
     if (!sessionData.session_date) newErrors.session_date = 'Por favor, selecione a data.'
-    if (!sessionData.session_time) newErrors.session_time = 'Por favor, selecione a hora.'
+    if (!sessionData.session_time) newErrors.session_time = 'Por favor, insira a hora.'
+    if (!validarHora(sessionData.session_time)) newErrors.session_time = 'Por favor, insira uma hora válida (formato HH:MM).'
     if (!sessionData.session_fee || !validarNumero(sessionData.session_fee)) newErrors.session_fee = 'Por favor, insira um valor válido para a sessão.'
+    if (!sessionData.duration_minutes || !validarNumero(sessionData.duration_minutes)) newErrors.duration_minutes = 'Por favor, insira uma duração válida.'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setSessionData({
-      ...sessionData,
-      [name]: value
-    })
+    
+    // Special handling for session_time to auto-insert ":"
+    if (name === 'session_time') {
+      let formattedValue = value.replace(/[^0-9]/g, ''); // Remove non-numeric characters
+      
+      if (formattedValue.length >= 2) {
+        // Insert ":" after the first two digits
+        formattedValue = formattedValue.slice(0, 2) + ':' + formattedValue.slice(2);
+      }
+      
+      // Limit to 5 characters (HH:MM)
+      formattedValue = formattedValue.slice(0, 5);
+      
+      setSessionData({
+        ...sessionData,
+        [name]: formattedValue
+      });
+    } else {
+      setSessionData({
+        ...sessionData,
+        [name]: value
+      });
+    }
+    
     setErrors({ ...errors, [name]: '' })
     // Auto-generate title when patient is selected
     if (name === 'patient_id' && value) {
@@ -113,7 +135,7 @@ export default function ScheduleSessionSidebar(props) {
         title: '',
         session_date: '',
         session_time: '',
-        duration_minutes: 60,
+        duration_minutes: 50,
         status: 'scheduled',
         payment_status: 'to pay',
         notes: '',
@@ -135,9 +157,7 @@ export default function ScheduleSessionSidebar(props) {
   }
 
   // Gerar horários disponíveis
-  const generateTimeSlotsLocal = () => {
-    return generateTimeSlots()
-  }
+
 
   return (
     <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl z-[60] overflow-y-auto" style={{ transform: props.isOpen ? 'translateX(0)' : 'translateX(100%)', transition: 'transform 300ms ease-in-out' }}>
@@ -220,13 +240,16 @@ export default function ScheduleSessionSidebar(props) {
               </div>
               <div>
                 <label htmlFor="schedule-time" className="block text-sm font-medium text-gray-700">Hora</label>
-                <CustomDropdown
-                  value={sessionData.session_time}
-                  options={generateTimeSlotsLocal().map(slot => ({ value: slot.value, label: slot.display }))}
-                  onChange={val => handleChange({ target: { name: 'session_time', value: val } })}
-                  disabled={loading}
-                  placeholder="Hora"
+                <input
                   id="schedule-time"
+                  type="text"
+                  name="session_time"
+                  value={sessionData.session_time}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+                  placeholder="Hora"
+                  required
+                  disabled={loading}
                 />
                 {errors.session_time && (
                   <p className="text-red-500 text-xs mt-1">{errors.session_time}</p>
@@ -254,21 +277,23 @@ export default function ScheduleSessionSidebar(props) {
                 )}
               </div>
               <div>
-                <label htmlFor="schedule-duration" className="block text-sm font-medium text-gray-700">Duração</label>
-                <CustomDropdown
-                  value={sessionData.duration_minutes}
-                  options={[
-                    { value: 30, label: '30 minutos' },
-                    { value: 45, label: '45 minutos' },
-                    { value: 60, label: '60 minutos' },
-                    { value: 90, label: '90 minutos' },
-                    { value: 120, label: '2 horas' },
-                  ]}
-                  onChange={val => handleChange({ target: { name: 'duration_minutes', value: val } })}
-                  disabled={loading}
-                  placeholder="Duração"
+                <label htmlFor="schedule-duration" className="block text-sm font-medium text-gray-700">Duração (minutos)</label>
+                <input
                   id="schedule-duration"
+                  type="number"
+                  name="duration_minutes"
+                  value={sessionData.duration_minutes}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
+                  placeholder="Duração"
+                  min="1"
+                  step="1"
+                  required
+                  disabled={loading}
                 />
+                {errors.duration_minutes && (
+                  <p className="text-red-500 text-xs mt-1">{errors.duration_minutes}</p>
+                )}
               </div>
             </div>
             <div>

@@ -175,7 +175,7 @@ export default function Calendar() {
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
       days.push(
-        <div key={`empty-${i}`} className="h-32 bg-gray-50 border border-gray-200"></div>
+        <div key={`empty-${i}`} className="h-32 bg-gray-100 border border-gray-200"></div>
       )
     }
 
@@ -189,7 +189,7 @@ export default function Calendar() {
         <div
           key={day}
           className={`h-32 border border-gray-200 p-1 overflow-hidden ${
-            isCurrentDay ? 'bg-blue-50 border-blue-300' : 'bg-white hover:bg-gray-50'
+            isCurrentDay ? 'bg-blue-50 border-blue-300' : 'bg-white hover:bg-gray-100'
           }`}
         >
           <div className={`text-sm font-medium mb-1 ${
@@ -300,7 +300,7 @@ export default function Calendar() {
 
       timeSlots.push(
         <div key={hour} className="flex border-b border-gray-200">
-          <div className="w-20 p-2 text-sm text-gray-600 bg-gray-50">
+                        <div className="w-20 p-2 text-sm text-gray-600 bg-gray-100">
             {displayTime}
           </div>
           <div className="flex-1 p-2 min-h-16">
@@ -331,14 +331,14 @@ export default function Calendar() {
 
   if (!user || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F3F3F3] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-0 md:p-8">
+    <div className="min-h-screen bg-[#F3F3F3] p-0 md:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 md:gap-0 px-4 md:px-0 pt-6 md:pt-0">
         <h1 className="text-2xl font-bold text-gray-900">Calendário</h1>
@@ -366,7 +366,7 @@ export default function Calendar() {
         </div>
       </div>
       {/* Calendário */}
-      <div className="bg-white rounded-xl shadow border border-gray-200 p-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
         {loading ? (
           <div className="flex justify-center items-center py-16">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

@@ -247,15 +247,15 @@ export default function FinancialOverview() {
     let badgeClass = "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border cursor-pointer transition-all duration-150 group relative";
     let colorClass = "";
     if (status === 'paid') {
-      colorClass = "bg-green-100 text-green-800 border-green-200 group-hover:bg-green-200 group-hover:shadow";
+      colorClass = "bg-green-100 text-green-800 border-green-200 group-hover:bg-green-200";
     } else if (status === 'cancelled') {
-      colorClass = "bg-red-100 text-red-800 border-red-200 group-hover:bg-red-200 group-hover:shadow";
+      colorClass = "bg-red-100 text-red-800 border-red-200 group-hover:bg-red-200";
     } else if (status === 'invoice issued') {
-      colorClass = "bg-blue-100 text-blue-800 border-blue-200 group-hover:bg-blue-200 group-hover:shadow";
+      colorClass = "bg-blue-100 text-blue-800 border-blue-200 group-hover:bg-blue-200";
     } else if (status === 'to pay') {
-      colorClass = "bg-gray-100 text-gray-600 border-gray-300 group-hover:bg-gray-200 group-hover:shadow";
+      colorClass = "bg-gray-100 text-gray-600 border-gray-300 group-hover:bg-gray-200";
     } else {
-      colorClass = "bg-gray-100 text-gray-800 border-gray-200 group-hover:bg-gray-200 group-hover:shadow";
+      colorClass = "bg-gray-100 text-gray-800 border-gray-200 group-hover:bg-gray-200";
     }
     return (
       <span className={`${badgeClass} ${colorClass}`} tabIndex={0}>
@@ -270,7 +270,7 @@ export default function FinancialOverview() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-0 md:p-8">
+    <div className="min-h-screen bg-[#F3F3F3] p-0 md:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4 md:gap-0 px-4 md:px-0 pt-6 md:pt-0">
         <h1 className="text-2xl font-bold text-gray-900">Resumo Financeiro</h1>
@@ -278,7 +278,7 @@ export default function FinancialOverview() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 px-4 md:px-0">
         {/* Receita deste Mês */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-2 overflow-hidden">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
               <Euro className="w-6 h-6 text-blue-700" />
@@ -292,7 +292,7 @@ export default function FinancialOverview() {
           <div className="text-[11px] text-gray-400 text-right w-full mt-1">Receita deste Ano: €{realizadoAno}</div>
         </div>
         {/* Pagamentos em Falta */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-2 overflow-hidden">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
               <AlertTriangle className="w-6 h-6 text-red-600" />
@@ -306,7 +306,7 @@ export default function FinancialOverview() {
           <div className="text-[11px] text-gray-400 text-right w-full mt-1">Sessões: {countPagamentosEmFalta}</div>
         </div>
         {/* Sessões Futuras Não Pagas */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow flex flex-col gap-2 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-2 overflow-hidden">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center">
               <CalendarDays className="w-6 h-6 text-yellow-600" />
@@ -324,7 +324,7 @@ export default function FinancialOverview() {
 
       
       {/* Monthly Revenue Chart */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-6">
           Evolução da Receita - Desde {months.find(m => m.value === selectedMonth)?.label} {selectedYear}
         </h2>
@@ -423,7 +423,7 @@ export default function FinancialOverview() {
       </div>
       
       {/* Unpaid Sessions Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-md p-6 mb-8">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
           Sessões Não Pagas
         </h2>
@@ -451,7 +451,7 @@ export default function FinancialOverview() {
                     <td className="px-4 py-2 whitespace-nowrap w-1/4 pl-8">
                       {editingStatusIdUnpaidSessions === session.id ? (
                         <div className="relative">
-                          <div className="absolute left-0 bottom-full mb-2 w-full bg-white border border-gray-200 rounded shadow-lg z-50">
+                          <div className="absolute left-0 bottom-full mb-2 w-full bg-white border border-gray-200 rounded z-50">
                             {statusOptions.map(opt => (
                               <button
                                 key={opt.value}
@@ -484,7 +484,7 @@ export default function FinancialOverview() {
         </div>
       </div>
       {/* All Sessions Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-md p-6 mb-12">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-12">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
           Todas as Sessões
         </h2>
@@ -533,7 +533,7 @@ export default function FinancialOverview() {
                     <td className="px-4 py-2 whitespace-nowrap w-1/4 pl-8">
                       {editingStatusIdAllSessions === session.id ? (
                         <div className="relative">
-                          <div className="absolute left-0 bottom-full mb-2 w-full bg-white border border-gray-200 rounded shadow-lg z-50">
+                          <div className="absolute left-0 bottom-full mb-2 w-full bg-white border border-gray-200 rounded z-50">
                             {statusOptions.map(opt => (
                               <button
                                 key={opt.value}

@@ -92,7 +92,7 @@ export default function Sidebar() {
   return (
     <div className="h-screen fixed left-0 top-0 flex flex-col bg-[#ffffff] border-r border-gray-200 w-64">
       {/* Logo/Header da Sidebar */}
-      <div className="flex items-center justify-center h-20 border-b border-gray-200">
+      <div className="flex items-center justify-center h-20">
         <h1 className="text-2xl font-bold text-gray-800">heed</h1>
       </div>
 
@@ -115,7 +115,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom Buttons */}
-      <div className="px-4 py-4 border-t border-gray-200 space-y-2">
+      <div className="px-4 py-4 space-y-2">
         {/* Profile Button */}
         <Link
           href="/profile"

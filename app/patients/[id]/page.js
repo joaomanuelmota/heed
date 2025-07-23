@@ -1173,7 +1173,7 @@ export default function PatientProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F3F3F3] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     )
@@ -1181,7 +1181,7 @@ export default function PatientProfile() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F3F3F3] flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Error</h2>
           <p className="text-gray-600 mb-6">{error}</p>
@@ -1220,7 +1220,7 @@ export default function PatientProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F3F3F3]">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
@@ -1253,7 +1253,7 @@ export default function PatientProfile() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100" style={{ overflow: 'visible' }}>
+        <div className="bg-white rounded-lg border border-gray-100" style={{ overflow: 'visible' }}>
           <div className="border-b border-gray-100 flex gap-0">
             {tabs.map((tab) => {
               const Icon = tab.icon
