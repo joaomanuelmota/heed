@@ -79,36 +79,7 @@ serve(async (req) => {
 
     const userId = authData.user.id
 
-    // Create essential consent
-    const essentialConsent = {
-      user_id: userId,
-      consent_type: 'essential',
-      granted: true,
-      granted_at: new Date().toISOString(),
-      consent_version: '1.0',
-    }
-
-    const { error: consentError } = await supabaseAdmin
-      .from('user_consents')
-      .insert([essentialConsent])
-
-    if (consentError) {
-      // If consent creation fails, we should still return success for user creation
-      // but log the error for debugging
-      console.error('Error creating consent:', consentError)
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          user: authData.user,
-          warning: 'Conta criada, mas houve um erro ao registar consentimentos.'
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
+    // Note: user_consents table was eliminated, so consent creation is removed
 
     return new Response(
       JSON.stringify({ 
