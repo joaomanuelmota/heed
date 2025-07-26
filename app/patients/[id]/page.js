@@ -94,6 +94,7 @@ export default function PatientProfile() {
 
   const [triedSaveNote, setTriedSaveNote] = useState(false);
   const [triedSaveTreatmentPlan, setTriedSaveTreatmentPlan] = useState(false);
+  const [triedSaveEditNote, setTriedSaveEditNote] = useState(false);
 
   useEffect(() => {
     checkUser()
@@ -436,7 +437,7 @@ export default function PatientProfile() {
 
   const saveNote = async () => {
     if (!noteData.title.trim()) {
-      alert('Por favor, insira um título para a nota.')
+      setTriedSaveNote(true)
       return
     }
     
@@ -447,6 +448,7 @@ export default function PatientProfile() {
 
     try {
       await addNoteMutation.mutateAsync(noteData)
+      setTriedSaveNote(false)
     } catch (error) {
       console.error('Erro inesperado:', error)
       alert('Erro inesperado ao salvar nota')
@@ -483,11 +485,12 @@ export default function PatientProfile() {
       content: '',
       note_date: ''
     })
+    setTriedSaveEditNote(false)
   }
 
   const saveEditNote = async (noteId) => {
     if (!editNoteData.title.trim()) {
-      alert('Por favor, insira um título para a nota.')
+      setTriedSaveEditNote(true)
       return
     }
 
@@ -500,6 +503,7 @@ export default function PatientProfile() {
       }
 
       await updateNoteMutation.mutateAsync({ noteId, updateData })
+      setTriedSaveEditNote(false)
     } catch (error) {
       console.error('Erro inesperado:', error)
       alert('Erro inesperado ao atualizar nota')
@@ -632,11 +636,9 @@ export default function PatientProfile() {
                       value={noteData.title}
                       onChange={(e) => setNoteData({...noteData, title: e.target.value})}
                       placeholder="Título da Nota *"
-                      className={`px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 w-full ${!validarTitulo(noteData.title) ? (triedSaveNote ? 'border-red-200 bg-red-50' : 'border-gray-300') : 'border-gray-300'}`}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 w-full"
                     />
-                    {!validarTitulo(noteData.title) && triedSaveNote && (
-                      <p className="text-red-500 text-xs mt-1">O título é obrigatório.</p>
-                    )}
+
                   </div>
                   <div className="flex flex-col">
                     <label htmlFor="note-date" className="block text-sm font-medium text-gray-700">Data da Nota</label>
@@ -657,27 +659,31 @@ export default function PatientProfile() {
                     placeholder="Escreva aqui as suas notas clínicas..."
                   />
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    onClick={() => { setShowAddNote(false); setTriedSaveNote(false); }}
-                    variant="secondary"
-                    className="text-xs"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={() => { setTriedSaveNote(true); saveNote(); }}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
-                    disabled={!validarTitulo(noteData.title)}
-                  >
-                    Guardar Nota
-                  </Button>
+                <div className="flex flex-col gap-2">
+                  {!validarTitulo(noteData.title) && triedSaveNote && (
+                    <p className="text-red-500 text-sm text-center">Escreve um título para a nota.</p>
+                  )}
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      onClick={() => { setShowAddNote(false); setTriedSaveNote(false); }}
+                      variant="secondary"
+                      className="text-xs"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={() => saveNote()}
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                    >
+                      Guardar Nota
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Lista de notas redesenhada */}
-            <div className="space-y-10">
+            <div className="space-y-6">
               {notes.length === 0 && (
                 <div className="text-gray-500 text-center py-12">Adiciona uma nota</div>
               )}
@@ -687,31 +693,28 @@ export default function PatientProfile() {
                 const prevDate = prevNote ? new Date(prevNote.note_date) : null
                 const showDateHeader = !prevDate || noteDate.toDateString() !== prevDate.toDateString()
                 const preview = note.content
-                  ? note.content.replace(/<[^>]+>/g, '').split('\n').slice(0, 3).join(' ').slice(0, 120) + (note.content.length > 120 ? '...' : '')
+                  ? note.content.replace(/<[^>]+>/g, '').slice(0, 120) + (note.content.length > 120 ? '...' : '')
                   : 'No content';
                 const isExpanded = expandedNoteId === note.id;
                 return (
                   <div key={note.id}>
-                    {/* Note Card Redesigned */}
-                    <div className="flex">
-                      <div className="flex-shrink-0 w-24 flex justify-center">
-                        <div className="w-px h-full relative flex flex-col items-center">
-                          <div className="bg-gray-200" style={{ height: '22px', width: '2px' }} />
-                          <div className="text-xs text-gray-500 whitespace-nowrap select-none font-medium my-1">
-                            {formatDateUtil(note.note_date, { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                          </div>
-                          <div className="bg-gray-200 flex-1 w-[2px]" />
-                        </div>
+                    {/* Note Card */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                      {/* Header with title and date */}
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-lg font-bold text-gray-900">{note.title}</h4>
+                        <span className="text-sm text-gray-500 font-medium">
+                          {formatDateUtil(note.note_date, { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        </span>
                       </div>
-                      <div className="flex-1 ml-4 mb-6">
-                        <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow group relative">
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="text-lg font-bold text-gray-900 truncate max-w-[70%]">{note.title}</h4>
-                          </div>
-                          {isExpanded ? (
-                            editingNoteId === note.id ? (
-                              // Formulário de edição inline
-                              <form onSubmit={e => { e.preventDefault(); saveEditNote(note.id); }} className="space-y-3">
+                      
+                      {/* Content */}
+                      {isExpanded ? (
+                        editingNoteId === note.id ? (
+                          // Formulário de edição inline
+                          <form onSubmit={e => { e.preventDefault(); saveEditNote(note.id); }} className="space-y-3">
+                            <div className="flex flex-col md:flex-row gap-4 mb-4">
+                              <div className="flex-1">
                                 <label htmlFor="edit-note-title" className="block text-sm font-medium text-gray-700">Título da Nota</label>
                                 <input
                                   id="edit-note-title"
@@ -719,13 +722,13 @@ export default function PatientProfile() {
                                   value={editNoteData.title}
                                   onChange={e => setEditNoteData({ ...editNoteData, title: e.target.value })}
                                   placeholder="Título da Nota *"
-                                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 font-bold ${!validarTitulo(editNoteData.title) ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 font-bold"
                                   required
                                 />
-                                {(!validarTitulo(editNoteData.title) && editNoteData.title.trim() !== '') && (
-                                  <p className="text-red-500 text-xs mt-1">O título é obrigatório.</p>
-                                )}
-                                <label htmlFor="edit-note-date" className="block text-sm font-medium text-gray-700 mt-2">Data da Nota</label>
+
+                              </div>
+                              <div className="flex flex-col">
+                                <label htmlFor="edit-note-date" className="block text-sm font-medium text-gray-700">Data da Nota</label>
                                 <input
                                   id="edit-note-date"
                                   type="date"
@@ -734,52 +737,59 @@ export default function PatientProfile() {
                                   className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                                   required
                                 />
-                                <RichTextEditorLazy
-                                  value={editNoteData.content}
-                                  onChange={(content) => setEditNoteData({ ...editNoteData, content })}
-                                  placeholder="Write your clinical notes here..."
-                                />
-                                <div className="flex items-center justify-between mt-2">
-                                  <Button
-                                    onClick={cancelEditNote}
-                                    variant="secondary"
-                                    className="text-xs"
-                                  >
-                                    Cancelar
-                                  </Button>
-                                  <div className="flex gap-2">
-                                    <Button type="submit" className="px-3 py-1 text-sm font-medium">Salvar</Button>
-                                  </div>
-                                </div>
-                              </form>
-                            ) : (
-                              // Visualização expandida
-                              <>
-                                <div className="prose prose-sm max-w-none text-gray-700 mb-2" dangerouslySetInnerHTML={{ __html: note.content }} />
-                                <div className="flex items-center justify-between mt-2">
-                                  <button onClick={() => setExpandedNoteId(null)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver menos</button>
-                                  <div className="flex gap-2">
-                                    <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors" title="Editar"><Edit className="w-4 h-4" /></button>
-                                    <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600 p-1 rounded transition-colors" title="Excluir"><Trash2 className="w-4 h-4" /></button>
-                                  </div>
-                                </div>
-                              </>
-                            )
-                          ) : (
-                            // Visualização compacta
-                            <>
-                              <div className="text-gray-700 text-sm mb-2 truncate" style={{ maxHeight: '3.6em', overflow: 'hidden' }}>{preview}</div>
-                              <div className="flex items-center justify-between mt-2">
-                                <button onClick={() => setExpandedNoteId(note.id)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver mais</button>
-                                <div className="flex gap-2">
-                                  <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors" title="Editar"><Edit className="w-4 h-4" /></button>
-                                  <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600 p-1 rounded transition-colors" title="Excluir"><Trash2 className="w-4 h-4" /></button>
-                                </div>
                               </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                            </div>
+                            <RichTextEditorLazy
+                              value={editNoteData.content}
+                              onChange={(content) => setEditNoteData({ ...editNoteData, content })}
+                              placeholder="Write your clinical notes here..."
+                            />
+                                                            <div className="flex flex-col gap-2">
+                                  {!validarTitulo(editNoteData.title) && triedSaveEditNote && (
+                                    <p className="text-red-500 text-sm text-center">Escreve um título para a nota.</p>
+                                  )}
+                                  <div className="flex items-center justify-between">
+                                    <Button
+                                      onClick={cancelEditNote}
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      Cancelar
+                                    </Button>
+                                    <div className="flex gap-2">
+                                      <Button type="submit" className="px-3 py-1 text-sm font-medium">Salvar</Button>
+                                    </div>
+                                  </div>
+                                </div>
+                          </form>
+                        ) : (
+                          // Visualização expandida
+                          <>
+                            <div className="prose prose-sm max-w-none text-gray-700 mb-2" dangerouslySetInnerHTML={{ __html: note.content }} />
+                            <div className="flex items-center justify-between mt-2">
+                              <button onClick={() => setExpandedNoteId(null)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver menos</button>
+                              <div className="flex gap-2">
+                                <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors" title="Editar"><Edit className="w-4 h-4" /></button>
+                                <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600 p-1 rounded transition-colors" title="Excluir"><Trash2 className="w-4 h-4" /></button>
+                              </div>
+                            </div>
+                          </>
+                        )
+                      ) : (
+                        // Visualização compacta
+                        <>
+                          <div className="text-gray-700 text-sm mb-2" style={{ maxHeight: '3.6em', overflow: 'hidden' }}>
+                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: note.content }} />
+                          </div>
+                          <div className="flex items-center justify-between mt-2">
+                            <button onClick={() => setExpandedNoteId(note.id)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver mais</button>
+                            <div className="flex gap-2">
+                              <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors" title="Editar"><Edit className="w-4 h-4" /></button>
+                              <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600 p-1 rounded transition-colors" title="Excluir"><Trash2 className="w-4 h-4" /></button>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 )
