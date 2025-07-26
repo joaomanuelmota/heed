@@ -20,6 +20,7 @@ import ReactDOM from 'react-dom'
 import Button from '../../../components/Button'
 import SessionDetailsSidebar from '../../../components/SessionDetailsSidebar'
 import CustomDropdown from '../../../components/CustomDropdown'
+import ContentSection from '../../../components/ContentSection'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 const RichTextEditorLazy = dynamic(() => import('../../../components/RichTextEditor'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando editor...</div> })
@@ -28,42 +29,10 @@ export default function PatientProfile() {
   const [user, setUser] = useState(null)
   const [activeTab, setActiveTab] = useState('notes')
   
-  // Estados para notas
-  const [showAddNote, setShowAddNote] = useState(false)
-  const [noteData, setNoteData] = useState({
-    title: '',
-    content: '',
-    note_date: new Date().toISOString().split('T')[0]
-  })
-
-  // Estados para edição de notas
-  const [editingNoteId, setEditingNoteId] = useState(null)
-  const [editNoteData, setEditNoteData] = useState({
-    title: '',
-    content: '',
-    note_date: ''
-  })
   const [showScheduleSidebar, setShowScheduleSidebar] = useState(false)
   const [editingPatient, setEditingPatient] = useState(null)
   
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [expandedNoteId, setExpandedNoteId] = useState(null);
-  
-  // Estados para treatment plans  
-  const [showAddTreatmentPlan, setShowAddTreatmentPlan] = useState(false)
-  const [treatmentPlanData, setTreatmentPlanData] = useState({
-    title: '',
-    content: '',
-    plan_date: new Date().toISOString().split('T')[0]
-  })
 
-  // Estados para edição de treatment plans
-  const [editingTreatmentPlanId, setEditingTreatmentPlanId] = useState(null)
-  const [editTreatmentPlanData, setEditTreatmentPlanData] = useState({
-    title: '',
-    content: '',
-    plan_date: ''
-  })
   
   // Adicionar estados para edição do status
   const [editingStatusId, setEditingStatusId] = useState(null);
@@ -92,9 +61,7 @@ export default function PatientProfile() {
     { value: 'invoice issued', label: 'Fatura Emitida' }
   ];
 
-  const [triedSaveNote, setTriedSaveNote] = useState(false);
-  const [triedSaveTreatmentPlan, setTriedSaveTreatmentPlan] = useState(false);
-  const [triedSaveEditNote, setTriedSaveEditNote] = useState(false);
+
 
   useEffect(() => {
     checkUser()
@@ -143,29 +110,7 @@ export default function PatientProfile() {
     enabled: !!user?.id && !!params.id
   })
 
-  // React Query - Buscar notas do paciente
-  const {
-    data: notes = [],
-    isLoading: loadingNotes
-  } = useQuery({
-    queryKey: ['notes', user?.id, params.id],
-    queryFn: async () => {
-      if (!user?.id || !params.id) return [];
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*')
-        .eq('patient_id', params.id)
-        .eq('psychologist_id', user.id)
-        .order('note_date', { ascending: false })
 
-      if (error) {
-        console.error('Error fetching notes:', error)
-        return []
-      }
-      return data || []
-    },
-    enabled: !!user?.id && !!params.id
-  })
 
   // React Query - Buscar sessões do paciente
   const {
@@ -191,29 +136,7 @@ export default function PatientProfile() {
     enabled: !!user?.id && !!params.id
   })
 
-  // React Query - Buscar treatment plans do paciente
-  const {
-    data: treatmentPlans = [],
-    isLoading: loadingTreatmentPlans
-  } = useQuery({
-    queryKey: ['treatmentPlans', user?.id, params.id],
-    queryFn: async () => {
-      if (!user?.id || !params.id) return [];
-      const { data, error } = await supabase
-        .from('treatment_plans')
-        .select('*')
-        .eq('patient_id', params.id)
-        .eq('psychologist_id', user.id)
-        .order('plan_date', { ascending: false })
 
-      if (error) {
-        console.error('Error fetching treatment plans:', error)
-        return []
-      }
-      return data || []
-    },
-    enabled: !!user?.id && !!params.id
-  })
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return 'Unknown'
@@ -233,139 +156,7 @@ export default function PatientProfile() {
   }
 
   // React Query Mutations
-  const addNoteMutation = useMutation({
-    mutationFn: async (noteData) => {
-      const newNote = {
-        psychologist_id: user.id,
-        patient_id: params.id,
-        title: noteData.title.trim(),
-        content: noteData.content || '',
-        note_date: noteData.note_date,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
 
-      const { data, error } = await supabase
-        .from('notes')
-        .insert([newNote])
-        .select()
-
-      if (error) throw new Error(error.message)
-      return data[0]
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes', user?.id, params.id] })
-      setNoteData({
-        title: '',
-        content: '',
-        note_date: new Date().toISOString().split('T')[0]
-      })
-      setShowAddNote(false)
-      setTriedSaveNote(false)
-    }
-  })
-
-  const updateNoteMutation = useMutation({
-    mutationFn: async ({ noteId, updateData }) => {
-      const { data, error } = await supabase
-        .from('notes')
-        .update(updateData)
-        .eq('id', noteId)
-        .eq('psychologist_id', user.id)
-        .select()
-
-      if (error) throw new Error(error.message)
-      return data[0]
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes', user?.id, params.id] })
-      setEditingNoteId(null)
-      setEditNoteData({ title: '', content: '', note_date: '' })
-    }
-  })
-
-  const deleteNoteMutation = useMutation({
-    mutationFn: async (noteId) => {
-      const { error } = await supabase
-        .from('notes')
-        .delete()
-        .eq('id', noteId)
-        .eq('psychologist_id', user.id)
-
-      if (error) throw new Error(error.message)
-      return noteId
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes', user?.id, params.id] })
-    }
-  })
-
-  const addTreatmentPlanMutation = useMutation({
-    mutationFn: async (planData) => {
-      const newPlan = {
-        psychologist_id: user.id,
-        patient_id: params.id,
-        title: planData.title.trim(),
-        content: planData.content || '',
-        plan_date: planData.plan_date,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-
-      const { data, error } = await supabase
-        .from('treatment_plans')
-        .insert([newPlan])
-        .select()
-
-      if (error) throw new Error(error.message)
-      return data[0]
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['treatmentPlans', user?.id, params.id] })
-      setTreatmentPlanData({
-        title: '',
-        content: '',
-        plan_date: new Date().toISOString().split('T')[0]
-      })
-      setShowAddTreatmentPlan(false)
-      setTriedSaveTreatmentPlan(false)
-    }
-  })
-
-  const updateTreatmentPlanMutation = useMutation({
-    mutationFn: async ({ planId, updateData }) => {
-      const { data, error } = await supabase
-        .from('treatment_plans')
-        .update(updateData)
-        .eq('id', planId)
-        .eq('psychologist_id', user.id)
-        .select()
-
-      if (error) throw new Error(error.message)
-      return data[0]
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['treatmentPlans', user?.id, params.id] })
-      setEditingTreatmentPlanId(null)
-      setEditTreatmentPlanData({ title: '', content: '', plan_date: '' })
-    }
-  })
-
-  const deleteTreatmentPlanMutation = useMutation({
-    mutationFn: async (planId) => {
-      const { error } = await supabase
-        .from('treatment_plans')
-        .delete()
-        .eq('id', planId)
-        .eq('psychologist_id', user.id)
-
-      if (error) throw new Error(error.message)
-      return planId
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['treatmentPlans', user?.id, params.id] })
-    }
-  })
 
   const updateSessionMutation = useMutation({
     mutationFn: async ({ sessionId, updateData }) => {
@@ -435,152 +226,7 @@ export default function PatientProfile() {
     });
   }
 
-  const saveNote = async () => {
-    if (!noteData.title.trim()) {
-      setTriedSaveNote(true)
-      return
-    }
-    
-    if (!patient) {
-      alert('Informações do paciente não disponíveis')
-      return
-    }
 
-    try {
-      await addNoteMutation.mutateAsync(noteData)
-      setTriedSaveNote(false)
-    } catch (error) {
-      console.error('Erro inesperado:', error)
-      alert('Erro inesperado ao salvar nota')
-    }
-  }
-
-  const deleteNote = async (noteId) => {
-    if (!confirm('Tem certeza de que deseja excluir esta nota? Esta ação não pode ser desfeita.')) {
-      return
-    }
-
-    try {
-      await deleteNoteMutation.mutateAsync(noteId)
-      alert('Nota excluída com sucesso!')
-    } catch (error) {
-      console.error('Erro inesperado:', error)
-      alert('Erro inesperado ao excluir nota')
-    }
-  }
-
-  const startEditNote = (note) => {
-    setEditingNoteId(note.id)
-    setEditNoteData({
-      title: note.title,
-      content: note.content || '',
-      note_date: note.note_date
-    })
-  }
-
-  const cancelEditNote = () => {
-    setEditingNoteId(null)
-    setEditNoteData({
-      title: '',
-      content: '',
-      note_date: ''
-    })
-    setTriedSaveEditNote(false)
-  }
-
-  const saveEditNote = async (noteId) => {
-    if (!editNoteData.title.trim()) {
-      setTriedSaveEditNote(true)
-      return
-    }
-
-    try {
-      const updateData = {
-        title: editNoteData.title.trim(),
-        content: editNoteData.content || '',
-        note_date: editNoteData.note_date,
-        updated_at: new Date().toISOString()
-      }
-
-      await updateNoteMutation.mutateAsync({ noteId, updateData })
-      setTriedSaveEditNote(false)
-    } catch (error) {
-      console.error('Erro inesperado:', error)
-      alert('Erro inesperado ao atualizar nota')
-    }
-  }
-
-  const saveTreatmentPlan = async () => {
-    if (!treatmentPlanData.title.trim()) {
-      alert('Por favor, insira um título para o plano terapêutico.')
-      return
-    }
-    
-    if (!patient) {
-      alert('Informações do paciente não disponíveis')
-      return
-    }
-
-    try {
-      await addTreatmentPlanMutation.mutateAsync(treatmentPlanData)
-    } catch (error) {
-      console.error('Erro inesperado:', error)
-      alert('Erro inesperado ao salvar plano terapêutico')
-    }
-  }
-
-  const deleteTreatmentPlan = async (treatmentPlanId) => {
-    if (!confirm('Tem certeza de que deseja excluir este plano terapêutico? Esta ação não pode ser desfeita.')) {
-      return
-    }
-
-    try {
-      await deleteTreatmentPlanMutation.mutateAsync(treatmentPlanId)
-      alert('Plano terapêutico excluído com sucesso!')
-    } catch (error) {
-      console.error('Erro inesperado:', error)
-      alert('Erro inesperado ao excluir plano terapêutico')
-    }
-  }
-
-  const startEditTreatmentPlan = (treatmentPlan) => {
-    setEditingTreatmentPlanId(treatmentPlan.id)
-    setEditTreatmentPlanData({
-      title: treatmentPlan.title,
-      content: treatmentPlan.content || '',
-      plan_date: treatmentPlan.plan_date
-    })
-  }
-
-  const cancelEditTreatmentPlan = () => {
-    setEditingTreatmentPlanId(null)
-    setEditTreatmentPlanData({
-      title: '',
-      content: '',
-      plan_date: ''
-    })
-  }
-
-  const saveEditTreatmentPlan = async (treatmentPlanId) => {
-    if (!editTreatmentPlanData.title.trim()) {
-      alert('Por favor, insira um título para o plano terapêutico.')
-      return
-    }
-
-    try {
-      const updateData = {
-        title: editTreatmentPlanData.title.trim(),
-        content: editTreatmentPlanData.content || '',
-        plan_date: editTreatmentPlanData.plan_date,
-        updated_at: new Date().toISOString()
-      }
-
-      await updateTreatmentPlanMutation.mutateAsync({ planId: treatmentPlanId, updateData })
-    } catch (error) {
-      console.error('Erro inesperado:', error)
-      alert('Erro inesperado ao atualizar plano terapêutico')
-    }
-  }
 
   const getStatusDisplay = (status) => {
     const statusConfig = {
@@ -611,399 +257,29 @@ export default function PatientProfile() {
     switch (activeTab) {
       case 'notes':
         return (
-          <div className="space-y-6">
-            {/* Add Note Button */}
-            <div className="flex justify-end items-center">
-              <Button 
-                onClick={() => setShowAddNote(!showAddNote)}
-                className="flex items-center space-x-2"
-                variant={showAddNote ? 'secondary' : 'primary'}
-              >
-                <Plus className="w-4 h-4" />
-                <span>{showAddNote ? 'Cancelar' : 'Nova Nota'}</span>
-              </Button>
-            </div>
-
-            {/* Formulário de criação de nota - aparece quando showAddNote é true */}
-            {showAddNote && (
-              <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex flex-col md:flex-row gap-4 mb-4">
-                  <div className="flex-1">
-                    <label htmlFor="note-title" className="block text-sm font-medium text-gray-700">Título da Nota</label>
-                    <input
-                      id="note-title"
-                      type="text"
-                      value={noteData.title}
-                      onChange={(e) => setNoteData({...noteData, title: e.target.value})}
-                      placeholder="Título da Nota *"
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 w-full"
-                    />
-
-                  </div>
-                  <div className="flex flex-col">
-                    <label htmlFor="note-date" className="block text-sm font-medium text-gray-700">Data da Nota</label>
-                    <input
-                      id="note-date"
-                      type="date"
-                      value={noteData.note_date}
-                      onChange={(e) => setNoteData({...noteData, note_date: e.target.value})}
-                      placeholder="Data da Nota *"
-                      className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <RichTextEditorLazy
-                    value={noteData.content}
-                    onChange={(content) => setNoteData({...noteData, content})}
-                    placeholder="Escreva aqui as suas notas clínicas..."
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  {!validarTitulo(noteData.title) && triedSaveNote && (
-                    <p className="text-red-500 text-sm text-center">Escreve um título para a nota.</p>
-                  )}
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      onClick={() => { setShowAddNote(false); setTriedSaveNote(false); }}
-                      variant="secondary"
-                      className="text-xs"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      onClick={() => saveNote()}
-                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
-                    >
-                      Guardar Nota
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Lista de notas redesenhada */}
-            <div className="space-y-6">
-              {notes.length === 0 && (
-                <div className="text-gray-500 text-center py-12">Adiciona uma nota</div>
-              )}
-              {notes.map((note, index) => {
-                const noteDate = new Date(note.note_date)
-                const prevNote = index > 0 ? notes[index - 1] : null
-                const prevDate = prevNote ? new Date(prevNote.note_date) : null
-                const showDateHeader = !prevDate || noteDate.toDateString() !== prevDate.toDateString()
-                const preview = note.content
-                  ? note.content.replace(/<[^>]+>/g, '').slice(0, 120) + (note.content.length > 120 ? '...' : '')
-                  : 'No content';
-                const isExpanded = expandedNoteId === note.id;
-                return (
-                  <div key={note.id}>
-                    {/* Note Card */}
-                    <div className="bg-white rounded-lg border border-gray-200 p-4">
-                      {/* Header with title and date */}
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-lg font-bold text-gray-900">{note.title}</h4>
-                        <span className="text-sm text-gray-500 font-medium">
-                          {formatDateUtil(note.note_date, { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                        </span>
-                      </div>
-                      
-                      {/* Content */}
-                      {isExpanded ? (
-                        editingNoteId === note.id ? (
-                          // Formulário de edição inline
-                          <form onSubmit={e => { e.preventDefault(); saveEditNote(note.id); }} className="space-y-3">
-                            <div className="flex flex-col md:flex-row gap-4 mb-4">
-                              <div className="flex-1">
-                                <label htmlFor="edit-note-title" className="block text-sm font-medium text-gray-700">Título da Nota</label>
-                                <input
-                                  id="edit-note-title"
-                                  type="text"
-                                  value={editNoteData.title}
-                                  onChange={e => setEditNoteData({ ...editNoteData, title: e.target.value })}
-                                  placeholder="Título da Nota *"
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 font-bold"
-                                  required
-                                />
-
-                              </div>
-                              <div className="flex flex-col">
-                                <label htmlFor="edit-note-date" className="block text-sm font-medium text-gray-700">Data da Nota</label>
-                                <input
-                                  id="edit-note-date"
-                                  type="date"
-                                  value={editNoteData.note_date}
-                                  onChange={e => setEditNoteData({ ...editNoteData, note_date: e.target.value })}
-                                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                  required
-                                />
-                              </div>
-                            </div>
-                            <RichTextEditorLazy
-                              value={editNoteData.content}
-                              onChange={(content) => setEditNoteData({ ...editNoteData, content })}
-                              placeholder="Write your clinical notes here..."
-                            />
-                                                            <div className="flex flex-col gap-2">
-                                  {!validarTitulo(editNoteData.title) && triedSaveEditNote && (
-                                    <p className="text-red-500 text-sm text-center">Escreve um título para a nota.</p>
-                                  )}
-                                  <div className="flex items-center justify-between">
-                                    <Button
-                                      onClick={cancelEditNote}
-                                      variant="secondary"
-                                      className="text-xs"
-                                    >
-                                      Cancelar
-                                    </Button>
-                                    <div className="flex gap-2">
-                                      <Button type="submit" className="px-3 py-1 text-sm font-medium">Salvar</Button>
-                                    </div>
-                                  </div>
-                                </div>
-                          </form>
-                        ) : (
-                          // Visualização expandida
-                          <>
-                            <div className="prose prose-sm max-w-none text-gray-700 mb-2" dangerouslySetInnerHTML={{ __html: note.content }} />
-                            <div className="flex items-center justify-between mt-2">
-                              <button onClick={() => setExpandedNoteId(null)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver menos</button>
-                              <div className="flex gap-2">
-                                <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors" title="Editar"><Edit className="w-4 h-4" /></button>
-                                <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600 p-1 rounded transition-colors" title="Excluir"><Trash2 className="w-4 h-4" /></button>
-                              </div>
-                            </div>
-                          </>
-                        )
-                      ) : (
-                        // Visualização compacta
-                        <>
-                          <div className="text-gray-700 text-sm mb-2" style={{ maxHeight: '3.6em', overflow: 'hidden' }}>
-                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: note.content }} />
-                          </div>
-                          <div className="flex items-center justify-between mt-2">
-                            <button onClick={() => setExpandedNoteId(note.id)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver mais</button>
-                            <div className="flex gap-2">
-                              <button onClick={() => { setExpandedNoteId(note.id); startEditNote(note); }} className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors" title="Editar"><Edit className="w-4 h-4" /></button>
-                              <button onClick={() => deleteNote(note.id)} className="text-gray-400 hover:text-red-600 p-1 rounded transition-colors" title="Excluir"><Trash2 className="w-4 h-4" /></button>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+          <ContentSection
+            type="notes"
+            title="Nota Clínica"
+            icon={FileText}
+            patientId={patient.id}
+            userId={user.id}
+            placeholder="Escreva aqui as suas notas clínicas..."
+            buttonText="Nova"
+            validationMessage="Escreve um título para a nota."
+          />
         )
       case 'treatment':
         return (
-          <div className="space-y-6">
-            {/* Add Treatment Plan Button */}
-            <div className="flex justify-end items-center">
-              <Button 
-                onClick={() => setShowAddTreatmentPlan(!showAddTreatmentPlan)}
-                className="flex items-center space-x-2"
-                variant={showAddTreatmentPlan ? 'secondary' : 'primary'}
-              >
-                <Plus className="w-4 h-4" />
-                <span>{showAddTreatmentPlan ? 'Cancelar' : 'Adicionar Plano Terapêutico'}</span>
-              </Button>
-            </div>
-
-            {/* Add Treatment Plan Form */}
-            {showAddTreatmentPlan && (
-              <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex flex-col md:flex-row gap-4 mb-4">
-                  <div className="flex-1">
-                    <label htmlFor="plan-title" className="block text-sm font-medium text-gray-700">Título do Plano</label>
-                    <input
-                      id="plan-title"
-                      type="text"
-                      value={treatmentPlanData.title}
-                      onChange={(e) => setTreatmentPlanData({...treatmentPlanData, title: e.target.value})}
-                      placeholder="Título do Plano *"
-                      className={`px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 w-full ${!validarTitulo(treatmentPlanData.title) ? (triedSaveTreatmentPlan ? 'border-red-200 bg-red-50' : 'border-gray-300') : 'border-gray-300'}`}
-                    />
-                    {!validarTitulo(treatmentPlanData.title) && triedSaveTreatmentPlan && (
-                      <p className="text-red-500 text-xs mt-1">O título é obrigatório.</p>
-                    )}
-                  </div>
-                  <div className="flex flex-col">
-                    <label htmlFor="plan-date" className="block text-sm font-medium text-gray-700">Data do Plano</label>
-                    <input
-                      id="plan-date"
-                      type="date"
-                      value={treatmentPlanData.plan_date}
-                      onChange={(e) => setTreatmentPlanData({...treatmentPlanData, plan_date: e.target.value})}
-                      className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <RichTextEditorLazy
-                    value={treatmentPlanData.content}
-                    onChange={(content) => setTreatmentPlanData({...treatmentPlanData, content})}
-                    placeholder="Descreva o plano terapêutico, objetivos, métodos, cronograma..."
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    onClick={() => { setShowAddTreatmentPlan(false); setTriedSaveTreatmentPlan(false); }}
-                    variant="secondary"
-                    className="px-3 py-1 text-sm font-medium"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={() => { setTriedSaveTreatmentPlan(true); saveTreatmentPlan(); }}
-                    className="px-3 py-1 text-sm font-medium"
-                    disabled={!validarTitulo(treatmentPlanData.title)}
-                  >
-                    Guardar Plano Terapêutico
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Treatment Plans List */}
-            {loadingTreatmentPlans ? (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="text-center py-8">
-                  <div className="flex justify-center items-center mb-4 gap-2">
-                    <Brain className="w-12 h-12 text-gray-400" />
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">Ainda não existem planos terapêuticos</h4>
-                  <p className="text-gray-500 mb-4">Comece por criar o primeiro plano terapêutico para este paciente.</p>
-                </div>
-              </div>
-            ) : treatmentPlans.length === 0 ? (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="text-center py-8">
-                  <div className="flex justify-center items-center mb-4 gap-2">
-                    <Brain className="w-12 h-12 text-gray-400" />
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">Ainda não existem planos terapêuticos</h4>
-                  <p className="text-gray-500 mb-4">Comece por criar o primeiro plano terapêutico para este paciente.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-10">
-                {treatmentPlans.map((plan, index) => {
-                  const isEditing = editingTreatmentPlanId === plan.id;
-                  const isExpanded = expandedNoteId === plan.id; // Reusing the same state for simplicity
-                  const planDate = new Date(plan.plan_date)
-                  const prevPlan = index > 0 ? treatmentPlans[index - 1] : null
-                  const prevDate = prevPlan ? new Date(prevPlan.plan_date) : null
-                  const showDateHeader = !prevDate || planDate.toDateString() !== prevDate.toDateString()
-                  
-                  return (
-                    <div key={plan.id}>
-                      {/* Treatment Plan Card */}
-                      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow group relative flex flex-col min-h-[180px]">
-                        {/* Data do Plano compacta */}
-                        <div className="mb-2">
-                          <span className="block text-sm font-medium text-gray-700">Data do Plano</span>
-                          <span className="block text-base text-gray-900 font-semibold">{formatDate(plan.plan_date)}</span>
-                        </div>
-                        
-                        {isEditing ? (
-                          // Formulário de edição inline
-                          <div className="space-y-3">
-                            <label htmlFor="edit-plan-title" className="block text-sm font-medium text-gray-700">Título do Plano</label>
-                            <input
-                              id="edit-plan-title"
-                              type="text"
-                              value={editTreatmentPlanData.title}
-                              onChange={e => setEditTreatmentPlanData({ ...editTreatmentPlanData, title: e.target.value })}
-                              placeholder="Título do Plano *"
-                              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 font-bold ${!validarTitulo(editTreatmentPlanData.title) ? 'border-red-200 bg-red-50' : 'border-gray-300'}`}
-                              required
-                            />
-                            {(!validarTitulo(editTreatmentPlanData.title) && editTreatmentPlanData.title.trim() !== '') && (
-                              <p className="text-red-500 text-xs mt-1">O título é obrigatório.</p>
-                            )}
-                            <label htmlFor="edit-plan-date" className="block text-sm font-medium text-gray-700 mt-2">Data do Plano</label>
-                            <input
-                              id="edit-plan-date"
-                              type="date"
-                              value={editTreatmentPlanData.plan_date}
-                              onChange={e => setEditTreatmentPlanData({ ...editTreatmentPlanData, plan_date: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                              required
-                            />
-                            <RichTextEditorLazy
-                              value={editTreatmentPlanData.content}
-                              onChange={(content) => setEditTreatmentPlanData({ ...editTreatmentPlanData, content })}
-                              placeholder="Descreva o plano terapêutico, objetivos, métodos, cronograma..."
-                            />
-                            <div className="flex items-center justify-between mt-2">
-                              <Button
-                                onClick={cancelEditTreatmentPlan}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                Cancelar
-                              </Button>
-                              <div className="flex gap-2">
-                                <Button onClick={() => saveEditTreatmentPlan(plan.id)} className="px-3 py-1 text-sm font-medium">Guardar</Button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <h4 className="text-lg font-medium text-gray-900 mb-2">{plan.title}</h4>
-                            <div className="flex-1">
-                              {plan.content && (
-                                <div className="bg-gray-50 rounded-lg p-4">
-                                  <div className="text-gray-700">
-                                    {isExpanded || !plan.content || plan.content.length <= 150 ? (
-                                      <>
-                                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: plan.content }} />
-                                        {plan.content.length > 150 && (
-                                          <div className="flex items-center justify-between mt-2">
-                                            <button onClick={() => setExpandedNoteId(null)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver menos</button>
-                                          </div>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <>
-                                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: plan.content.substring(0, 150) + '...' }} />
-                                        <div className="flex items-center justify-between mt-2">
-                                          <button onClick={() => setExpandedNoteId(plan.id)} className="text-blue-600 hover:underline text-xs bg-transparent border-none p-0 m-0">Ver mais</button>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex justify-end gap-2 mt-4">
-                              <button
-                                onClick={() => startEditTreatmentPlan(plan)}
-                                className="text-gray-400 hover:text-blue-600 transition-colors"
-                                title="Edit treatment plan"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => deleteTreatmentPlan(plan.id)}
-                                className="text-gray-400 hover:text-red-600 transition-colors"
-                                title="Delete treatment plan"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+          <ContentSection
+            type="treatment_plans"
+            title="Plano Terapêutico"
+            icon={Brain}
+            patientId={patient.id}
+            userId={user.id}
+            placeholder="Descreva o plano terapêutico, objetivos, métodos, cronograma..."
+            buttonText="Adicionar"
+            validationMessage="Escreve um título para o plano."
+          />
         )
       case 'payments':
         return (
@@ -1223,9 +499,9 @@ export default function PatientProfile() {
   // Função para invalidar todas as queries relacionadas ao paciente
   const invalidatePatientQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['patient', user?.id, params.id] })
-    queryClient.invalidateQueries({ queryKey: ['notes', user?.id, params.id] })
+    
     queryClient.invalidateQueries({ queryKey: ['sessions', user?.id, params.id] })
-    queryClient.invalidateQueries({ queryKey: ['treatmentPlans', user?.id, params.id] })
+
   }
 
   return (
@@ -1311,9 +587,9 @@ export default function PatientProfile() {
               // Invalidar todas as queries relacionadas ao paciente
               console.log('PatientProfile: Invalidating patient queries...');
               queryClient.invalidateQueries({ queryKey: ['patient', user?.id, params.id] })
-              queryClient.invalidateQueries({ queryKey: ['notes', user?.id, params.id] })
+        
               queryClient.invalidateQueries({ queryKey: ['sessions', user?.id, params.id] })
-              queryClient.invalidateQueries({ queryKey: ['treatmentPlans', user?.id, params.id] })
+        
             }
           }}
           user={user}
