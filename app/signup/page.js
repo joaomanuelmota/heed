@@ -114,17 +114,7 @@ export default function SignUp() {
           setMessage(`Erro: ${signUpError.message}`)
         } else {
           analytics.signupCompleted('email');
-          const userId = data?.user?.id;
-          if (userId) {
-            const consentError = await createDefaultConsents(userId);
-            if (consentError) {
-              setMessage('Conta criada, mas houve um erro ao registar consentimentos.');
-            } else {
-              setMessage('Sucesso! Por favor, verifique o seu email para confirmar a conta.');
-            }
-          } else {
-            setMessage('Sucesso! Por favor, verifique o seu email para confirmar a conta.');
-          }
+          setMessage('Sucesso! Por favor, verifique o seu email para confirmar a conta.');
           setFormData({
             firstName: '',
             lastName: '',

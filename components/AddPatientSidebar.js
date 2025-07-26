@@ -50,8 +50,14 @@ export default function AddPatientSidebar(props) {
       }
     },
     onSuccess: () => {
+      console.log('AddPatientSidebar: Mutation successful, invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ['patients', props.user?.id] });
       queryClient.invalidateQueries({ queryKey: ['sessions', props.user?.id] });
+      // Chamar onSuccess para fechar a sidebar e atualizar a página
+      if (props.onSuccess) {
+        console.log('AddPatientSidebar: Calling onSuccess callback...');
+        props.onSuccess(false);
+      }
     }
   });
 

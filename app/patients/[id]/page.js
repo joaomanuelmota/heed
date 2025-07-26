@@ -20,30 +20,21 @@ import ReactDOM from 'react-dom'
 import Button from '../../../components/Button'
 import SessionDetailsSidebar from '../../../components/SessionDetailsSidebar'
 import CustomDropdown from '../../../components/CustomDropdown'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 const RichTextEditorLazy = dynamic(() => import('../../../components/RichTextEditor'), { ssr: false, loading: () => <div className="p-4 text-gray-400">Carregando editor...</div> })
 
 export default function PatientProfile() {
   const [user, setUser] = useState(null)
-  const [patient, setPatient] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [isExpanded, setIsExpanded] = useState(false)
   const [activeTab, setActiveTab] = useState('notes')
   
   // Estados para notas
   const [showAddNote, setShowAddNote] = useState(false)
-  const [notes, setNotes] = useState([])
-  const [notesLoading, setNotesLoading] = useState(false)
   const [noteData, setNoteData] = useState({
     title: '',
     content: '',
     note_date: new Date().toISOString().split('T')[0]
   })
-
-  // Estados para payments/sessions
-  const [sessions, setSessions] = useState([])
-  const [sessionsLoading, setSessionsLoading] = useState(false)
 
   // Estados para edição de notas
   const [editingNoteId, setEditingNoteId] = useState(null)
@@ -60,8 +51,6 @@ export default function PatientProfile() {
   
   // Estados para treatment plans  
   const [showAddTreatmentPlan, setShowAddTreatmentPlan] = useState(false)
-  const [treatmentPlans, setTreatmentPlans] = useState([])
-  const [treatmentPlansLoading, setTreatmentPlansLoading] = useState(false)
   const [treatmentPlanData, setTreatmentPlanData] = useState({
     title: '',
     content: '',
@@ -95,6 +84,7 @@ export default function PatientProfile() {
 
   const router = useRouter()
   const params = useParams()
+  const queryClient = useQueryClient()
 
   const paymentStatusOptions = [
     { value: 'paid', label: 'Pago' },
@@ -115,7 +105,6 @@ export default function PatientProfile() {
       
       if (user) {
         setUser(user)
-        fetchPatient(user.id, params.id)
       } else {
         router.push('/login')
       }
@@ -125,38 +114,105 @@ export default function PatientProfile() {
     }
   }
 
-  const fetchPatient = async (psychologistId, patientId) => {
-    try {
+  // React Query - Buscar dados do paciente
+  const {
+    data: patient,
+    isLoading: loadingPatient,
+    error: patientError
+  } = useQuery({
+    queryKey: ['patient', user?.id, params.id],
+    queryFn: async () => {
+      if (!user?.id || !params.id) return null;
       const { data, error } = await supabase
         .from('patients')
         .select('*')
-        .eq('id', patientId)
-        .eq('psychologist_id', psychologistId)
+        .eq('id', params.id)
+        .eq('psychologist_id', user.id)
         .single()
 
       if (error) {
         if (error.code === 'PGRST116') {
-          setError('Patient not found or you do not have permission to view this patient.')
+          throw new Error('Patient not found or you do not have permission to view this patient.')
         } else {
-          setError(`Error fetching patient: ${error.message}`)
+          throw new Error(`Error fetching patient: ${error.message}`)
         }
-      } else {
-        setPatient(data)
       }
-    } catch (error) {
-      setError(`Unexpected error: ${error.message}`)
-    }
-    
-    setLoading(false)
-  }
+      return data
+    },
+    enabled: !!user?.id && !!params.id
+  })
 
-  useEffect(() => {
-    if (patient && user) {
-      fetchNotes(patient.id)
-      fetchSessions(patient.id)
-      fetchTreatmentPlans(patient.id)
-    }
-  }, [patient, user])
+  // React Query - Buscar notas do paciente
+  const {
+    data: notes = [],
+    isLoading: loadingNotes
+  } = useQuery({
+    queryKey: ['notes', user?.id, params.id],
+    queryFn: async () => {
+      if (!user?.id || !params.id) return [];
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('patient_id', params.id)
+        .eq('psychologist_id', user.id)
+        .order('note_date', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching notes:', error)
+        return []
+      }
+      return data || []
+    },
+    enabled: !!user?.id && !!params.id
+  })
+
+  // React Query - Buscar sessões do paciente
+  const {
+    data: sessions = [],
+    isLoading: loadingSessions
+  } = useQuery({
+    queryKey: ['sessions', user?.id, params.id],
+    queryFn: async () => {
+      if (!user?.id || !params.id) return [];
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('patient_id', params.id)
+        .eq('psychologist_id', user.id)
+        .order('session_date', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching sessions:', error)
+        return []
+      }
+      return data || []
+    },
+    enabled: !!user?.id && !!params.id
+  })
+
+  // React Query - Buscar treatment plans do paciente
+  const {
+    data: treatmentPlans = [],
+    isLoading: loadingTreatmentPlans
+  } = useQuery({
+    queryKey: ['treatmentPlans', user?.id, params.id],
+    queryFn: async () => {
+      if (!user?.id || !params.id) return [];
+      const { data, error } = await supabase
+        .from('treatment_plans')
+        .select('*')
+        .eq('patient_id', params.id)
+        .eq('psychologist_id', user.id)
+        .order('plan_date', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching treatment plans:', error)
+        return []
+      }
+      return data || []
+    },
+    enabled: !!user?.id && !!params.id
+  })
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return 'Unknown'
@@ -175,78 +231,156 @@ export default function PatientProfile() {
     return formatDateLong(dateString)
   }
 
-  const fetchNotes = async (patientId) => {
-    if (!user) {
-      return
-    }
-    
-    setNotesLoading(true)
-    try {
+  // React Query Mutations
+  const addNoteMutation = useMutation({
+    mutationFn: async (noteData) => {
+      const newNote = {
+        psychologist_id: user.id,
+        patient_id: params.id,
+        title: noteData.title.trim(),
+        content: noteData.content || '',
+        note_date: noteData.note_date,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
       const { data, error } = await supabase
         .from('notes')
-        .select('*')
-        .eq('patient_id', patientId)
+        .insert([newNote])
+        .select()
+
+      if (error) throw new Error(error.message)
+      return data[0]
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes', user?.id, params.id] })
+      setNoteData({
+        title: '',
+        content: '',
+        note_date: new Date().toISOString().split('T')[0]
+      })
+      setShowAddNote(false)
+      setTriedSaveNote(false)
+    }
+  })
+
+  const updateNoteMutation = useMutation({
+    mutationFn: async ({ noteId, updateData }) => {
+      const { data, error } = await supabase
+        .from('notes')
+        .update(updateData)
+        .eq('id', noteId)
         .eq('psychologist_id', user.id)
-        .order('note_date', { ascending: false })
+        .select()
 
-      if (error) {
-        console.error('Error fetching notes:', error)
-      } else {
-        setNotes(data || [])
+      if (error) throw new Error(error.message)
+      return data[0]
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes', user?.id, params.id] })
+      setEditingNoteId(null)
+      setEditNoteData({ title: '', content: '', note_date: '' })
+    }
+  })
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: async (noteId) => {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', noteId)
+        .eq('psychologist_id', user.id)
+
+      if (error) throw new Error(error.message)
+      return noteId
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes', user?.id, params.id] })
+    }
+  })
+
+  const addTreatmentPlanMutation = useMutation({
+    mutationFn: async (planData) => {
+      const newPlan = {
+        psychologist_id: user.id,
+        patient_id: params.id,
+        title: planData.title.trim(),
+        content: planData.content || '',
+        plan_date: planData.plan_date,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
-    } catch (error) {
-      console.error('Unexpected error fetching notes:', error)
-    }
-    setNotesLoading(false)
-  }
 
-  const fetchTreatmentPlans = async (patientId) => {
-    if (!user) {
-      return
-    }
-    
-    setTreatmentPlansLoading(true)
-    try {
       const { data, error } = await supabase
         .from('treatment_plans')
-        .select('*')
-        .eq('patient_id', patientId)
-        .eq('psychologist_id', user.id)
-        .order('plan_date', { ascending: false })
+        .insert([newPlan])
+        .select()
 
-      if (error) {
-        console.error('Error fetching treatment plans:', error)
-      } else {
-        setTreatmentPlans(data || [])
-      }
-    } catch (error) {
-      console.error('Unexpected error fetching treatment plans:', error)
+      if (error) throw new Error(error.message)
+      return data[0]
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['treatmentPlans', user?.id, params.id] })
+      setTreatmentPlanData({
+        title: '',
+        content: '',
+        plan_date: new Date().toISOString().split('T')[0]
+      })
+      setShowAddTreatmentPlan(false)
+      setTriedSaveTreatmentPlan(false)
     }
-    setTreatmentPlansLoading(false)
-  }
+  })
 
-  const fetchSessions = async (patientId) => {
-    if (!user) return
-    
-    setSessionsLoading(true)
-    try {
+  const updateTreatmentPlanMutation = useMutation({
+    mutationFn: async ({ planId, updateData }) => {
+      const { data, error } = await supabase
+        .from('treatment_plans')
+        .update(updateData)
+        .eq('id', planId)
+        .eq('psychologist_id', user.id)
+        .select()
+
+      if (error) throw new Error(error.message)
+      return data[0]
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['treatmentPlans', user?.id, params.id] })
+      setEditingTreatmentPlanId(null)
+      setEditTreatmentPlanData({ title: '', content: '', plan_date: '' })
+    }
+  })
+
+  const deleteTreatmentPlanMutation = useMutation({
+    mutationFn: async (planId) => {
+      const { error } = await supabase
+        .from('treatment_plans')
+        .delete()
+        .eq('id', planId)
+        .eq('psychologist_id', user.id)
+
+      if (error) throw new Error(error.message)
+      return planId
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['treatmentPlans', user?.id, params.id] })
+    }
+  })
+
+  const updateSessionMutation = useMutation({
+    mutationFn: async ({ sessionId, updateData }) => {
       const { data, error } = await supabase
         .from('sessions')
-        .select('*')
-        .eq('patient_id', patientId)
+        .update(updateData)
+        .eq('id', sessionId)
         .eq('psychologist_id', user.id)
-        .order('session_date', { ascending: false })
 
-      if (error) {
-        console.error('Error fetching sessions:', error)
-      } else {
-        setSessions(data || [])
-      }
-    } catch (error) {
-      console.error('Unexpected error fetching sessions:', error)
+      if (error) throw new Error(error.message)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions', user?.id, params.id] })
     }
-    setSessionsLoading(false)
-  }
+  })
 
   const getStatusBadge = (status) => {
     let badgeClass = "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border cursor-pointer transition-all duration-150 group relative";
@@ -275,27 +409,17 @@ export default function PatientProfile() {
   }
 
   const handleStatusChange = async (sessionId, newStatus) => {
-    await supabase
-      .from('sessions')
-      .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
-      .eq('id', sessionId);
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === sessionId ? { ...s, payment_status: newStatus } : s
-      )
-    );
+    await updateSessionMutation.mutateAsync({
+      sessionId,
+      updateData: { payment_status: newStatus, updated_at: new Date().toISOString() }
+    });
   };
 
   const handlePaymentStatusChange = async (sessionId, newPaymentStatus) => {
-    await supabase
-      .from('sessions')
-      .update({ payment_status: newPaymentStatus, updated_at: new Date().toISOString() })
-      .eq('id', sessionId)
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === sessionId ? { ...s, payment_status: newPaymentStatus } : s
-      )
-    )
+    await updateSessionMutation.mutateAsync({
+      sessionId,
+      updateData: { payment_status: newPaymentStatus, updated_at: new Date().toISOString() }
+    });
   }
 
   // Adicionar função para atualizar o status da sessão
@@ -304,17 +428,10 @@ export default function PatientProfile() {
     if (newStatus === 'cancelled') {
       paymentStatusUpdate = { payment_status: 'to pay' }
     }
-    await supabase
-      .from('sessions')
-      .update({ status: newStatus, updated_at: new Date().toISOString(), ...paymentStatusUpdate })
-      .eq('id', sessionId)
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === sessionId
-          ? { ...s, status: newStatus, ...(newStatus === 'cancelled' ? { payment_status: 'to pay' } : {}) }
-          : s
-      )
-    )
+    await updateSessionMutation.mutateAsync({
+      sessionId,
+      updateData: { status: newStatus, updated_at: new Date().toISOString(), ...paymentStatusUpdate }
+    });
   }
 
   const saveNote = async () => {
@@ -329,38 +446,7 @@ export default function PatientProfile() {
     }
 
     try {
-      const newNote = {
-        psychologist_id: user.id,
-        patient_id: patient.id,
-        title: noteData.title.trim(),
-        content: noteData.content || '',
-        note_date: noteData.note_date,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-
-      const { data, error } = await supabase
-        .from('notes')
-        .insert([newNote])
-        .select()
-
-      if (error) {
-        console.error('Erro ao salvar nota:', error)
-      } else {
-        // Adicionar a nova nota à lista
-        setNotes([data[0], ...notes])
-        
-        // Limpar formulário
-        setNoteData({
-          title: '',
-          content: '',
-          note_date: new Date().toISOString().split('T')[0]
-        })
-        
-        // Fechar formulário
-        setShowAddNote(false)
-        setTriedSaveNote(false);
-      }
+      await addNoteMutation.mutateAsync(noteData)
     } catch (error) {
       console.error('Erro inesperado:', error)
       alert('Erro inesperado ao salvar nota')
@@ -373,20 +459,8 @@ export default function PatientProfile() {
     }
 
     try {
-      const { error } = await supabase
-        .from('notes')
-        .delete()
-        .eq('id', noteId)
-        .eq('psychologist_id', user.id)
-
-      if (error) {
-        console.error('Erro ao excluir nota:', error)
-        alert('Erro ao excluir nota: ' + error.message)
-      } else {
-        // Remove a nota da lista local
-        setNotes(notes.filter(note => note.id !== noteId))
-        alert('Nota excluída com sucesso!')
-      }
+      await deleteNoteMutation.mutateAsync(noteId)
+      alert('Nota excluída com sucesso!')
     } catch (error) {
       console.error('Erro inesperado:', error)
       alert('Erro inesperado ao excluir nota')
@@ -425,32 +499,11 @@ export default function PatientProfile() {
         updated_at: new Date().toISOString()
       }
 
-      const { data, error } = await supabase
-        .from('notes')
-        .update(updateData)
-        .eq('id', noteId)
-        .eq('psychologist_id', user.id)
-        .select()
-
-      if (error) {
-        console.error('Erro ao atualizar nota:', error)
-        alert('Erro ao atualizar nota: ' + error.message)
-      } else {
-        // Atualizar a nota na lista local
-        setNotes(notes.map(note => 
-          note.id === noteId ? { ...note, ...updateData } : note
-        ))
-        
-        // Sair do modo de edição
-        setEditingNoteId(null)
-        setEditNoteData({ title: '', content: '', note_date: '' })
-      }
+      await updateNoteMutation.mutateAsync({ noteId, updateData })
     } catch (error) {
       console.error('Erro inesperado:', error)
       alert('Erro inesperado ao atualizar nota')
     }
-
-    fetchSessions(patient.id)
   }
 
   const saveTreatmentPlan = async () => {
@@ -465,38 +518,7 @@ export default function PatientProfile() {
     }
 
     try {
-      const newTreatmentPlan = {
-        psychologist_id: user.id,
-        patient_id: patient.id,
-        title: treatmentPlanData.title.trim(),
-        content: treatmentPlanData.content || '',
-        plan_date: treatmentPlanData.plan_date,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-
-      const { data, error } = await supabase
-        .from('treatment_plans')
-        .insert([newTreatmentPlan])
-        .select()
-
-      if (error) {
-        console.error('Erro ao salvar plano terapêutico:', error)
-      } else {
-        // Adicionar o novo treatment plan à lista
-        setTreatmentPlans([data[0], ...treatmentPlans])
-        
-        // Limpar formulário
-        setTreatmentPlanData({
-          title: '',
-          content: '',
-          plan_date: new Date().toISOString().split('T')[0]
-        })
-        
-        // Fechar formulário
-        setShowAddTreatmentPlan(false)
-        setTriedSaveTreatmentPlan(false);
-      }
+      await addTreatmentPlanMutation.mutateAsync(treatmentPlanData)
     } catch (error) {
       console.error('Erro inesperado:', error)
       alert('Erro inesperado ao salvar plano terapêutico')
@@ -509,20 +531,8 @@ export default function PatientProfile() {
     }
 
     try {
-      const { error } = await supabase
-        .from('treatment_plans')
-        .delete()
-        .eq('id', treatmentPlanId)
-        .eq('psychologist_id', user.id)
-
-      if (error) {
-        console.error('Erro ao excluir plano terapêutico:', error)
-        alert('Erro ao excluir plano terapêutico: ' + error.message)
-      } else {
-        // Remove o treatment plan da lista local
-        setTreatmentPlans(treatmentPlans.filter(plan => plan.id !== treatmentPlanId))
-        alert('Plano terapêutico excluído com sucesso!')
-      }
+      await deleteTreatmentPlanMutation.mutateAsync(treatmentPlanId)
+      alert('Plano terapêutico excluído com sucesso!')
     } catch (error) {
       console.error('Erro inesperado:', error)
       alert('Erro inesperado ao excluir plano terapêutico')
@@ -561,26 +571,7 @@ export default function PatientProfile() {
         updated_at: new Date().toISOString()
       }
 
-      const { data, error } = await supabase
-        .from('treatment_plans')
-        .update(updateData)
-        .eq('id', treatmentPlanId)
-        .eq('psychologist_id', user.id)
-        .select()
-
-      if (error) {
-        console.error('Erro ao atualizar plano terapêutico:', error)
-        alert('Erro ao atualizar plano terapêutico: ' + error.message)
-      } else {
-        // Atualizar o treatment plan na lista local
-        setTreatmentPlans(treatmentPlans.map(plan => 
-          plan.id === treatmentPlanId ? { ...plan, ...updateData } : plan
-        ))
-        
-        // Sair do modo de edição
-        setEditingTreatmentPlanId(null)
-        setEditTreatmentPlanData({ title: '', content: '', plan_date: '' })
-      }
+      await updateTreatmentPlanMutation.mutateAsync({ planId: treatmentPlanId, updateData })
     } catch (error) {
       console.error('Erro inesperado:', error)
       alert('Erro inesperado ao atualizar plano terapêutico')
@@ -867,7 +858,7 @@ export default function PatientProfile() {
             )}
 
             {/* Treatment Plans List */}
-            {treatmentPlansLoading ? (
+            {loadingTreatmentPlans ? (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="text-center py-8">
                   <div className="flex justify-center items-center mb-4 gap-2">
@@ -1015,7 +1006,7 @@ export default function PatientProfile() {
             </div>
 
             {/* Sessions Table */}
-            {sessionsLoading ? (
+            {loadingSessions ? (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -1171,7 +1162,7 @@ export default function PatientProfile() {
     }
   }
 
-  if (loading) {
+  if (loadingPatient) {
     return (
       <div className="min-h-screen bg-[#F3F3F3] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -1179,12 +1170,12 @@ export default function PatientProfile() {
     )
   }
 
-  if (error) {
+  if (patientError) {
     return (
       <div className="min-h-screen bg-[#F3F3F3] flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Error</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <p className="text-gray-600 mb-6">{patientError.message}</p>
           <Link href="/patients" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
             Back to Patients
           </Link>
@@ -1217,6 +1208,14 @@ export default function PatientProfile() {
   // Funções de validação
   function validarTitulo(titulo) {
     return titulo && titulo.trim().length > 0
+  }
+
+  // Função para invalidar todas as queries relacionadas ao paciente
+  const invalidatePatientQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['patient', user?.id, params.id] })
+    queryClient.invalidateQueries({ queryKey: ['notes', user?.id, params.id] })
+    queryClient.invalidateQueries({ queryKey: ['sessions', user?.id, params.id] })
+    queryClient.invalidateQueries({ queryKey: ['treatmentPlans', user?.id, params.id] })
   }
 
   return (
@@ -1284,7 +1283,7 @@ export default function PatientProfile() {
           onClose={() => setShowScheduleSidebar(false)}
           onSuccess={() => {
             setShowScheduleSidebar(false)
-            fetchSessions(patient.id)
+            queryClient.invalidateQueries({ queryKey: ['sessions', user?.id, params.id] })
           }}
           user={user}
           patients={[patient]}
@@ -1294,11 +1293,17 @@ export default function PatientProfile() {
           isOpen={!!editingPatient}
           onClose={() => setEditingPatient(null)}
           onSuccess={(deleted = false) => {
+            console.log('PatientProfile: onSuccess called, deleted:', deleted);
             setEditingPatient(null)
             if (deleted) {
               router.push('/patients')
             } else {
-              fetchPatient(user.id, patient.id)
+              // Invalidar todas as queries relacionadas ao paciente
+              console.log('PatientProfile: Invalidating patient queries...');
+              queryClient.invalidateQueries({ queryKey: ['patient', user?.id, params.id] })
+              queryClient.invalidateQueries({ queryKey: ['notes', user?.id, params.id] })
+              queryClient.invalidateQueries({ queryKey: ['sessions', user?.id, params.id] })
+              queryClient.invalidateQueries({ queryKey: ['treatmentPlans', user?.id, params.id] })
             }
           }}
           user={user}
@@ -1310,7 +1315,7 @@ export default function PatientProfile() {
           onClose={() => setShowEditSessionSidebar(false)}
           onSuccess={() => {
             setShowEditSessionSidebar(false);
-            fetchSessions(patient.id);
+            queryClient.invalidateQueries({ queryKey: ['sessions', user?.id, params.id] });
           }}
           user={user}
           patients={[patient]}

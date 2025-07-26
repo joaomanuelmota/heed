@@ -55,11 +55,13 @@ serve(async (req) => {
       )
     }
 
+    console.log('Creating user with email:', email)
+
     // Create user with Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: false, // Keep email confirmation required
+      email_confirm: false, // Don't auto-confirm, we'll send email manually
       user_metadata: {
         first_name: firstName,
         last_name: lastName,
@@ -68,6 +70,7 @@ serve(async (req) => {
     })
 
     if (authError) {
+      console.error('Error creating user:', authError)
       return new Response(
         JSON.stringify({ error: authError.message }),
         { 
@@ -77,31 +80,25 @@ serve(async (req) => {
       )
     }
 
-    const userId = authData.user.id
+    console.log('User created successfully:', authData.user.id)
 
-    // Create essential consent
-    const essentialConsent = {
-      user_id: userId,
-      consent_type: 'essential',
-      granted: true,
-      granted_at: new Date().toISOString(),
-      consent_version: '1.0',
-    }
+    // Send confirmation email manually
+    console.log('Sending confirmation email to:', email)
+    const { error: emailError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'signup',
+      email: email,
+      options: {
+        redirectTo: `${Deno.env.get('SITE_URL') || 'http://localhost:3000'}/auth/callback`
+      }
+    })
 
-    const { error: consentError } = await supabaseAdmin
-      .from('user_consents')
-      .insert([essentialConsent])
-
-    if (consentError) {
-      // If consent creation fails, we should still return success for user creation
-      // but log the error for debugging
-      console.error('Error creating consent:', consentError)
-      
+    if (emailError) {
+      console.error('Error sending confirmation email:', emailError)
       return new Response(
         JSON.stringify({ 
           success: true, 
           user: authData.user,
-          warning: 'Conta criada, mas houve um erro ao registar consentimentos.'
+          warning: 'Conta criada, mas houve um erro ao enviar o email de confirmação.'
         }),
         { 
           status: 200, 
@@ -109,6 +106,8 @@ serve(async (req) => {
         }
       )
     }
+
+    console.log('Confirmation email sent successfully')
 
     return new Response(
       JSON.stringify({ 
